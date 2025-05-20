@@ -1,0 +1,106 @@
+,0
+000, FERIAS
+90,H - RESC COM JUSTA CAUSA POR INICIATIVA DO EMPREGADOR
+10,Rescisão de contrato de trabalho por justa causa e iniciativa do empregador ou demissão de servidor
+H,"Rescisão, com justa causa, por iniciativa do empregador."
+92,I1 - RESC SEM JUSTA CAUSA POR INICIATIVA DO EMPREGADOR
+11,Rescisão de contrato de trabalho sem justa causa por iniciativa do empregador ou exoneração de ofício de servidor de cargo efetivo ou exoneração de ca
+I1,"Rescisao, sem justa causa, por iniciativa do empregador."
+93,I2 - RESCISAO POR CULPA RECIPROCA OU FORCA MAIOR
+I2,Rescisão por culpa recíproca ou força maior.
+94,Afastamento por Doença não relacionada ao trabalho
+12,Término do Contrato de Trabalho
+I3,Rescisão por término do contrato a termo.
+96,Afastamento por Serviço Militar Obrigatório
+21,Rescisão sem Justa Causa por Iniciativa do Empregado ou exoneração de cargo efetivo a pedido do servidor
+J,Rescisão do contrato de trabalho por iniciativa do empregado.
+98,L - OUTROS MOTIVOS DE RESCISAO DO CONTRATO DE TRABALHO
+L,Outros motivos de rescisão do contrato de trabalho.
+99,Outros Motivos de Desligamento sem Rescisão contratual
+40,Mudança do Regime Trabalhista
+M,Mudança de regime estatutário.
+103,O1 - AFASTAMENTO TEMPORARIO POR MOTIVO DE ACIDENTE DE TRABALHO POR PERIODO SUPERIOR A 15 DIAS
+91,Afastamento por Acidente de Trabalho Típico
+Z2,Retorno de afastamento temporário por motivo de acidente do trabalho.
+O1,"Afastamento temporário por motivo de acidente do trabalho, por período superior a 15 dias."
+104,O2 - NOVO AFASTAMENTO TEMPORARIO EM DECORRENCIA DO MESMO ACIDENTE DO TRABALHO
+Z5,Outros retornos de afastamento temporário e/ou licença.
+O2,Novo afastamento temporário em decorrência do mesmo acidente do trabalho.
+105,P1 - AFASTAMENTO TEMPORARIO POR MOTIVO DE DOENCA POR PERIODO SUPERIOR A 15 DIAS
+P1,"Afastamento temporário por motivo de doença, por período superior a 15 dias."
+106,P2 - NOVO AFASTAMENTO TEMPORARIO EM DECORRENCIA DA MESMA DOENCA DENTRO DE 60 DIAS
+P2,"Novo afastamento temporário em decorrência da mesma doença, dentro de 60 dias contados da cessação do afastamento anterior."
+107,Q1 - AFAST TEMPORARIO POR MOTIVO DE LICENCA-MATERNIDADE (120) DIAS
+95,Afastamento por Licença Maternidade/Paternidade
+Z1,Retorno de afastamento temporário por motivo de licença-maternidade.
+Q1,Afastamento temporário por motivo de licença-maternidade (120 dias).
+108,Q3 - AFAST TEMPORARIO POR MOTIVO DE ABORTO N/ CRIMINOSO
+Q3,Afastamento temporário por motivo de aborto não criminoso.
+109,R - AFAST TEMPORARIO PARA PRESTAR SERVICO MILITAR
+Z4,Retorno de afastamento temporário por motivo de prestação de serviço militar.
+R,Afastamento temporário para prestar serviço militar.
+111,U1 - APOSENTADORIA
+70,Aposentadoria por Tempo de Contribuição com Rescisão contratual
+U1,Aposentadoria.
+113,U3 - APOSENTADORIA POR INVALIDEZ
+73,Aposentadoria por Invalidez decorrente de Acidente de trabalho
+U3,Aposentadoria por invalidez.
+114,W - AFAST TEMPORARIO P/ EXERCICIO DE MANDATO SINDICAL
+97,Afastamento sem vencimento/sem remuneração
+W,Afastamento temporário para exercício de mandato sindical.
+115,X - LICENCA SEM VENCIMENTOS
+X,Licença sem vencimentos.
+116,Y - OUTROS MOTIVOS DE AFASTAMENTO TEMPORARIO
+Y,Outros motivos de afastamento temporário.
+124,RESCISAO (USADO NA MIGRACAO) SERVIDOR COM DATA DE RESCISAO SEM CODIGO DE AFASTAMENTO
+125,S2 - FALECIMENTO
+60,Falecimento
+S2,Falecimento.
+127,Q4 - AFAST TEMPORARIO POR LICENCA-MATERNIDADE DECORRENTE DE ADOCAO OU GUARDA JUDICIAL DE CRIANCA ATE UM ANO DE IDADE
+Q2,Licença Maternidade paga pela empresa
+128,Q5 - AFAST TEMPORARIO POR LICENCA-MATERNIDADE DECORRENTE DE ADOCAO OU GUARDA JUDICIAL DE CRIANCA A PARTIR DE UM ANO ATE 4 ANOS
+Q5,Afastamento temporário por motivo de licença-maternidade decorrente de adoção ou guarda judicial de criança a partir de 1(um) ano até 4 (quatro) anos de idade (60 dias).
+129,Q6 - AFAST TEMPORARIO POR LICENCA-MATERNIDADE DECORRENTE DE ADOCAO OU GUARDA JUDICIAL DE CRIANCA DE 4 ATE 8 ANOS
+Q6,Afastamento temporário por motivo de licença-maternidade decorrente de adoção ou guarda judicial de criança de 4 (quatro) até 8(oito) anos de idade (30 dias).
+130,"O3 - AFASTAMENTO TEMPORARIO POR MOTIVO DE ACIDENTE DO TRABALHO, POR PERIODO IGUAL OU INFERIOR A 15 DIAS"
+Z6,"Retorno de afastamento temporário por motivo de acidente de trabalho, por período igual ou inferior a 15 dias."
+O3,"Afastamento temporário por motivo de acidente do trabalho, por período igual ou inferior a 15 dias."
+140,P3 - AFASTAMENTO TEMPORARIO POR MOTIVO DE DOENCA POR PERIODO IGUAL OU INFERIOR A 15 DIAS
+P3,"Afastamento temporário por motivo de doença, por período igual ou inferior a 15 dias."
+164,LMP - LICENCA MATERNIDADE PRORROGACAO PM
+165,REC - PENA DE RECLUSAO
+166,LTS - LICENCA TRATAMENTO SAUDE - EFETIVOS
+167,ALT - AFASTAMENTO POR LUTO
+168,LCA - LICENÇA PARA CASAMENTO
+169,LAC - LICENCA ACOMPANHAMENTO FAMILIAR DOENTE ATÉ 30 DIAS
+170,LPA - LICENCA PATERNIDADE
+171,DS - DOACAO DE SANGUE
+172,JE - JUSTICA ELEITORAL
+173,EXL - EXAME DE LEGISLACAO
+174,REX - REALIZACAO DE EXAMES
+175,SUS - AFASTAMENTO POR SUSPENSAO
+176,ACE - AFASTAMENTO CANDIDATURA ELEITORAL
+177,MAT - LICENCA MATERNIDADE - SERVIDOR EFETIVO (180 DIAS)
+270,LFF - LICENCA FALECIMENTO MEMBRO DA FAMILIA
+271,LCS - LICENCA CASAMENTO
+273,LPT - LICENCA PATERNIDADE
+277,LDS - LICENCA DOACAO DE SANGUE
+278,CES - CESSAO SEM ONUS
+N2,"Transferência de empregado para outra empresa que tenha assumido os encargos trabalhistas, sem que tenha havido rescisao de contrato de trabalho."
+279,PMO - PROCEDIMENTOS MEDICOS ODONTOLOGICOS
+280,CTJ - COMPARECIMENTO TRIBUNAL DO JURI
+284,CJ - CONVOCACAO JURI
+285,PCS - PARTICIPACAO CURSOS/SEMINARIOS
+286,CPA - COMPARECIMENTO PROCESSO ADMINISTRATIVO DISCIPLINAR
+292,LA2 - LICENCA ACOMPANHAR FAMILIAR DOENTE CONTINUACAO DE 31 A 60 DIAS
+293,LA3 - LICENCA ACAMPANHAR FAMILIA DOENTE - SEM CALCULO DE 61 A 120 DIAS
+294,LMS - LICENCA MANDATO SINDICAL
+295,AMS - AFASTAMENTO MOTIVO DE SAUDE PG PM
+296,CCO - CESSAO COM ONUS PARA PREFEITURA
+364,GES - AFASTAMENTO LEI 14.151 GESTANTE
+367,DES - DESAPARECIMENTO
+368,FAP - FOLGA APLICADORES PSS/CP
+369,LP - LICENÇA PREMIO
+373,teste
+377,AFASTAMENTO SENTENÇA JUDICIAL
+378,LICENÇA MATERNIDADE EFETIVO ADOÇAO

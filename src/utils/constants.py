@@ -5,9 +5,9 @@ from pathlib import Path
 BASE_DIR = Path(Path.cwd())
 DATA_DIR = BASE_DIR / "data"
 DOWNLOADS_DIR = BASE_DIR / "downloads"
+FIORILLI_DIR = DATA_DIR / "fiorilli"
+AHGORA_DIR = DATA_DIR / "ahgora"
 TASKS_DIR = BASE_DIR / "tasks"
-FIORILLI_DIR = TASKS_DIR / "fiorilli"
-AHGORA_DIR = TASKS_DIR / "ahgora"
 
 INQUIRER_KEYBINDINGS = {
     "answer": [
@@ -89,3 +89,12 @@ REQUIRED_VARS = {
     "AHGORA_PSW": None,
     "AHGORA_COMPANY": None,
 }
+
+ABSENCES_COLUMNS = [
+    "id",
+    "cod",
+    "start_date",
+    "start_time",
+    "end_date",
+    "end_time",
+]

@@ -8,21 +8,19 @@ from rich import print
 
 from src.managers.file_manager import FileManager as file_manager
 from src.utils.config import Config
-from src.utils.constants import PT_MONTHS, TASKS_DIR, FIORILLI_DIR, AHGORA_DIR
+from src.utils.constants import (
+    PT_MONTHS,
+    TASKS_DIR,
+    FIORILLI_DIR,
+    AHGORA_DIR,
+    DATA_DIR,
+    ABSENCES_COLUMNS,
+)
 from src.utils.ui import console
-
-ABSENCES_COLUMNS = [
-    "id",
-    "cod",
-    "start_date",
-    "start_time",
-    "end_date",
-    "end_time",
-]
 
 
 class DataManager:
-    def analyze(self) -> (pd.DataFrame, pd.DataFrame):
+    def analyze(self):
         try:
             ()
             with console.status(
@@ -121,6 +119,9 @@ class DataManager:
         if "id" in df.columns:
             df["id"] = df["id"].astype(str).str.zfill(6)
 
+        if "desc" in df.columns:
+            df["desc"] = df["desc"].astype(str)
+
         return df
 
     def convert_date(self, date_str: str):
@@ -170,6 +171,10 @@ class DataManager:
             ~fiorilli_employees["id"].isin(dismissed_ids)
         ]
 
+        absence_codes = self.read_csv(
+            DATA_DIR / "absence_codes.csv", columns=["cod", "desc"]
+        )
+
         new_employees_df = self._get_new_employees_df(
             fiorilli_active_employees=fiorilli_active_employees,
             ahgora_employees=ahgora_employees,
@@ -187,8 +192,10 @@ class DataManager:
             ahgora_employees=ahgora_employees,
         )
         new_absences_df = self._get_new_absences_df(
+            fiorilli_employees=fiorilli_employees,
             last_absences=last_absences,
             all_absences=all_absences,
+            absence_codes=absence_codes,
         )
 
         self.save_tasks_dfs(
@@ -277,18 +284,62 @@ class DataManager:
 
     def _get_new_absences_df(
         self,
+        fiorilli_employees: pd.DataFrame,
         last_absences: pd.DataFrame,
         all_absences: pd.DataFrame,
+        absence_codes: pd.DataFrame,
     ) -> pd.DataFrame:
         try:
             merged = pd.merge(last_absences, all_absences, how="outer", indicator=True)
-
             new_absences = merged[merged["_merge"] == "right_only"].drop(
                 "_merge", axis=1
             )
+
+            if new_absences.empty:
+                empty_df = pd.DataFrame(columns=ABSENCES_COLUMNS)
+                return empty_df, empty_df.copy()
+
         except TypeError:
             new_absences = all_absences
-        return new_absences
+
+        if not new_absences.empty:
+            new_absences["start_date"] = pd.to_datetime(new_absences["start_date"])
+            new_absences["end_date"] = pd.to_datetime(new_absences["end_date"])
+
+            new_absences_df = new_absences.copy()
+
+            new_absences_df = new_absences_df.merge(
+                fiorilli_employees[["id", "name"]], on="id", how="left"
+            )
+
+            new_absences_df = new_absences_df.merge(
+                absence_codes[["cod", "desc"]], on="cod", how="left"
+            ).rename(columns={"desc": "cod_name"})
+
+            new_absences_df["duration"] = (
+                new_absences_df["end_date"] - new_absences_df["start_date"]
+            ).dt.days + 1
+            new_absences_df["duration"] = new_absences_df["duration"].clip(lower=1)
+
+            new_absences_df = new_absences_df[
+                [
+                    "id",
+                    "name",
+                    "cod",
+                    "cod_name",
+                    "start_date",
+                    "end_date",
+                    "duration",
+                    "start_time",
+                    "end_time",
+                ]
+            ]
+
+            # df_import = new_absences[ABSENCES_COLUMNS].copy()
+
+            return new_absences_df
+
+        return pd.DataFrame()
 
     def normalize_text(self, text):
         if pd.isna(text):
