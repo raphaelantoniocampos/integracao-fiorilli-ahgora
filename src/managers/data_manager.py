@@ -56,17 +56,18 @@ class DataManager:
             Config.update_last_analisys()
             print("[bold green]Dados sincronizados com sucesso![/bold green]\n")
             sleep(1)
-        except KeyboardInterrupt as e:
-            print(f"[bold red]Erro ao sincronizar dados: {e}[/bold red]\n")
+        except KeyboardInterrupt:
             sleep(1)
+            return
 
-        except FileNotFoundError as e:
+        except FileNotFoundError as err:
             print(
                 f"[bold red]Erro ao analisar dados: {
-                    e
-                }[/bold red]\nFaça do download primeiro."
+                    err
+                }[/bold red]\nFaça o download primeiro."
             )
             sleep(1)
+            return
 
     @staticmethod
     def filter_df(df: pd.DataFrame, ids: list[str]) -> pd.DataFrame:
