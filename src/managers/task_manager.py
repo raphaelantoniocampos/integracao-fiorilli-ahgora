@@ -10,7 +10,7 @@ from src.tasks.add_absences_task import AddAbsencesTask
 from src.tasks.add_employees_task import AddEmployeesTask
 from src.tasks.remove_employees_task import RemoveEmployeesTask
 from src.tasks.update_employees_task import UpdateEmployeesTask
-from src.utils.constants import DATA_DIR, INQUIRER_KEYBINDINGS
+from src.utils.constants import INQUIRER_KEYBINDINGS, TASKS_DIR
 from src.utils.ui import console, spinner
 
 
@@ -83,13 +83,13 @@ class TaskManager:
     def _get_path(self, name: str) -> Path:
         match name:
             case "add_employees":
-                return DATA_DIR / "tasks" / "new_employees.csv"
+                return TASKS_DIR / "new_employees.csv"
             case "remove_employees":
-                return DATA_DIR / "tasks" / "dismissed_employees.csv"
+                return TASKS_DIR / "dismissed_employees.csv"
             case "update_employees":
-                return DATA_DIR / "tasks" / "changed_employees.csv"
+                return TASKS_DIR / "changed_employees.csv"
             case "add_absences":
-                return DATA_DIR / "tasks" / "new_absences.csv"
+                return TASKS_DIR / "new_absences.csv"
 
     def _get_option(self, name: str, df: DataFrame) -> str:
         if df.empty:

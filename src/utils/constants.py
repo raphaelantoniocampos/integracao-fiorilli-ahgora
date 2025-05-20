@@ -1,8 +1,13 @@
 from pathlib import Path
 
+# Program diresctories
+
 BASE_DIR = Path(Path.cwd())
 DATA_DIR = BASE_DIR / "data"
 DOWNLOADS_DIR = BASE_DIR / "downloads"
+TASKS_DIR = BASE_DIR / "tasks"
+FIORILLI_DIR = TASKS_DIR / "fiorilli"
+AHGORA_DIR = TASKS_DIR / "ahgora"
 
 INQUIRER_KEYBINDINGS = {
     "answer": [

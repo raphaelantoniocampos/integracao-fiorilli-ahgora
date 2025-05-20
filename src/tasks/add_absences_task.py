@@ -10,7 +10,7 @@ from src.managers.file_manager import FileManager
 from src.models.key import Key, wait_key_press
 from src.models.task import Task
 from src.tasks.task_runner import TaskRunner
-from src.utils.constants import DATA_DIR
+from src.utils.constants import DATA_DIR, TASKS_DIR
 from src.utils.ui import spinner
 
 
@@ -27,7 +27,7 @@ class AddAbsencesTask(TaskRunner):
     def run(self):
         print(f"\n[bold yellow]{'-' * 15} AFASTAMENTOS! {'-' * 15}[/bold yellow]")
 
-        absences_bytes = (DATA_DIR / "fiorilli" / "absences.csv").read_bytes()
+        absences_bytes = (FIORILLI_DIR / "absences.csv").read_bytes()
 
         temp_absences_file = self.temp_dir_path / "absences.csv"
         filter_file = self.temp_dir_path / "filter.txt"
@@ -179,6 +179,6 @@ class AddAbsencesTask(TaskRunner):
         file_manager = FileManager()
         file_manager.move_file(
             source=temp_absences,
-            destination=DATA_DIR / "tasks" / "absences.csv",
+            destination=TASKS_DIR / "absences.csv",
         )
         spinner()

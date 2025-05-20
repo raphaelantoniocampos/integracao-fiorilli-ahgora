@@ -8,7 +8,6 @@ from rich.panel import Panel
 from src.managers.file_manager import FileManager
 from src.utils.constants import (
     DATA_DIR,
-    DOWNLOADS_DIR,
     INQUIRER_KEYBINDINGS,
     JSON_INIT_CONFIG,
 )
@@ -25,12 +24,6 @@ class Config:
         self.is_env_ok = Creds.is_env_ok()
         if not self.is_env_ok:
             Creds()
-
-    def check_dirs(self):
-        if not DATA_DIR.exists():
-            DATA_DIR.mkdir()
-        if not DOWNLOADS_DIR.exists():
-            DOWNLOADS_DIR.mkdir()
 
     def menu(self) -> None:
         self.update_time_since()

@@ -8,7 +8,7 @@ from rich import print
 
 from src.managers.file_manager import FileManager as file_manager
 from src.utils.config import Config
-from src.utils.constants import DATA_DIR, PT_MONTHS
+from src.utils.constants import PT_MONTHS, TASKS_DIR, FIORILLI_DIR, AHGORA_DIR
 from src.utils.ui import console
 
 ABSENCES_COLUMNS = [
@@ -33,16 +33,16 @@ class DataManager:
 
                 file_manager.save_df(
                     df=ahgora_employees,
-                    path=DATA_DIR / "ahgora" / "employees.csv",
+                    path=AHGORA_DIR / "employees.csv",
                 )
                 file_manager.save_df(
                     df=fiorilli_employees,
-                    path=DATA_DIR / "fiorilli" / "employees.csv",
+                    path=FIORILLI_DIR / "employees.csv",
                 )
 
                 file_manager.save_df(
                     df=all_absences,
-                    path=DATA_DIR / "fiorilli" / "absences.csv",
+                    path=FIORILLI_DIR / "absences.csv",
                     header=False,
                 )
 
@@ -62,7 +62,9 @@ class DataManager:
 
         except FileNotFoundError as e:
             print(
-                f"[bold red]Erro ao analisar dados: {e}[/bold red]\nFaça do download primeiro."
+                f"[bold red]Erro ao analisar dados: {
+                    e
+                }[/bold red]\nFaça do download primeiro."
             )
             sleep(1)
 
@@ -307,28 +309,26 @@ class DataManager:
         changed_employees_df,
         new_absences_df,
     ):
-        save_dir = DATA_DIR / "tasks"
-
         file_manager.save_df(
             df=new_employees_df,
-            path=save_dir / "new_employees.csv",
+            path=TASKS_DIR / "new_employees.csv",
         )
         file_manager.save_df(
             df=dismissed_employees_df,
-            path=save_dir / "dismissed_employees.csv",
+            path=TASKS_DIR / "dismissed_employees.csv",
         )
         file_manager.save_df(
             df=changed_employees_df,
-            path=save_dir / "changed_employees.csv",
+            path=TASKS_DIR / "changed_employees.csv",
         )
         file_manager.save_df(
             df=new_absences_df,
-            path=save_dir / "new_absences.csv",
+            path=TASKS_DIR / "new_absences.csv",
         )
 
     def get_employees_data(self) -> (pd.DataFrame, pd.DataFrame):
-        raw_fiorilli_employees = DATA_DIR / "fiorilli" / "raw_employees.txt"
-        raw_ahgora_employees = DATA_DIR / "ahgora" / "raw_employees.csv"
+        raw_fiorilli_employees = FIORILLI_DIR / "raw_employees.txt"
+        raw_ahgora_employees = AHGORA_DIR / "raw_employees.csv"
 
         fiorilli_employees = self.read_csv(
             raw_fiorilli_employees,
@@ -368,9 +368,9 @@ class DataManager:
         return ahgora_employees, fiorilli_employees
 
     def get_absences_data(self) -> pd.DataFrame:
-        last_absences_path = DATA_DIR / "tasks" / "absences.csv"
-        raw_absences_path = DATA_DIR / "fiorilli" / "raw_absences.txt"
-        raw_vacations_path = DATA_DIR / "fiorilli" / "raw_vacations.txt"
+        last_absences_path = TASKS_DIR / "absences.csv"
+        raw_absences_path = FIORILLI_DIR / "raw_absences.txt"
+        raw_vacations_path = FIORILLI_DIR / "raw_vacations.txt"
 
         try:
             last_absences = self.read_csv(
