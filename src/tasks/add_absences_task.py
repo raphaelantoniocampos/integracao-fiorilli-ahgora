@@ -10,7 +10,7 @@ from src.managers.file_manager import FileManager
 from src.models.key import Key, wait_key_press
 from src.models.task import Task
 from src.tasks.task_runner import TaskRunner
-from src.utils.constants import DATA_DIR, TASKS_DIR
+from src.utils.constants import FIORILLI_DIR, TASKS_DIR
 from src.utils.ui import spinner
 
 
@@ -166,13 +166,17 @@ class AddAbsencesTask(TaskRunner):
 
     def ask_to_insert_file(self, file_name):
         print(
-            f"Insira o arquivo [bold green]{file_name}[/bold green] na importação de afastamentos AHGORA."
+            f"Insira o arquivo [bold green]{
+                file_name
+            }[/bold green] na importação de afastamentos AHGORA."
         )
         print("Selecione [bold white]pw_afimport_01[/bold white].")
         print("Clique em [white on dark_green] Obter Registros[/white on dark_green].")
         copy(str(self.temp_dir_path))
         print(
-            f"Caminho '{str(self.temp_dir_path)}' copiado para a área de transferência!)\n"
+            f"Caminho '{
+                str(self.temp_dir_path)
+            }' copiado para a área de transferência!)\n"
         )
 
     def exit_task(self, temp_absences):

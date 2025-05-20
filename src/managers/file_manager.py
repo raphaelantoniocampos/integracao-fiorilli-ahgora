@@ -13,30 +13,32 @@ from src.utils.constants import (
 
 
 class FileManager:
-    def move_downloads_to_data_dir(self):
+    @staticmethod
+    def move_downloads_to_data_dir():
         for file in DOWNLOADS_DIR.iterdir():
             if "trabalhador" in file.name.lower():
-                self.move_file(
+                FileManager.move_file(
                     source=file,
                     destination=FIORILLI_DIR / "raw_employees.txt",
                 )
             elif "funcionarios" in file.name.lower():
-                self.move_file(
+                FileManager.move_file(
                     source=file,
                     destination=AHGORA_DIR / "raw_employees.csv",
                 )
             elif "pontoafastamentos" in file.name.lower():
-                self.move_file(
+                FileManager.move_file(
                     source=file,
                     destination=FIORILLI_DIR / "raw_absences.txt",
                 )
             elif "pontoferias" in file.name.lower():
-                self.move_file(
+                FileManager.move_file(
                     source=file,
                     destination=FIORILLI_DIR / "raw_vacations.txt",
                 )
 
-    def move_file(self, source: Path, destination: Path):
+    @staticmethod
+    def move_file(source: Path, destination: Path):
         if not destination.parent.exists():
             destination.parent.mkdir(parents=True, exist_ok=True)
         source.replace(destination)
@@ -66,7 +68,7 @@ class FileManager:
                 return FIORILLI_DIR / "raw_absences.txt"
 
     @staticmethod
-    def check_dirs(self):
+    def check_dirs():
         dirs_to_check = [DATA_DIR, DOWNLOADS_DIR, TASKS_DIR, FIORILLI_DIR, AHGORA_DIR]
 
         for dir in dirs_to_check:

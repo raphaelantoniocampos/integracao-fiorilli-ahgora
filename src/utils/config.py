@@ -18,6 +18,7 @@ from src.utils.ui import console, spinner
 class Config:
     def __init__(self):
         FileManager.check_dirs()
+        FileManager.move_downloads_to_data_dir()
         self.json_path: Path = DATA_DIR / "config.json"
         self.data: dict = self._load()
         self.update_time_since()
