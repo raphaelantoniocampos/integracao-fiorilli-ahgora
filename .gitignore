@@ -16,5 +16,5 @@ data/config.json
 data/actions/*
 data/ahgora/*
 data/fiorilli/*
-data/tasks/*
+tasks/*
 
