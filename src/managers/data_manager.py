@@ -9,12 +9,13 @@ from rich import print
 from src.managers.file_manager import FileManager as file_manager
 from src.utils.config import Config
 from src.utils.constants import (
-    PT_MONTHS,
-    TASKS_DIR,
-    FIORILLI_DIR,
+    ABSENCES_COLUMNS,
     AHGORA_DIR,
     DATA_DIR,
-    ABSENCES_COLUMNS,
+    FIORILLI_DIR,
+    PT_MONTHS,
+    TASKS_DIR,
+    UPLOAD_ABSENCES_COLUMNS,
 )
 from src.utils.ui import console
 
@@ -28,6 +29,15 @@ class DataManager:
             ):
                 ahgora_employees, fiorilli_employees = self.get_employees_data()
                 last_absences, all_absences = self.get_absences_data()
+
+                absence_codes = self.read_csv(
+                    DATA_DIR / "absence_codes.csv", columns=["cod", "desc"]
+                )
+                all_absences = self.get_view_absences(
+                    all_absences,
+                    fiorilli_employees,
+                    absence_codes=absence_codes,
+                )
 
                 file_manager.save_df(
                     df=ahgora_employees,
@@ -54,18 +64,48 @@ class DataManager:
             Config.update_last_analisys()
             print("[bold green]Dados sincronizados com sucesso![/bold green]\n")
             sleep(1)
-        except KeyboardInterrupt:
+        except KeyboardInterrupt as e:
+            print(f"[bold red]Erro ao sincronizar dados: {e}[/bold red]\n")
             sleep(1)
-            return
 
-        except FileNotFoundError as err:
+        except FileNotFoundError as e:
             print(
                 f"[bold red]Erro ao analisar dados: {
-                    err
+                    e
                 }[/bold red]\nFaça o download primeiro."
             )
             sleep(1)
-            return
+
+    def get_view_absences(
+        self,
+        absences_df: pd.DataFrame,
+        fiorilli_employees: pd.DataFrame,
+        absence_codes: pd.DataFrame,
+    ) -> pd.DataFrame:
+        absences_df["start_date"] = pd.to_datetime(
+            absences_df["start_date"],
+            format="%d/%m/%Y",
+        )
+        absences_df["end_date"] = pd.to_datetime(
+            absences_df["end_date"],
+            format="%d/%m/%Y",
+        )
+
+        absences_df = absences_df.merge(
+            fiorilli_employees[["id", "name"]], on="id", how="left"
+        )
+
+        absences_df = absences_df.merge(
+            absence_codes[["cod", "desc"]], on="cod", how="left"
+        ).rename(columns={"desc": "cod_name"})
+
+        absences_df["duration"] = (
+            absences_df["end_date"] - absences_df["start_date"]
+        ).dt.days + 1
+        absences_df["duration"] = absences_df["duration"].clip(lower=1)
+
+        absences_df = absences_df[ABSENCES_COLUMNS]
+        return absences_df
 
     @staticmethod
     def filter_df(df: pd.DataFrame, ids: list[str]) -> pd.DataFrame:
@@ -139,17 +179,31 @@ class DataManager:
         for pt, en in PT_MONTHS.items():
             date_str = date_str.replace(f"{pt}/", f"{en}/")
         try:
-            return pd.to_datetime(date_str, format="%d/%b/%Y", errors="raise")
+            return pd.to_datetime(
+                date_str,
+                format="%d/%b/%Y",
+                errors="raise",
+            )
         except ValueError:
             try:
-                return pd.to_datetime(date_str, format="%d/%m/%Y", errors="raise")
+                return pd.to_datetime(
+                    date_str,
+                    format="%d/%m/%Y",
+                    errors="raise",
+                )
             except ValueError:
                 try:
                     return pd.to_datetime(
-                        date_str, format="%d/%b/%Y %H:%M", errors="raise"
+                        date_str,
+                        format="%d/%b/%Y %H:%M",
+                        errors="raise",
                     )
                 except ValueError:
-                    return pd.to_datetime(date_str, format="ISO8601", errors="coerce")
+                    return pd.to_datetime(
+                        date_str,
+                        format="ISO8601",
+                        errors="coerce",
+                    )
 
     def generate_tasks_dfs(
         self,
@@ -172,10 +226,6 @@ class DataManager:
             ~fiorilli_employees["id"].isin(dismissed_ids)
         ]
 
-        absence_codes = self.read_csv(
-            DATA_DIR / "absence_codes.csv", columns=["cod", "desc"]
-        )
-
         new_employees_df = self._get_new_employees_df(
             fiorilli_active_employees=fiorilli_active_employees,
             ahgora_employees=ahgora_employees,
@@ -193,11 +243,12 @@ class DataManager:
             ahgora_employees=ahgora_employees,
         )
         new_absences_df = self._get_new_absences_df(
-            fiorilli_employees=fiorilli_employees,
             last_absences=last_absences,
             all_absences=all_absences,
-            absence_codes=absence_codes,
         )
+
+        if new_absences_df.empty:
+            new_absences_df = all_absences
 
         self.save_tasks_dfs(
             new_employees_df=new_employees_df,
@@ -243,7 +294,8 @@ class DataManager:
             how="left",
         )
         dismissed_employees_df["dismissal_date"] = pd.to_datetime(
-            dismissed_employees_df["dismissal_date"], format="%d/%m/%Y"
+            dismissed_employees_df["dismissal_date"],
+            format="%d/%m/%Y",
         )
 
         today = datetime.today()
@@ -285,10 +337,8 @@ class DataManager:
 
     def _get_new_absences_df(
         self,
-        fiorilli_employees: pd.DataFrame,
         last_absences: pd.DataFrame,
         all_absences: pd.DataFrame,
-        absence_codes: pd.DataFrame,
     ) -> pd.DataFrame:
         try:
             merged = pd.merge(last_absences, all_absences, how="outer", indicator=True)
@@ -297,50 +347,10 @@ class DataManager:
             )
 
             if new_absences.empty:
-                empty_df = pd.DataFrame(columns=ABSENCES_COLUMNS)
-                return empty_df, empty_df.copy()
+                return all_absences
 
         except TypeError:
-            new_absences = all_absences
-
-        if not new_absences.empty:
-            new_absences["start_date"] = pd.to_datetime(new_absences["start_date"])
-            new_absences["end_date"] = pd.to_datetime(new_absences["end_date"])
-
-            new_absences_df = new_absences.copy()
-
-            new_absences_df = new_absences_df.merge(
-                fiorilli_employees[["id", "name"]], on="id", how="left"
-            )
-
-            new_absences_df = new_absences_df.merge(
-                absence_codes[["cod", "desc"]], on="cod", how="left"
-            ).rename(columns={"desc": "cod_name"})
-
-            new_absences_df["duration"] = (
-                new_absences_df["end_date"] - new_absences_df["start_date"]
-            ).dt.days + 1
-            new_absences_df["duration"] = new_absences_df["duration"].clip(lower=1)
-
-            new_absences_df = new_absences_df[
-                [
-                    "id",
-                    "name",
-                    "cod",
-                    "cod_name",
-                    "start_date",
-                    "end_date",
-                    "duration",
-                    "start_time",
-                    "end_time",
-                ]
-            ]
-
-            # df_import = new_absences[ABSENCES_COLUMNS].copy()
-
-            return new_absences_df
-
-        return pd.DataFrame()
+            return all_absences
 
     def normalize_text(self, text):
         if pd.isna(text):
@@ -428,7 +438,7 @@ class DataManager:
             last_absences = self.read_csv(
                 last_absences_path,
                 header=None,
-                columns=ABSENCES_COLUMNS,
+                columns=UPLOAD_ABSENCES_COLUMNS,
             )
         except FileNotFoundError:
             last_absences = pd.DataFrame
@@ -438,12 +448,12 @@ class DataManager:
                     self.read_csv(
                         raw_vacations_path,
                         header=None,
-                        columns=ABSENCES_COLUMNS,
+                        columns=UPLOAD_ABSENCES_COLUMNS,
                     ),
                     self.read_csv(
                         raw_absences_path,
                         header=None,
-                        columns=ABSENCES_COLUMNS,
+                        columns=UPLOAD_ABSENCES_COLUMNS,
                     ),
                 ]
             )

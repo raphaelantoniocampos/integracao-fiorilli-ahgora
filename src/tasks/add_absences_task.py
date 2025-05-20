@@ -2,16 +2,18 @@ import os
 import tempfile
 from pathlib import Path
 
+import pandas as pd
 from InquirerPy import inquirer
 from pyperclip import copy
 from rich import print
+from rich.table import Table
 
 from src.managers.file_manager import FileManager
 from src.models.key import Key, wait_key_press
 from src.models.task import Task
 from src.tasks.task_runner import TaskRunner
 from src.utils.constants import FIORILLI_DIR, TASKS_DIR
-from src.utils.ui import spinner
+from src.utils.ui import console, spinner
 
 
 class AddAbsencesTask(TaskRunner):
@@ -31,12 +33,12 @@ class AddAbsencesTask(TaskRunner):
 
         temp_absences_file = self.temp_dir_path / "absences.csv"
         filter_file = self.temp_dir_path / "filter.txt"
-        new_absences_file = self.temp_dir_path / "new_absences.txt"
+        upload_file = self.temp_dir_path / "upload.txt"
 
         temp_absences_file.write_bytes(absences_bytes)
 
         while True:
-            self.ask_to_insert_file("absences.csv")
+            self.ask_to_insert_file(temp_absences_file)
             if wait_key_press([self.KEY_CONTINUE, self.KEY_STOP]) == "sair":
                 return
 
@@ -74,7 +76,7 @@ class AddAbsencesTask(TaskRunner):
         print(f"\n[bold]{file_size} NOVOS AFASTAMENTOS![/bold]\n")
         print("Arquivo '[bold green]new_absences.txt[/bold green]' gerado com sucesso!")
 
-        self.ask_to_insert_file("new_absences.txt")
+        self.ask_to_insert_file(upload_file)
         wait_key_press(self.KEY_CONTINUE)
 
         spinner("Aguarde", 1)
@@ -148,6 +150,101 @@ class AddAbsencesTask(TaskRunner):
                 for error in errors:
                     print(f"  - {error}")
 
+    def edit_absences_interactive(self):
+        """Permite edição interativa dos afastamentos"""
+        choices = []
+        for idx, row in self.task.df.iterrows():
+            display_text = (
+                f"{row['id']} | {row.get('name', 'N/A')} | "
+                f"{row['cod']} ({row.get('cod_name', 'N/A')}) | "
+                f"{row['start_date']} a {row['end_date']}"
+            )
+            choices.append((display_text, idx))
+
+        selected = inquirer.fuzzy(
+            message="Selecione o afastamento para editar:",
+            choices=choices,
+            mandatory=False,
+            border=True,
+        ).execute()
+
+        if not selected:
+            return
+
+        selected_idx = selected[0][1]
+        selected_row = self.absences_df.iloc[selected_idx]
+
+        print("\n[bold]Editando afastamento:[/bold]")
+        print(f"ID: {selected_row['id']}")
+        print(f"Nome: {selected_row.get('name', 'N/A')}")
+        print(f"Código: {selected_row['cod']} ({selected_row.get('cod_name', 'N/A')})")
+        print(f"Período: {selected_row['start_date']} a {selected_row['end_date']}")
+        print(f"Duração: {selected_row.get('duration', 'N/A')} dias\n")
+
+        edit_options = [
+            ("Matrícula", "id"),
+            ("Código", "cod"),
+            ("Data de Início", "start_date"),
+            ("Data de Fim", "end_date"),
+            ("Hora de Início", "start_time"),
+            ("Hora de Fim", "end_time"),
+            ("Cancelar", None),
+        ]
+
+        field_to_edit = inquirer.select(
+            message="O que deseja editar?",
+            choices=[(opt[0], opt[1]) for opt in edit_options],
+            default=None,
+        ).execute()
+
+        if not field_to_edit:
+            return
+
+        new_value = inquirer.text(
+            message=f"Novo valor para {field_to_edit} (atual: {
+                selected_row[field_to_edit]
+            }):",
+            default=str(selected_row[field_to_edit]),
+        ).execute()
+
+        self.task.df.at[selected_idx, field_to_edit] = new_value
+
+        if field_to_edit in ["start_date", "end_date"]:
+            start = pd.to_datetime(self.absences_df.at[selected_idx, "start_date"])
+            end = pd.to_datetime(self.absences_df.at[selected_idx, "end_date"])
+            duration = (end - start).days + 1
+            self.absences_df.at[selected_idx, "duration"] = max(1, duration)
+
+        print("\n[bold green]Afastamento atualizado com sucesso![/bold green]")
+        self.show_all_absences()
+
+    def show_all_absences(self):
+        """Mostra todos os afastamentos de forma formatada"""
+
+        print("\n[bold cyan]LISTA DE AFASTAMENTOS:[/bold cyan]")
+
+        table = Table(show_header=True, header_style="bold magenta")
+        table.add_column("ID", style="dim")
+        table.add_column("Nome")
+        table.add_column("Código")
+        table.add_column("Tipo")
+        table.add_column("Início")
+        table.add_column("Fim")
+        table.add_column("Duração")
+
+        for _, row in self.absences_df.iterrows():
+            table.add_row(
+                str(row["id"]),
+                row.get("name", "N/A"),
+                str(row["cod"]),
+                row.get("cod_name", "N/A"),
+                str(row["start_date"]),
+                str(row["end_date"]),
+                str(row.get("duration", "N/A")),
+            )
+
+        console.print(table)
+
     def read_filter_numbers(self, file_path):
         """Lê o arquivo TXT e retorna uma lista com os números dos registros."""
         filter_numbers = []
@@ -164,10 +261,10 @@ class AddAbsencesTask(TaskRunner):
                             continue
         return filter_numbers
 
-    def ask_to_insert_file(self, file_name):
+    def ask_to_insert_file(self, file):
         print(
             f"Insira o arquivo [bold green]{
-                file_name
+                str(file)
             }[/bold green] na importação de afastamentos AHGORA."
         )
         print("Selecione [bold white]pw_afimport_01[/bold white].")

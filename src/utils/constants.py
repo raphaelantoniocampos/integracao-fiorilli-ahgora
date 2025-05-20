@@ -90,11 +90,23 @@ REQUIRED_VARS = {
     "AHGORA_COMPANY": None,
 }
 
-ABSENCES_COLUMNS = [
+UPLOAD_ABSENCES_COLUMNS = [
     "id",
     "cod",
     "start_date",
     "start_time",
     "end_date",
+    "end_time",
+]
+
+ABSENCES_COLUMNS = [
+    "id",
+    "name",
+    "cod",
+    "cod_name",
+    "start_date",
+    "end_date",
+    "duration",
+    "start_time",
     "end_time",
 ]
