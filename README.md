@@ -156,4 +156,4 @@ Para contribuir com o desenvolvimento sinta-se livre para mandar um Pull Request
 
 ## Licença
 
-Este projeto é licenciado sob os termos da licença MIT.
+Este projeto é licenciado sob os termos da [licença MIT](LICENSE).
