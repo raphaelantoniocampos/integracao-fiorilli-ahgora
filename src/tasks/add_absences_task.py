@@ -6,15 +6,14 @@ import pandas as pd
 from InquirerPy import inquirer
 from pyperclip import copy
 from rich import print
-from rich.table import Table
 
 from src.managers.data_manager import DataManager
 from src.managers.file_manager import FileManager
 from src.models.key import Key, wait_key_press
 from src.models.task import Task
 from src.tasks.task_runner import TaskRunner
-from src.utils.constants import FIORILLI_DIR, TASKS_DIR, UPLOAD_ABSENCES_COLUMNS
-from src.utils.ui import console, spinner
+from src.utils.constants import FIORILLI_DIR, TASKS_DIR, ABSENCES_COLUMNS, UPLOAD_ABSENCES_COLUMNS
+from src.utils.ui import spinner
 
 
 class AddAbsencesTask(TaskRunner):
@@ -32,27 +31,24 @@ class AddAbsencesTask(TaskRunner):
 
         absences_bytes = (FIORILLI_DIR / "absences.csv").read_bytes()
 
-        temp_absences_path = self.temp_dir_path / "absences.csv"
+        view_absences_path = self.temp_dir_path / "absences.csv"
+        upload_absences_path = self.temp_dir_path / "upload_absences.csv"
         filter_path = self.temp_dir_path / "filter.txt"
         upload_file_path = self.temp_dir_path / "upload.txt"
 
-        temp_absences_path.write_bytes(absences_bytes)
+        view_absences_path.write_bytes(absences_bytes)
 
         data_manager = DataManager()
         while True:
-            absences_df = data_manager.read_csv(temp_absences_path)
+            absences_df = data_manager.read_csv(view_absences_path, columns=ABSENCES_COLUMNS)
 
-            FileManager.save_df(
-                absences_df,
-                temp_absences_path,
-                columns=UPLOAD_ABSENCES_COLUMNS,
-            )
+            self.df_to_upload(absences_df, upload_absences_path)
+            self.ask_to_insert_file(upload_absences_path)
 
-            self.ask_to_insert_file(temp_absences_path)
             if wait_key_press([self.KEY_CONTINUE, self.KEY_STOP]) == "sair":
                 return
 
-            spinner("Aguarde", 1)
+            spinner("Aguarde")
             print(
                 "\nInsira os erros de registros no arquivo e salve (Ctrl+S) no arquivo [violet]filter.txt[/]"
             )
@@ -62,7 +58,7 @@ class AddAbsencesTask(TaskRunner):
             if wait_key_press([self.KEY_CONTINUE, self.KEY_STOP]) == "sair":
                 return
 
-            spinner("Aguarde", 1)
+            spinner("Aguarde")
 
             error_groups = self.process_filter_errors(filter_path)
             self.display_error_groups(error_groups)
@@ -70,31 +66,29 @@ class AddAbsencesTask(TaskRunner):
                 message="Deseja editar algum afastamento?",
                 default=False,
             ).execute():
-                self.edit_absences_interactive(absences_df)
+                absences_df = self.edit_absences_interactive(absences_df)
+                if absences_df:
+                    self.df_to_upload(absences_df, upload_absences_path)
 
-            FileManager.save_df(
-                absences_df,
-                temp_absences_path,
-                columns=[UPLOAD_ABSENCES_COLUMNS],
-            )
             if not inquirer.confirm(
                 message="Repetir",
                 default=False,
             ).execute():
                 break
 
+
         filter_numbers = self.read_filter_numbers(filter_path)
 
         file_size = self.filter_lines(
-            temp_absences_path,
+            upload_absences_path,
             upload_file_path,
             filter_numbers,
         )
 
-        spinner("Aguarde", 1)
+        spinner("Aguarde")
         if file_size == 0:
             print("\nNenhum novo afastamento.")
-            self.exit_task(temp_absences_path)
+            self.exit_task(view_absences_path)
             return
 
         print(f"\n[bold]{file_size} NOVOS AFASTAMENTOS![/bold]\n")
@@ -103,9 +97,17 @@ class AddAbsencesTask(TaskRunner):
         self.ask_to_insert_file(upload_file_path)
         wait_key_press(self.KEY_CONTINUE)
 
-        spinner("Aguarde", 1)
-        self.exit_task(temp_absences_path)
+        spinner("Aguarde")
+        self.exit_task(view_absences_path)
         return
+
+    def df_to_upload(self, absences_df: pd.DataFrame, file_path: Path):
+        FileManager.save_df(
+            df=absences_df,
+            path=file_path,
+            header=False,
+            columns=UPLOAD_ABSENCES_COLUMNS,
+        )
 
     def filter_lines(self, absences_path, upload_file_path, filter_numbers) -> int:
         with (
@@ -175,9 +177,10 @@ class AddAbsencesTask(TaskRunner):
             display_text = (
                 f"{row['id']} | {row.get('name', 'N/A')} | "
                 f"{row['cod']} ({row.get('cod_name', 'N/A')}) | "
+                f"{row['duration']} dias | "
                 f"{row['start_date']} a {row['end_date']}"
             )
-            choices.append((display_text, idx))
+            choices.append((display_text, idx + 1))
 
         selected = inquirer.fuzzy(
             message="Selecione o afastamento para editar:",
@@ -189,7 +192,7 @@ class AddAbsencesTask(TaskRunner):
         if not selected:
             return
 
-        selected_idx = selected[0][1]
+        selected_idx = int(selected[1] - 1)
         selected_row = df.iloc[selected_idx]
 
         print("\n[bold]Editando afastamento:[/bold]")
@@ -213,7 +216,7 @@ class AddAbsencesTask(TaskRunner):
             message="O que deseja editar?",
             choices=[(opt[0], opt[1]) for opt in edit_options],
             default=None,
-        ).execute()
+        ).execute()[1]
 
         if not field_to_edit:
             return
@@ -234,13 +237,11 @@ class AddAbsencesTask(TaskRunner):
             df.at[selected_idx, "duration"] = max(1, duration)
 
         print("\n[bold green]Afastamento atualizado com sucesso![/bold green]")
-        self.show_all_absences(df)
+        # self.show_all_absences(df)
+        return df
 
     def show_all_absences(self, df):
         """Mostra todos os afastamentos de forma formatada"""
-
-        print("\n[bold cyan]LISTA DE AFASTAMENTOS:[/bold cyan]")
-
         table = Table(show_header=True, header_style="bold magenta")
         table.add_column("ID", style="dim")
         table.add_column("Nome")

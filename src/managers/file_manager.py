@@ -54,8 +54,8 @@ class FileManager:
         df.to_csv(
             path,
             index=False,
-            header=header,
             encoding="utf-8",
+            header=header,
             columns=columns,
         )
 

@@ -341,6 +341,12 @@ class DataManager:
         all_absences: pd.DataFrame,
     ) -> pd.DataFrame:
         try:
+            for col in ['start_date', 'end_date']:
+                if col in last_absences.columns:
+                    last_absences[col] = pd.to_datetime(last_absences[col], format="%d/%m/%Y",)
+                if col in all_absences.columns:
+                    all_absences[col] = pd.to_datetime(all_absences[col], format="%d/%m/%Y",)
+
             merged = pd.merge(last_absences, all_absences, how="outer", indicator=True)
             new_absences = merged[merged["_merge"] == "right_only"].drop(
                 "_merge", axis=1
@@ -438,7 +444,7 @@ class DataManager:
             last_absences = self.read_csv(
                 last_absences_path,
                 header=None,
-                columns=UPLOAD_ABSENCES_COLUMNS,
+                columns=ABSENCES_COLUMNS,
             )
         except FileNotFoundError:
             last_absences = pd.DataFrame
