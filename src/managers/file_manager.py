@@ -49,12 +49,14 @@ class FileManager:
         df: DataFrame,
         path: Path,
         header=True,
+        columns=None,
     ):
         df.to_csv(
             path,
             index=False,
             header=header,
             encoding="utf-8",
+            columns=columns,
         )
 
     @staticmethod

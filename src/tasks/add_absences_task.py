@@ -8,11 +8,12 @@ from pyperclip import copy
 from rich import print
 from rich.table import Table
 
+from src.managers.data_manager import DataManager
 from src.managers.file_manager import FileManager
 from src.models.key import Key, wait_key_press
 from src.models.task import Task
 from src.tasks.task_runner import TaskRunner
-from src.utils.constants import FIORILLI_DIR, TASKS_DIR
+from src.utils.constants import FIORILLI_DIR, TASKS_DIR, UPLOAD_ABSENCES_COLUMNS
 from src.utils.ui import console, spinner
 
 
@@ -31,14 +32,23 @@ class AddAbsencesTask(TaskRunner):
 
         absences_bytes = (FIORILLI_DIR / "absences.csv").read_bytes()
 
-        temp_absences_file = self.temp_dir_path / "absences.csv"
-        filter_file = self.temp_dir_path / "filter.txt"
-        upload_file = self.temp_dir_path / "upload.txt"
+        temp_absences_path = self.temp_dir_path / "absences.csv"
+        filter_path = self.temp_dir_path / "filter.txt"
+        upload_file_path = self.temp_dir_path / "upload.txt"
 
-        temp_absences_file.write_bytes(absences_bytes)
+        temp_absences_path.write_bytes(absences_bytes)
 
+        data_manager = DataManager()
         while True:
-            self.ask_to_insert_file(temp_absences_file)
+            absences_df = data_manager.read_csv(temp_absences_path)
+
+            FileManager.save_df(
+                absences_df,
+                temp_absences_path,
+                columns=UPLOAD_ABSENCES_COLUMNS,
+            )
+
+            self.ask_to_insert_file(temp_absences_path)
             if wait_key_press([self.KEY_CONTINUE, self.KEY_STOP]) == "sair":
                 return
 
@@ -46,60 +56,68 @@ class AddAbsencesTask(TaskRunner):
             print(
                 "\nInsira os erros de registros no arquivo e salve (Ctrl+S) no arquivo [violet]filter.txt[/]"
             )
-            filter_file.touch()
-            os.startfile(filter_file)
+            filter_path.touch()
+            os.startfile(filter_path)
 
             if wait_key_press([self.KEY_CONTINUE, self.KEY_STOP]) == "sair":
                 return
 
             spinner("Aguarde", 1)
 
-            error_groups = self.process_filter_errors(filter_file)
+            error_groups = self.process_filter_errors(filter_path)
             self.display_error_groups(error_groups)
-            if inquirer.confirm(message="Editar arquivo?", default=False).execute():
-                os.startfile(temp_absences_file)
-            if not inquirer.confirm(message="Repetir", default=False).execute():
+            if inquirer.confirm(
+                message="Deseja editar algum afastamento?",
+                default=False,
+            ).execute():
+                self.edit_absences_interactive(absences_df)
+
+            FileManager.save_df(
+                absences_df,
+                temp_absences_path,
+                columns=[UPLOAD_ABSENCES_COLUMNS],
+            )
+            if not inquirer.confirm(
+                message="Repetir",
+                default=False,
+            ).execute():
                 break
 
-        filter_numbers_file = self.read_filter_numbers(filter_file)
+        filter_numbers = self.read_filter_numbers(filter_path)
 
         file_size = self.filter_lines(
-            temp_absences_file, new_absences_file, filter_numbers_file
+            temp_absences_path,
+            upload_file_path,
+            filter_numbers,
         )
 
         spinner("Aguarde", 1)
         if file_size == 0:
             print("\nNenhum novo afastamento.")
-            self.exit_task(temp_absences_file)
+            self.exit_task(temp_absences_path)
             return
 
         print(f"\n[bold]{file_size} NOVOS AFASTAMENTOS![/bold]\n")
         print("Arquivo '[bold green]new_absences.txt[/bold green]' gerado com sucesso!")
 
-        self.ask_to_insert_file(upload_file)
+        self.ask_to_insert_file(upload_file_path)
         wait_key_press(self.KEY_CONTINUE)
 
         spinner("Aguarde", 1)
-        self.exit_task(temp_absences_file)
+        self.exit_task(temp_absences_path)
         return
 
-    def filter_lines(
-        self, absences_file, new_absences_file, filter_numbers_file
-    ) -> int:
+    def filter_lines(self, absences_path, upload_file_path, filter_numbers) -> int:
         with (
-            open(absences_file, "r", encoding="utf-8") as infile,
-            open(new_absences_file, "w", encoding="utf-8") as outfile,
+            open(absences_path, "r", encoding="utf-8") as infile,
+            open(upload_file_path, "w", encoding="utf-8") as outfile,
         ):
             lines_written = 0
             for index, line in enumerate(infile, start=1):
-                if index not in filter_numbers_file:
+                if index not in filter_numbers:
                     outfile.write(line)
-                    self._get_line_absences_data(line)
                     lines_written += 1
             return lines_written
-
-    def _get_line_absences_data(self, line: str):
-        return line
 
     def process_filter_errors(self, file_path):
         """Processa o arquivo de erros e retorna um dicionário com os erros agrupados"""
@@ -150,10 +168,10 @@ class AddAbsencesTask(TaskRunner):
                 for error in errors:
                     print(f"  - {error}")
 
-    def edit_absences_interactive(self):
+    def edit_absences_interactive(self, df):
         """Permite edição interativa dos afastamentos"""
         choices = []
-        for idx, row in self.task.df.iterrows():
+        for idx, row in df.iterrows():
             display_text = (
                 f"{row['id']} | {row.get('name', 'N/A')} | "
                 f"{row['cod']} ({row.get('cod_name', 'N/A')}) | "
@@ -172,7 +190,7 @@ class AddAbsencesTask(TaskRunner):
             return
 
         selected_idx = selected[0][1]
-        selected_row = self.absences_df.iloc[selected_idx]
+        selected_row = df.iloc[selected_idx]
 
         print("\n[bold]Editando afastamento:[/bold]")
         print(f"ID: {selected_row['id']}")
@@ -207,18 +225,18 @@ class AddAbsencesTask(TaskRunner):
             default=str(selected_row[field_to_edit]),
         ).execute()
 
-        self.task.df.at[selected_idx, field_to_edit] = new_value
+        df.at[selected_idx, field_to_edit] = new_value
 
         if field_to_edit in ["start_date", "end_date"]:
-            start = pd.to_datetime(self.absences_df.at[selected_idx, "start_date"])
-            end = pd.to_datetime(self.absences_df.at[selected_idx, "end_date"])
+            start = pd.to_datetime(df.at[selected_idx, "start_date"])
+            end = pd.to_datetime(df.at[selected_idx, "end_date"])
             duration = (end - start).days + 1
-            self.absences_df.at[selected_idx, "duration"] = max(1, duration)
+            df.at[selected_idx, "duration"] = max(1, duration)
 
         print("\n[bold green]Afastamento atualizado com sucesso![/bold green]")
-        self.show_all_absences()
+        self.show_all_absences(df)
 
-    def show_all_absences(self):
+    def show_all_absences(self, df):
         """Mostra todos os afastamentos de forma formatada"""
 
         print("\n[bold cyan]LISTA DE AFASTAMENTOS:[/bold cyan]")
@@ -232,7 +250,7 @@ class AddAbsencesTask(TaskRunner):
         table.add_column("Fim")
         table.add_column("Duração")
 
-        for _, row in self.absences_df.iterrows():
+        for _, row in df.iterrows():
             table.add_row(
                 str(row["id"]),
                 row.get("name", "N/A"),
