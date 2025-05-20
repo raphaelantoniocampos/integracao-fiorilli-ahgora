@@ -1,6 +1,6 @@
 from pathlib import Path
 
-BASE_DIR = Path(Path.cwd() / "src")
+BASE_DIR = Path(Path.cwd())
 DATA_DIR = BASE_DIR / "data"
 DOWNLOADS_DIR = BASE_DIR / "downloads"
 
