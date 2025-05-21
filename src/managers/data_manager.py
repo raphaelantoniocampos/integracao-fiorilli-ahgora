@@ -341,11 +341,17 @@ class DataManager:
         all_absences: pd.DataFrame,
     ) -> pd.DataFrame:
         try:
-            for col in ['start_date', 'end_date']:
+            for col in ["start_date", "end_date"]:
                 if col in last_absences.columns:
-                    last_absences[col] = pd.to_datetime(last_absences[col], format="%d/%m/%Y",)
+                    last_absences[col] = pd.to_datetime(
+                        last_absences[col],
+                        format="%d/%m/%Y",
+                    )
                 if col in all_absences.columns:
-                    all_absences[col] = pd.to_datetime(all_absences[col], format="%d/%m/%Y",)
+                    all_absences[col] = pd.to_datetime(
+                        all_absences[col],
+                        format="%d/%m/%Y",
+                    )
 
             merged = pd.merge(last_absences, all_absences, how="outer", indicator=True)
             new_absences = merged[merged["_merge"] == "right_only"].drop(
@@ -354,6 +360,7 @@ class DataManager:
 
             if new_absences.empty:
                 return all_absences
+            return pd.DataFrame(columns=ABSENCES_COLUMNS)
 
         except TypeError:
             return all_absences

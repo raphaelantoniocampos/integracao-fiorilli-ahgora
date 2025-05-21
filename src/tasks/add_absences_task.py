@@ -6,14 +6,20 @@ import pandas as pd
 from InquirerPy import inquirer
 from pyperclip import copy
 from rich import print
+from rich.table import Table
 
 from src.managers.data_manager import DataManager
 from src.managers.file_manager import FileManager
 from src.models.key import Key, wait_key_press
 from src.models.task import Task
 from src.tasks.task_runner import TaskRunner
-from src.utils.constants import FIORILLI_DIR, TASKS_DIR, ABSENCES_COLUMNS, UPLOAD_ABSENCES_COLUMNS
-from src.utils.ui import spinner
+from src.utils.constants import (
+    FIORILLI_DIR,
+    TASKS_DIR,
+    ABSENCES_COLUMNS,
+    UPLOAD_ABSENCES_COLUMNS,
+)
+from src.utils.ui import spinner, console
 
 
 class AddAbsencesTask(TaskRunner):
@@ -39,9 +45,11 @@ class AddAbsencesTask(TaskRunner):
         view_absences_path.write_bytes(absences_bytes)
 
         data_manager = DataManager()
-        while True:
-            absences_df = data_manager.read_csv(view_absences_path, columns=ABSENCES_COLUMNS)
 
+        absences_df = data_manager.read_csv(
+            view_absences_path, columns=ABSENCES_COLUMNS
+        )
+        while True:
             self.df_to_upload(absences_df, upload_absences_path)
             self.ask_to_insert_file(upload_absences_path)
 
@@ -66,16 +74,24 @@ class AddAbsencesTask(TaskRunner):
                 message="Deseja editar algum afastamento?",
                 default=False,
             ).execute():
-                absences_df = self.edit_absences_interactive(absences_df)
-                if absences_df:
-                    self.df_to_upload(absences_df, upload_absences_path)
+                repeat = True
+                while repeat:
+                    absences_df = self.edit_absences_interactive(
+                        absences_df, filter_path
+                    )
+                    if absences_df is not None:
+                        self.df_to_upload(absences_df, upload_absences_path)
+                    if not inquirer.confirm(
+                        message="Continuar editando?",
+                        default=True,
+                    ).execute():
+                        repeat = False
 
             if not inquirer.confirm(
-                message="Repetir",
-                default=False,
+                message="Repetir importação?",
+                default=True,
             ).execute():
                 break
-
 
         filter_numbers = self.read_filter_numbers(filter_path)
 
@@ -91,7 +107,12 @@ class AddAbsencesTask(TaskRunner):
             self.exit_task(view_absences_path)
             return
 
-        print(f"\n[bold]{file_size} NOVOS AFASTAMENTOS![/bold]\n")
+        self.show_absences(
+            absences_df.drop(
+                [x - 1 for x in filter_numbers],
+                axis=0,
+            )
+        )
         print("Arquivo '[bold green]new_absences.txt[/bold green]' gerado com sucesso!")
 
         self.ask_to_insert_file(upload_file_path)
@@ -170,7 +191,7 @@ class AddAbsencesTask(TaskRunner):
                 for error in errors:
                     print(f"  - {error}")
 
-    def edit_absences_interactive(self, df):
+    def edit_absences_interactive(self, df, filter_path):
         """Permite edição interativa dos afastamentos"""
         choices = []
         for idx, row in df.iterrows():
@@ -237,10 +258,9 @@ class AddAbsencesTask(TaskRunner):
             df.at[selected_idx, "duration"] = max(1, duration)
 
         print("\n[bold green]Afastamento atualizado com sucesso![/bold green]")
-        # self.show_all_absences(df)
         return df
 
-    def show_all_absences(self, df):
+    def show_absences(self, df):
         """Mostra todos os afastamentos de forma formatada"""
         table = Table(show_header=True, header_style="bold magenta")
         table.add_column("ID", style="dim")
@@ -261,6 +281,8 @@ class AddAbsencesTask(TaskRunner):
                 str(row["end_date"]),
                 str(row.get("duration", "N/A")),
             )
+
+        print(f"\n[bold]{len(df)} NOVOS AFASTAMENTOS![/bold]\n")
 
         console.print(table)
 
