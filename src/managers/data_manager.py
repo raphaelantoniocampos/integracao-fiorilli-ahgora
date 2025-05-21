@@ -141,7 +141,12 @@ class DataManager:
         for col in df.columns:
             if "date" in col:
                 df[col] = df[col].apply(self.convert_date)
-                df[col] = pd.to_datetime(df[col], dayfirst=True, errors="coerce")
+                df[col] = pd.to_datetime(
+                    df[col],
+                    dayfirst=True,
+                    format="%d/%m/%Y",
+                    errors="coerce",
+                )
                 df[col] = df[col].dt.strftime("%d/%m/%Y")
 
         if "cpf" in df.columns:
@@ -313,8 +318,14 @@ class DataManager:
         merged_employees = fiorilli_active_employees.merge(
             ahgora_employees, on="id", suffixes=("_fiorilli", "_ahgora"), how="inner"
         )
-
-        columns_to_check = ["position", "department"]
+        change_conditions = []
+        columns_to_check = [
+            "name",
+            "admission_date",
+            "dismissal_date",
+            "position",
+            "department",
+        ]
         for col in columns_to_check:
             merged_employees[f"{col}_fiorilli_norm"] = merged_employees[
                 f"{col}_fiorilli"
@@ -323,17 +334,35 @@ class DataManager:
                 f"{col}_ahgora"
             ].apply(self.normalize_text)
 
-        position_changed = (
-            merged_employees["position_fiorilli_norm"]
-            != merged_employees["position_ahgora_norm"]
+        condition = (
+            merged_employees[f"{col}_fiorilli_norm"]
+            != merged_employees[f"{col}_ahgora_norm"]
         )
-        location_changed = (
-            merged_employees["department_fiorilli_norm"]
-            != merged_employees["department_ahgora_norm"]
-        )
-        changed_employees_df = merged_employees[position_changed | location_changed]
+        change_conditions.append(condition)
+
+        if change_conditions:
+            combined_condition = change_conditions[0]
+            for cond in change_conditions[1:]:
+                combined_condition |= cond
+        else:
+            return pd.DataFrame()
+
+        changed_employees_df = merged_employees[combined_condition]
 
         return changed_employees_df
+
+        # position_changed = (
+        #     merged_employees["position_fiorilli_norm"]
+        #     != merged_employees["position_ahgora_norm"]
+        # )
+        # location_changed = (
+        #     merged_employees["department_fiorilli_norm"]
+        #     != merged_employees["department_ahgora_norm"]
+        # )
+
+        # changed_employees_df = merged_employees[position_changed | location_changed]
+        #
+        # return changed_employees_df
 
     def _get_new_absences_df(
         self,
@@ -341,17 +370,13 @@ class DataManager:
         all_absences: pd.DataFrame,
     ) -> pd.DataFrame:
         try:
-            for col in ["start_date", "end_date"]:
-                if col in last_absences.columns:
-                    last_absences[col] = pd.to_datetime(
-                        last_absences[col],
-                        format="%d/%m/%Y",
-                    )
-                if col in all_absences.columns:
-                    all_absences[col] = pd.to_datetime(
-                        all_absences[col],
-                        format="%d/%m/%Y",
-                    )
+            for df in [last_absences, all_absences]:
+                for col in ["start_date", "end_date"]:
+                    if col in df.columns:
+                        df[col] = pd.to_datetime(
+                            df[col],
+                            format="%d/%m/%Y",
+                        )
 
             merged = pd.merge(last_absences, all_absences, how="outer", indicator=True)
             new_absences = merged[merged["_merge"] == "right_only"].drop(
@@ -359,8 +384,8 @@ class DataManager:
             )
 
             if new_absences.empty:
-                return all_absences
-            return pd.DataFrame(columns=ABSENCES_COLUMNS)
+                return pd.DataFrame(columns=ABSENCES_COLUMNS)
+            return new_absences
 
         except TypeError:
             return all_absences
