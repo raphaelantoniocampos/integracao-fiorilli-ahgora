@@ -252,9 +252,6 @@ class DataManager:
             all_absences=all_absences,
         )
 
-        if new_absences_df.empty:
-            new_absences_df = all_absences
-
         self.save_tasks_dfs(
             new_employees_df=new_employees_df,
             dismissed_employees_df=dismissed_employees_df,
@@ -382,9 +379,6 @@ class DataManager:
             new_absences = merged[merged["_merge"] == "right_only"].drop(
                 "_merge", axis=1
             )
-
-            if new_absences.empty:
-                return pd.DataFrame(columns=ABSENCES_COLUMNS)
             return new_absences
 
         except TypeError:
