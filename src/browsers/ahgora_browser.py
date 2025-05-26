@@ -5,7 +5,6 @@ from rich.console import Console
 from selenium.webdriver.common.by import By
 
 from src.browsers.core_browser import CoreBrowser
-from src.utils.config import Config
 from src.utils.creds import Creds
 
 
@@ -25,8 +24,7 @@ class AhgoraBrowser(CoreBrowser):
         with self.console.status(
             "[yellow]Iniciando AHGORA webdriver[/]", spinner="dots"
         ):
-            headless_mode = Config().data.get("headless_mode")
-            super().__init__(url=self.URL, headless_mode=headless_mode)
+            super().__init__(url=self.URL)
 
     def _start_employees_download(self) -> None:
         with self.console.status(

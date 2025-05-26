@@ -26,6 +26,14 @@ class Config:
         if not self.is_env_ok:
             Creds()
 
+        self.last_analisys = self.data.get("last_analisys")
+        self.headless_mode = bool(self.data.get("headless_mode"))
+        self.last_download_fiorilli = self.data.get("last_download")[
+            "fiorilli_employees"
+        ]
+        self.last_download_ahgora = self.data.get("last_download")["ahgora_employees"]
+        self.last_download_absences = self.data.get("last_download")["absences"]
+
     def menu(self) -> None:
         self.update_time_since()
         console.print(
@@ -34,31 +42,25 @@ class Config:
                 style="bold cyan",
             )
         )
-        last_analisys = self.data.get("last_analisys")
-        headless_mode = self.data.get("headless_mode")
-        last_download_fiorilli = self.data.get("last_download")["fiorilli_employees"]
-        last_download_ahgora = self.data.get("last_download")["ahgora_employees"]
-        last_download_absences = self.data.get("last_download")["absences"]
-
         console.print(
             f"""
 [bold orange]Opções[/bold orange]
-[cyan]•[/] [bold]Modo de Download Headless[/bold]: {headless_mode}
+[cyan]•[/] [bold]Modo de Download Headless[/bold]: {self.headless_mode}
 
 [bold orange]Dados[/bold orange]
-[cyan]•[/] [bold]Análise[/]: {last_analisys["datetime"]} ([bold]{
-                last_analisys["time_since"]
+[cyan]•[/] [bold]Análise[/]: {self.last_analisys["datetime"]} ([bold]{
+                self.last_analisys["time_since"]
             }[/] atrás)
 
 [cyan]•[/] [bold]Downloads[/]:
-  • Afastamentos - {last_download_absences["datetime"]} ([bold]{
-                last_download_absences["time_since"]
+  • Afastamentos - {self.last_download_absences["datetime"]} ([bold]{
+                self.last_download_absences["time_since"]
             }[/] atrás)
-  • Funcionários Fiorilli - {last_download_fiorilli["datetime"]} ([bold]{
-                last_download_fiorilli["time_since"]
+  • Funcionários Fiorilli - {self.last_download_fiorilli["datetime"]} ([bold]{
+                self.last_download_fiorilli["time_since"]
             }[/] atrás)
-  • Funcionários Ahgora - {last_download_ahgora["datetime"]} ([bold]{
-                last_download_ahgora["time_since"]
+  • Funcionários Ahgora - {self.last_download_ahgora["datetime"]} ([bold]{
+                self.last_download_ahgora["time_since"]
             }[/] atrás)
 """
         )

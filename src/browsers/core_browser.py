@@ -16,6 +16,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
+from src.utils.config import Config
 from src.utils.constants import DOWNLOADS_DIR
 
 
@@ -30,9 +31,9 @@ class CoreBrowser(ABC):
         StaleElementReferenceException,
     )
 
-    def __init__(self, url: str, headless_mode: bool):
+    def __init__(self, url: str):
         load_dotenv()
-        self.driver = self._get_web_driver(headless_mode=headless_mode)
+        self.driver = self._get_web_driver()
         self.driver.get(url)
 
     def _login(self) -> None:
@@ -44,10 +45,11 @@ class CoreBrowser(ABC):
     def _enter_password(self) -> None:
         """Enters the password into the login form"""
 
-    def _get_web_driver(self, headless_mode: bool) -> webdriver.Firefox:
+    def _get_web_driver(self) -> webdriver.Firefox:
         """Configures and returns an instance of the Firefox WebDriver"""
         options = webdriver.FirefoxOptions()
-        if headless_mode:
+        config = Config()
+        if config.headless_mode:
             options.add_argument("-headless")
         options.set_preference("browser.download.folderList", 2)
         options.set_preference("browser.download.dir", str(DOWNLOADS_DIR))
