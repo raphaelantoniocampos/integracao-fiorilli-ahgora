@@ -211,7 +211,7 @@ class AddAbsencesTask(TaskRunner):
         ).execute()
 
         if not selected:
-            return
+            return df
 
         selected_idx = int(selected[1] - 1)
         selected_row = df.iloc[selected_idx]
@@ -240,7 +240,7 @@ class AddAbsencesTask(TaskRunner):
         ).execute()[1]
 
         if not field_to_edit:
-            return
+            return df
 
         new_value = inquirer.text(
             message=f"Novo valor para {field_to_edit} (atual: {
