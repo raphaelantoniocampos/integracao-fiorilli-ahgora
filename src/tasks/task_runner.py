@@ -50,7 +50,7 @@ class TaskRunner(ABC):
         """Runs the task"""
 
     def exit_task(self):
-        if inquirer.confirm(message="Atualizar dados", default=False).execute():
+        if inquirer.confirm(message="Marcar como finalizado?", default=True).execute():
             self.task.path.unlink()
 
     def _choose_itens(

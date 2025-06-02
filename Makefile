@@ -12,15 +12,12 @@ PYTHON_CMD   := python
 PYINSTALLER_FLAGS = --noconfirm --onedir --console \
 	--icon "$(PROJECT_ROOT)/$(ICON_FILE)" \
 	--name "$(APP_NAME)" \
-	--add-data "$(PROJECT_ROOT)/data;data/" \
-	--add-data "$(PROJECT_ROOT)/downloads;downloads/" \
 	--add-data "$(PROJECT_ROOT)/src;src/" \
-	--add-data "$(PROJECT_ROOT)/tasks;tasks/"
 
 PYINSTALLER_CMD = uv run pyinstaller $(PYINSTALLER_FLAGS) "$(PROJECT_ROOT)/$(MAIN_SCRIPT)"
 
 # --- Targets ---
-.PHONY: all build clean help
+.PHONY: all build clean update help
 
 all: build
 
@@ -30,6 +27,23 @@ build:
 	@echo "--------------------------------------------------"
 	$(PYINSTALLER_CMD)
 	@echo "--------------------------------------------------"
+	@xcopy /Y /I "$(PROJECT_ROOT)\data\absence_codes.csv" "$(PROJECT_ROOT)\dist\$(APP_NAME)\data\"
+	@echo "Build concluido!"
+	@echo "Executavel em: $(PROJECT_ROOT)/dist/$(APP_NAME)/"
+	@echo "--------------------------------------------------"
+
+update:
+	@echo "--------------------------------------------------"
+	@echo "Iniciando o build do executavel..."
+	@echo "--------------------------------------------------"
+	@xcopy /S /Y /I /E "$(PROJECT_ROOT)\dist\$(APP_NAME)\data" "$(PROJECT_ROOT)\data"
+	@xcopy /S /Y /I /E "$(PROJECT_ROOT)\dist\$(APP_NAME)\downloads" "$(PROJECT_ROOT)\downloads"
+	@xcopy /S /Y /I /E "$(PROJECT_ROOT)\dist\$(APP_NAME)\tasks" "$(PROJECT_ROOT)\tasks"
+	$(PYINSTALLER_CMD)
+	@echo "--------------------------------------------------"
+	@xcopy /S /Y /I /E "$(PROJECT_ROOT)\data" "$(PROJECT_ROOT)\dist\$(APP_NAME)\data"
+	@xcopy /S /Y /I /E "$(PROJECT_ROOT)\downloads" "$(PROJECT_ROOT)\dist\$(APP_NAME)\downloads"
+	@xcopy /S /Y /I /E "$(PROJECT_ROOT)\tasks" "$(PROJECT_ROOT)\dist\$(APP_NAME)\tasks"
 	@echo "Build concluido!"
 	@echo "Executavel em: $(PROJECT_ROOT)/dist/$(APP_NAME)/"
 	@echo "--------------------------------------------------"
