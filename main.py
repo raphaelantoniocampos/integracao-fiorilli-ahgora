@@ -36,7 +36,5 @@ def main():
 if __name__ == "__main__":
     try:
         main()
-        exit(0)
     except KeyboardInterrupt:
         spinner("Saindo")
-        exit(1)

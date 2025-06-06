@@ -1,10 +1,10 @@
-# Makefile (Otimizado para Windows e projetos Python)
+# Makefile
 
 # --- Configurações do Projeto ---
 PROJECT_ROOT := $(CURDIR)
 APP_NAME     := Integracao Fiorilli Ahgora
 MAIN_SCRIPT  := main.py
-ICON_FILE    := ifa.ico
+ICON_FILE    := ifa2.ico
 
 # --- Comandos ---
 PYTHON_CMD   := python
@@ -48,6 +48,22 @@ update:
 	@echo "Executavel em: $(PROJECT_ROOT)/dist/$(APP_NAME)/"
 	@echo "--------------------------------------------------"
 
+shortcut:
+	@echo "--------------------------------------------------"
+	@echo "Criando atalho na area de trabalho publica..."
+	@echo "--------------------------------------------------"
+	@$(PYTHON_CMD) -c "import os, sys, win32com.client; \
+		target_path = os.path.join('$(PROJECT_ROOT)', 'dist', '$(APP_NAME)', '$(APP_NAME).exe'); \
+		shortcut_path = os.path.join('$(PUBLIC_DESKTOP)', '$(APP_NAME).lnk'); \
+		shell = win32com.client.Dispatch('WScript.Shell'); \
+		shortcut = shell.CreateShortCut(shortcut_path); \
+		shortcut.Targetpath = target_path; \
+		shortcut.WorkingDirectory = os.path.dirname(target_path); \
+		shortcut.IconLocation = os.path.join('$(PROJECT_ROOT)', '$(ICON_FILE)'); \
+		shortcut.save()"
+	@echo "Atalho criado em: $(PUBLIC_DESKTOP)/$(APP_NAME).lnk"
+	@echo "--------------------------------------------------"
+
 clean:
 	@echo "--------------------------------------------------"
 	@echo "Limpando arquivos de build (build/, dist/, *.spec)..."
@@ -66,11 +82,12 @@ help:
 	@echo "--------------------------------------------------"
 	@echo "Alvos disponiveis do Makefile:"
 	@echo "--------------------------------------------------"
-	@echo "  make all        - Constroi o projeto (default)."
-	@echo "  make build      - Constroi o executavel."
-	@echo "  make clean      - Remove os diretorios build/, dist/ e arquivos *.spec."
-	@echo "  make help       - Mostra esta mensagem de ajuda."
+	@echo "  make all		- Constroi o projeto (default)."
+	@echo "  make build		- Constroi o executavel."
+	@echo "  make update		- Atualiza o executavel."
+	@echo "  make shortcut	- Cria um atalho na area de trabalho publica."
+	@echo "  make clean		- Remove os diretorios build/, dist/ e arquivos *.spec."
+	@echo "  make help		- Mostra esta mensagem de ajuda."
 	@echo "--------------------------------------------------"
 	@echo "Lembre-se de ativar seu ambiente virtual Python (uv) antes de executar."
 	@echo "--------------------------------------------------"
-

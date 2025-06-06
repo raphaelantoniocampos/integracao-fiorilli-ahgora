@@ -8,6 +8,8 @@ from src.managers.file_manager import FileManager
 from src.utils.constants import INQUIRER_KEYBINDINGS
 from src.utils.ui import console, spinner
 
+DOWNLOAD_MESSAGE = "Selecione as opções de download"
+
 
 class DownloadManager:
     DOWNLOAD_OPTIONS = {
@@ -23,22 +25,44 @@ class DownloadManager:
                 style="bold cyan",
             )
         )
-        choices = [option for option in self.DOWNLOAD_OPTIONS]
-        choices.append("Voltar")
 
-        answers = inquirer.checkbox(
-            message="Selecione as opções de download",
-            choices=choices,
-            keybindings=INQUIRER_KEYBINDINGS,
-        ).execute()
+        while True:
+            choices = [
+                "Baixar tudo",
+                "Escolher",
+                "Voltar",
+            ]
+            answer = inquirer.rawlist(
+                message=DOWNLOAD_MESSAGE,
+                choices=choices,
+                default=choices[0],
+                keybindings=INQUIRER_KEYBINDINGS,
+            ).execute()
+            match answer:
+                case "Baixar tudo":
+                    selected_options = [option for option in self.DOWNLOAD_OPTIONS]
+                    break
+                case "Escolher":
+                    choices = [option for option in self.DOWNLOAD_OPTIONS]
+                    choices.append("Voltar")
 
-        selected_options = []
-        if choices[-1] in answers:
-            spinner()
-            return
+                    answers = inquirer.checkbox(
+                        message=DOWNLOAD_MESSAGE,
+                        choices=choices,
+                        keybindings=INQUIRER_KEYBINDINGS,
+                    ).execute()
 
-        for answer in answers:
-            selected_options.append(answer)
+                    selected_options = []
+                    if choices[-1] in answers:
+                        spinner()
+                        continue
+
+                    for answer in answers:
+                        selected_options.append(answer)
+                    break
+                case "Voltar":
+                    spinner()
+                    return
 
         proceed = inquirer.confirm(message="Continuar?", default=True).execute()
         if not proceed:
