@@ -104,7 +104,8 @@ class AddAbsencesTask(TaskRunner):
         spinner("Aguarde")
         if file_size == 0:
             print("\nNenhum novo afastamento.")
-            self.exit_task(view_absences_path)
+            self.finalize(view_absences_path)
+            self.exit_task()
             return
 
         self.show_absences(
@@ -119,7 +120,7 @@ class AddAbsencesTask(TaskRunner):
         wait_key_press(self.KEY_CONTINUE)
 
         spinner("Aguarde")
-        self.exit_task(view_absences_path)
+        self.finalize(view_absences_path)
         return
 
     def df_to_upload(self, absences_df: pd.DataFrame, file_path: Path):
@@ -317,7 +318,7 @@ class AddAbsencesTask(TaskRunner):
             }' copiado para a área de transferência!)\n"
         )
 
-    def exit_task(self, temp_absences):
+    def finalize(self, temp_absences):
         file_manager = FileManager()
         file_manager.move_file(
             source=temp_absences,
