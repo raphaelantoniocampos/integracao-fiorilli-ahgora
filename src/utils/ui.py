@@ -1,67 +1,38 @@
 import time
-from datetime import datetime
 
 from InquirerPy import inquirer
 from rich.console import Console
 from rich.panel import Panel
-from rich.table import Table
 
 from src.models.task import Task
 from src.utils.constants import (
     INQUIRER_KEYBINDINGS,
     MAIN_MENU_OPTIONS,
-    PT_MONTHS,
-    PT_WEEKDAYS,
 )
 
 console = Console()
-
-
-class Header:
-    """Display header with clock."""
-
-    def __rich__(self) -> Panel:
-        now = datetime.now()
-
-        en_weekday = now.strftime("%a")
-        en_month = now.strftime("%b")
-        day = now.strftime("%d")
-        year = now.strftime("%Y")
-
-        pt_weekday = PT_WEEKDAYS.get(en_weekday, en_weekday)
-        pt_month = PT_MONTHS.get(en_month, en_month)
-
-        time_str = now.strftime("%H[blink]:[/]%M[blink]")
-
-        grid = Table.grid()
-        grid.add_row(
-            f"{pt_weekday} {day} {pt_month} {year}",
-        )
-
-        grid.add_row(
-            "[b]Integração[/b] Fiorilli/Ahgora",
-        )
-
-        grid.add_row(
-            time_str,
-        )
-        return Panel.fit(
-            grid,
-            style="cyan",
-        )
 
 
 def spinner(
     wait_string: str = "Voltando",
     wait_time: float = 0.40,
 ):
-    with console.status(f"[bold green]{wait_string}...[/bold green]", spinner="dots"):
+    with console.status(
+        f"[bold green]{wait_string}...[/bold green]",
+        spinner="dots",
+    ):
         time.sleep(wait_time)
 
 
 def menu_table(tasks: list[Task]):
-    header = Header()
-    console.print(header)
+    console.print(
+        Panel.fit(
+            "[bold magenta]Integração Fiorilli Ahgora[/bold magenta] - [gold1]Automação de Sistemas de Ponto Eletrônico e RH[/gold1]",
+            subtitle="[green]github.com/raphaelantoniocampos/integracao_fiorilli_ahgora[/green]",
+        )
+    )
+
+    console.print()
 
     tasks_panel = get_tasks_panel(tasks)
     console.print(tasks_panel)
@@ -70,6 +41,8 @@ def menu_table(tasks: list[Task]):
         message="Selecione uma opção",
         choices=MAIN_MENU_OPTIONS,
         keybindings=INQUIRER_KEYBINDINGS,
+        instruction="Selecione o número ou navegue com as setas do teclado.",
+        long_instruction="[Enter] confirma • [Espaço] seleciona • [Esc] cancela [Ctrl+C] sair\nMIT License • © 2025 Raphael Campos",
     ).execute()
     return answers
 

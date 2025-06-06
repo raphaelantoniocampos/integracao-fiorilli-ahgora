@@ -72,16 +72,6 @@ PT_MONTHS = {
     "Dez": "Dec",
 }
 
-PT_WEEKDAYS = {
-    "Mon": "Seg",
-    "Tue": "Ter",
-    "Wed": "Qua",
-    "Thu": "Qui",
-    "Fri": "Sex",
-    "Sat": "Sáb",
-    "Sun": "Dom",
-}
-
 REQUIRED_VARS = {
     "FIORILLI_USER": None,
     "FIORILLI_PSW": None,
