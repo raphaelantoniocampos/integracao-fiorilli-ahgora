@@ -34,11 +34,11 @@ class Config:
         self.last_download_ahgora = self.data.get("last_download")["ahgora_employees"]
         self.last_download_absences = self.data.get("last_download")["absences"]
 
-    def menu(self) -> None:
+    def menu(self, name) -> None:
         self.update_time_since()
         console.print(
             Panel.fit(
-                "CONFIGURAÇÕES",
+                name.upper(),
                 style="bold cyan",
             )
         )
@@ -66,13 +66,13 @@ class Config:
         )
 
         choices = [
-            "Voltar",
-            "Alterar Headless Mode",
             "Configurar Variaveis de Ambiente",
+            "Alterar Headless Mode",
+            "Voltar",
         ]
         answer = inquirer.rawlist(
             message="Selecione as opções de download",
-            choices=choices[:-1] if self.is_env_ok else choices,
+            choices=choices[1:] if self.is_env_ok else choices,
             keybindings=INQUIRER_KEYBINDINGS,
             multiselect=True,
         ).execute()

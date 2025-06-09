@@ -42,7 +42,7 @@ def menu_table(tasks: list[Task]):
         choices=MAIN_MENU_OPTIONS,
         keybindings=INQUIRER_KEYBINDINGS,
         instruction="Selecione o número ou navegue com as setas do teclado.",
-        long_instruction="[Enter] confirma • [Espaço] seleciona • [Esc] cancela [Ctrl+C] sair\nMIT License • © 2025 Raphael Campos",
+        long_instruction="[Enter] confirma • [Espaço] seleciona • [Esc + Esc] cancela [Ctrl+C] sair\nMIT License • © 2025 Raphael Campos",
     ).execute()
     return answers
 

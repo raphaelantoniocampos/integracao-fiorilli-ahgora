@@ -2,7 +2,8 @@ from src.managers.data_manager import DataManager
 from src.managers.download_manager import DownloadManager
 from src.managers.task_manager import TaskManager
 from src.utils.config import Config
-from src.utils.ui import spinner, menu_table
+from src.utils.constants import MAIN_MENU_OPTIONS
+from src.utils.ui import menu_table, spinner
 
 
 def main():
@@ -10,27 +11,30 @@ def main():
     data_manager = DataManager()
     download_manager = DownloadManager()
 
+    MENU_ACTIONS = {
+        # Downloads
+        MAIN_MENU_OPTIONS[0]: lambda: download_manager.menu(MAIN_MENU_OPTIONS[0]),
+        # Dados
+        MAIN_MENU_OPTIONS[1]: lambda: data_manager.menu(MAIN_MENU_OPTIONS[1]),
+        # Tarefas
+        MAIN_MENU_OPTIONS[2]: lambda: task_manager.menu(MAIN_MENU_OPTIONS[2]),
+        # Configurações
+        MAIN_MENU_OPTIONS[3]: lambda: config.menu(MAIN_MENU_OPTIONS[3]),
+        # Sair
+        MAIN_MENU_OPTIONS[4]: lambda: exit_program(),
+    }
+
     while True:
         config = Config()
         tasks = task_manager.get_tasks()
 
         option = menu_table(tasks)
-        match option.lower():
-            case "baixar dados":
-                download_manager.menu()
+        action = MENU_ACTIONS.get(option)
+        action()
 
-            case "analisar dados":
-                data_manager.analyze()
 
-            case "tarefas":
-                task_manager.menu(tasks)
-
-            case "configurações":
-                config.menu()
-
-            case "sair":
-                spinner("Saindo")
-                return
+def exit_program():
+    raise KeyboardInterrupt()
 
 
 if __name__ == "__main__":

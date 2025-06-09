@@ -195,14 +195,14 @@ class AddAbsencesTask(TaskRunner):
     def edit_absences_interactive(self, df, filter_path):
         """Permite edição interativa dos afastamentos"""
         choices = []
-        for idx, row in df.iterrows():
+        for i, series in df.iterrows():
             display_text = (
-                f"{row['id']} | {row.get('name', 'N/A')} | "
-                f"{row['cod']} ({row.get('cod_name', 'N/A')}) | "
-                f"{row['duration']} dias | "
-                f"{row['start_date']} a {row['end_date']}"
+                f"{series['id']} | {series.get('name', 'N/A')} | "
+                f"{series['cod']} ({series.get('cod_name', 'N/A')}) | "
+                f"{series['duration']} dias | "
+                f"{series['start_date']} a {series['end_date']}"
             )
-            choices.append((display_text, idx + 1))
+            choices.append((display_text, i + 1))
 
         selected = inquirer.fuzzy(
             message="Selecione o afastamento para editar:",

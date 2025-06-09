@@ -3,8 +3,10 @@ from datetime import datetime
 from time import sleep
 
 import pandas as pd
+from InquirerPy import inquirer
 from pandas.errors import EmptyDataError
 from rich import print
+from rich.panel import Panel
 
 from src.managers.file_manager import FileManager as file_manager
 from src.utils.config import Config
@@ -13,14 +15,82 @@ from src.utils.constants import (
     AHGORA_DIR,
     DATA_DIR,
     FIORILLI_DIR,
+    INQUIRER_KEYBINDINGS,
     PT_MONTHS,
     TASKS_DIR,
     UPLOAD_ABSENCES_COLUMNS,
+    RAW_AHGORA_EMPLOYEES_COLUMNS,
+    RAW_FIORILLI_EMPLOYEES_COLUMNS,
 )
-from src.utils.ui import console
+from src.utils.ui import console, spinner
 
 
 class DataManager:
+    def menu(self, name):
+        console.print(
+            Panel.fit(
+                name.upper(),
+                style="bold cyan",
+            )
+        )
+        choices = ["Visualizar Dados", "Analisar Dados"]
+        choices.append("Voltar")
+
+        option = inquirer.rawlist(
+            message="Selecione uma opção",
+            choices=choices,
+            keybindings=INQUIRER_KEYBINDINGS,
+        ).execute()
+
+        if "Visualizar" in option:
+            self.visualizer()
+
+        if "Analisar" in option:
+            self.analyze()
+
+        if "Voltar" in option:
+            spinner()
+            return
+
+    def visualizer(self):
+        ahgora_files = [file for file in AHGORA_DIR.iterdir()]
+        fiorilli_files = [file for file in FIORILLI_DIR.iterdir()]
+        files = {
+            str(file.parent).split("\\")[-1] + "\\" + str(file.name): file
+            for file in ahgora_files + fiorilli_files
+        }
+        files["Voltar"] = None
+
+        while True:
+            option = inquirer.rawlist(
+                message="Selecione um arquivo",
+                choices=files.keys(),
+                mandatory=False,
+                keybindings=INQUIRER_KEYBINDINGS,
+            ).execute()
+
+            if not option or "Voltar" in option:
+                spinner()
+                return
+
+            df = self.read_csv(files[option])
+            columns = df.columns.to_list()
+
+            choices = []
+            for i, series in df.iterrows():
+                choices.append(
+                    series.to_list(),
+                )
+
+            inquirer.fuzzy(
+                message=option,
+                choices=choices,
+                keybindings=INQUIRER_KEYBINDINGS,
+                instruction=columns,
+                mandatory=False,
+                border=True,
+            ).execute()
+
     def analyze(self):
         try:
             ()
@@ -119,6 +189,28 @@ class DataManager:
         header: str | None = "infer",
         columns: list[str] = [],
     ):
+        if "raw_employees.txt" in str(path):
+            sep = "|"
+            encoding = "latin1"
+            header = None
+            columns = RAW_FIORILLI_EMPLOYEES_COLUMNS
+
+        if "raw_employees.csv" in str(path):
+            header = None
+            columns = RAW_AHGORA_EMPLOYEES_COLUMNS
+
+        if "absences.csv" in str(path):
+            header = None
+            columns = ABSENCES_COLUMNS
+
+        if "raw_vacations.txt" in str(path):
+            header = None
+            columns = UPLOAD_ABSENCES_COLUMNS
+
+        if "raw_absences.txt" in str(path):
+            header = None
+            columns = UPLOAD_ABSENCES_COLUMNS
+
         df = pd.read_csv(
             path,
             sep=sep,
@@ -424,41 +516,9 @@ class DataManager:
         raw_fiorilli_employees = FIORILLI_DIR / "raw_employees.txt"
         raw_ahgora_employees = AHGORA_DIR / "raw_employees.csv"
 
-        fiorilli_employees = self.read_csv(
-            raw_fiorilli_employees,
-            sep="|",
-            encoding="latin1",
-            header=None,
-            columns=[
-                "id",
-                "name",
-                "cpf",
-                "sex",
-                "birth_date",
-                "pis_pasep",
-                "position",
-                "department",
-                "cost_center",
-                "binding",
-                "admission_date",
-                "dismissal_date",
-            ],
-        )
+        fiorilli_employees = self.read_csv(raw_fiorilli_employees)
 
-        ahgora_employees = self.read_csv(
-            raw_ahgora_employees,
-            header=None,
-            columns=[
-                "id",
-                "name",
-                "position",
-                "scale",
-                "department",
-                "location",
-                "admission_date",
-                "dismissal_date",
-            ],
-        )
+        ahgora_employees = self.read_csv(raw_ahgora_employees)
         return ahgora_employees, fiorilli_employees
 
     def get_absences_data(self) -> pd.DataFrame:
@@ -469,24 +529,14 @@ class DataManager:
         try:
             last_absences = self.read_csv(
                 last_absences_path,
-                header=None,
-                columns=ABSENCES_COLUMNS,
             )
         except FileNotFoundError:
             last_absences = pd.DataFrame
         try:
             all_absences = pd.concat(
                 [
-                    self.read_csv(
-                        raw_vacations_path,
-                        header=None,
-                        columns=UPLOAD_ABSENCES_COLUMNS,
-                    ),
-                    self.read_csv(
-                        raw_absences_path,
-                        header=None,
-                        columns=UPLOAD_ABSENCES_COLUMNS,
-                    ),
+                    self.read_csv(raw_vacations_path),
+                    self.read_csv(raw_absences_path),
                 ]
             )
         except EmptyDataError:

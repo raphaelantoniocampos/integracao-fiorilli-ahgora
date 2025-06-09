@@ -15,11 +15,11 @@ from src.utils.ui import console, spinner
 
 
 class TaskManager:
-    def menu(self, tasks: list[Task]):
-        ()
+    def menu(self, name):
+        tasks = self.get_tasks()
         console.print(
             Panel.fit(
-                "Escolher Tarefas",
+                name.upper(),
                 style="bold cyan",
             )
         )

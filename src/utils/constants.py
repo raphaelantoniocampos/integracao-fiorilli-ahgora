@@ -32,9 +32,6 @@ INQUIRER_KEYBINDINGS = {
     "toggle": [
         {"key": "space"},
     ],
-    "toggle-all-true": [
-        {"key": "a"},
-    ],
 }
 
 
@@ -50,8 +47,8 @@ JSON_INIT_CONFIG = {
 }
 
 MAIN_MENU_OPTIONS = [
-    "Baixar Dados",
-    "Analisar dados",
+    "Downloads",
+    "Dados",
     "Tarefas",
     "Configurações",
     "Sair",
@@ -99,4 +96,30 @@ ABSENCES_COLUMNS = [
     "duration",
     "start_time",
     "end_time",
+]
+
+RAW_AHGORA_EMPLOYEES_COLUMNS = [
+    "id",
+    "name",
+    "position",
+    "scale",
+    "department",
+    "location",
+    "admission_date",
+    "dismissal_date",
+]
+
+RAW_FIORILLI_EMPLOYEES_COLUMNS = [
+    "id",
+    "name",
+    "cpf",
+    "sex",
+    "birth_date",
+    "pis_pasep",
+    "position",
+    "department",
+    "cost_center",
+    "binding",
+    "admission_date",
+    "dismissal_date",
 ]

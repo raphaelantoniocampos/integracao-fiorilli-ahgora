@@ -18,10 +18,10 @@ class DownloadManager:
         "Funcionários Fiorilli": FiorilliBrowser.download_employees_data,
     }
 
-    def menu(self):
+    def menu(self, name):
         console.print(
             Panel.fit(
-                "BAIXAR DADOS",
+                name.upper(),
                 style="bold cyan",
             )
         )
