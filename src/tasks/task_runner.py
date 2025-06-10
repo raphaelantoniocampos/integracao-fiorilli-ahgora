@@ -32,7 +32,11 @@ class TaskRunner(ABC):
             message="Ver e escolher itens da lista?", default=False
         ).execute()
         if choose_itens:
-            self._choose_itens()
+            itens = self._choose_itens()
+            if not itens:
+                return
+            ids = [item[0] for item in itens]
+            self.task.df = DataManager.filter_df(self.task.df, ids)
 
         if inquirer.confirm(message="Iniciar?", default=True).execute():
             url = self.task.url
@@ -56,7 +60,7 @@ class TaskRunner(ABC):
     def _choose_itens(
         self,
     ):
-        itens = inquirer.fuzzy(
+        return inquirer.fuzzy(
             message="Select actions:",
             choices=self.task.df.values.tolist(),
             keybindings={
@@ -85,9 +89,6 @@ class TaskRunner(ABC):
             multiselect=True,
             border=True,
         ).execute()
-        if itens:
-            ids = [item[0] for item in itens]
-            self.task.df = DataManager.filter_df(self.task.df, ids)
 
     def _open_browser(self, url: str) -> None:
         subprocess.run(["explorer.exe", url])
