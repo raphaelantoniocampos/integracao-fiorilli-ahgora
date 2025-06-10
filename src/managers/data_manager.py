@@ -17,10 +17,10 @@ from src.utils.constants import (
     FIORILLI_DIR,
     INQUIRER_KEYBINDINGS,
     PT_MONTHS,
-    TASKS_DIR,
-    UPLOAD_ABSENCES_COLUMNS,
     RAW_AHGORA_EMPLOYEES_COLUMNS,
     RAW_FIORILLI_EMPLOYEES_COLUMNS,
+    TASKS_DIR,
+    UPLOAD_ABSENCES_COLUMNS,
 )
 from src.utils.ui import console, spinner
 

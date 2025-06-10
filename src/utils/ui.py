@@ -13,6 +13,16 @@ from src.utils.constants import (
 console = Console()
 
 
+def header():
+    console.print(
+        Panel.fit(
+            "[bold magenta]Integração Fiorilli Ahgora[/bold magenta] - [gold1]Automação de Sistemas de Ponto Eletrônico e RH[/gold1]",
+            subtitle="[green]github.com/raphaelantoniocampos/integracao_fiorilli_ahgora[/green]",
+        )
+    )
+    console.print()
+
+
 def spinner(
     wait_string: str = "Voltando",
     wait_time: float = 0.40,
@@ -25,14 +35,7 @@ def spinner(
 
 
 def menu_table(tasks: list[Task]):
-    console.print(
-        Panel.fit(
-            "[bold magenta]Integração Fiorilli Ahgora[/bold magenta] - [gold1]Automação de Sistemas de Ponto Eletrônico e RH[/gold1]",
-            subtitle="[green]github.com/raphaelantoniocampos/integracao_fiorilli_ahgora[/green]",
-        )
-    )
-
-    console.print()
+    header()
 
     tasks_panel = get_tasks_panel(tasks)
     console.print(tasks_panel)

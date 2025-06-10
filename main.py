@@ -3,7 +3,7 @@ from src.managers.download_manager import DownloadManager
 from src.managers.task_manager import TaskManager
 from src.utils.config import Config
 from src.utils.constants import MAIN_MENU_OPTIONS
-from src.utils.ui import menu_table, spinner
+from src.utils.ui import console, menu_table, spinner
 
 
 def main():
@@ -25,6 +25,7 @@ def main():
     }
 
     while True:
+        console.clear()
         config = Config()
         tasks = task_manager.get_tasks()
 
