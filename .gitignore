@@ -7,6 +7,7 @@ wheels/
 *.egg-info
 output/
 *.spec
+*.lnk
 
 # Virtual environments
 .venv
