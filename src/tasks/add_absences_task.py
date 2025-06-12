@@ -9,7 +9,7 @@ from rich import print
 from rich.table import Table
 
 from src.managers.data_manager import DataManager
-from src.managers.file_manager import FileManager
+from src.managers.file_manager import FileManager as file_manager
 from src.models.key import Key, wait_key_press
 from src.models.task import Task
 from src.tasks.task_runner import TaskRunner
@@ -124,7 +124,7 @@ class AddAbsencesTask(TaskRunner):
         return
 
     def df_to_upload(self, absences_df: pd.DataFrame, file_path: Path):
-        FileManager.save_df(
+        file_manager.save_df(
             df=absences_df,
             path=file_path,
             header=False,
@@ -319,9 +319,8 @@ class AddAbsencesTask(TaskRunner):
         )
 
     def finalize(self, temp_absences):
-        file_manager = FileManager()
         file_manager.move_file(
             source=temp_absences,
-            destination=TASKS_DIR / "absences.csv",
+            destination=TASKS_DIR / "add_absences.csv",
         )
         spinner()

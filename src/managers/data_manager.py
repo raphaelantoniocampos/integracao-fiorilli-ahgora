@@ -497,19 +497,19 @@ class DataManager:
     ):
         file_manager.save_df(
             df=new_employees_df,
-            path=TASKS_DIR / "new_employees.csv",
+            path=TASKS_DIR / "add_employees.csv",
         )
         file_manager.save_df(
             df=dismissed_employees_df,
-            path=TASKS_DIR / "dismissed_employees.csv",
+            path=TASKS_DIR / "remove_employees.csv",
         )
         file_manager.save_df(
             df=changed_employees_df,
-            path=TASKS_DIR / "changed_employees.csv",
+            path=TASKS_DIR / "update_employees.csv",
         )
         file_manager.save_df(
             df=new_absences_df,
-            path=TASKS_DIR / "new_absences.csv",
+            path=TASKS_DIR / "add_abcenses.csv",
         )
 
     def get_employees_data(self) -> (pd.DataFrame, pd.DataFrame):
@@ -522,7 +522,7 @@ class DataManager:
         return ahgora_employees, fiorilli_employees
 
     def get_absences_data(self) -> pd.DataFrame:
-        last_absences_path = TASKS_DIR / "absences.csv"
+        last_absences_path = TASKS_DIR / "add_absences.csv"
         raw_absences_path = FIORILLI_DIR / "raw_absences.txt"
         raw_vacations_path = FIORILLI_DIR / "raw_vacations.txt"
 

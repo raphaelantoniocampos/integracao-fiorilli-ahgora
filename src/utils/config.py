@@ -5,7 +5,7 @@ from pathlib import Path
 from InquirerPy import inquirer
 from rich.panel import Panel
 
-from src.managers.file_manager import FileManager
+from src.managers.file_manager import FileManager as file_manager
 from src.utils.constants import (
     DATA_DIR,
     INQUIRER_KEYBINDINGS,
@@ -17,8 +17,8 @@ from src.utils.ui import console, spinner
 
 class Config:
     def __init__(self):
-        FileManager.check_dirs()
-        FileManager.move_downloads_to_data_dir()
+        file_manager.check_dirs()
+        file_manager.move_downloads_to_data_dir()
         self.json_path: Path = DATA_DIR / "config.json"
         self.data: dict = self._load()
         self.update_time_since()
@@ -194,7 +194,7 @@ class Config:
         self._update("last_download", file_name, value=file_last_download)
 
     def _get_last_download(self, file_name: str) -> str:
-        file_path = FileManager.file_name_to_file_path(file_name)
+        file_path = file_manager.file_name_to_file_path(file_name)
 
         return datetime.strftime(
             datetime.fromtimestamp(file_path.stat().st_mtime),

@@ -4,7 +4,7 @@ from rich.panel import Panel
 from src.browsers.ahgora_browser import AhgoraBrowser
 from src.browsers.fiorilli_browser import FiorilliBrowser
 from src.managers.data_manager import DataManager
-from src.managers.file_manager import FileManager
+from src.managers.file_manager import FileManager as file_manager
 from src.utils.constants import INQUIRER_KEYBINDINGS
 from src.utils.ui import console, spinner
 
@@ -69,15 +69,14 @@ class DownloadManager:
             return
 
         self.run(selected_options)
-        DataManager().analyze()
 
     def run(self, selected_options):
         for option in selected_options:
             fun = self.DOWNLOAD_OPTIONS[option]
             fun()
-
         self._move_files_to_data_dir()
+        dm = DataManager()
+        dm.analyze()
 
     def _move_files_to_data_dir(self):
-        file_manager = FileManager()
         file_manager.move_downloads_to_data_dir()

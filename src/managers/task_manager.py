@@ -81,15 +81,7 @@ class TaskManager:
         return data_manager.read_csv(path)
 
     def _get_path(self, name: str) -> Path:
-        match name:
-            case "add_employees":
-                return TASKS_DIR / "new_employees.csv"
-            case "remove_employees":
-                return TASKS_DIR / "dismissed_employees.csv"
-            case "update_employees":
-                return TASKS_DIR / "changed_employees.csv"
-            case "add_absences":
-                return TASKS_DIR / "new_absences.csv"
+        return TASKS_DIR / f"{name}.csv"
 
     def _get_option(self, name: str, df: DataFrame) -> str:
         if df.empty:

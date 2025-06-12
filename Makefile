@@ -7,7 +7,7 @@ MAIN_SCRIPT  := main.py
 ICON_FILE    := ifa2.ico
 
 # --- Comandos ---
-PYTHON_CMD   := python
+PYTHON_CMD   := uv run python
 
 PYINSTALLER_FLAGS = --noconfirm --onedir --console \
 	--icon "$(PROJECT_ROOT)/$(ICON_FILE)" \
@@ -88,6 +88,4 @@ help:
 	@echo "  make shortcut	- Cria um atalho na area de trabalho publica."
 	@echo "  make clean		- Remove os diretorios build/, dist/ e arquivos *.spec."
 	@echo "  make help		- Mostra esta mensagem de ajuda."
-	@echo "--------------------------------------------------"
-	@echo "Lembre-se de ativar seu ambiente virtual Python (uv) antes de executar."
 	@echo "--------------------------------------------------"

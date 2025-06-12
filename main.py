@@ -13,13 +13,21 @@ def main():
 
     MENU_ACTIONS = {
         # Downloads
-        MAIN_MENU_OPTIONS[0]: lambda: download_manager.menu(MAIN_MENU_OPTIONS[0]),
+        MAIN_MENU_OPTIONS[0]: lambda: download_manager.menu(
+            MAIN_MENU_OPTIONS[0],
+        ),
         # Dados
-        MAIN_MENU_OPTIONS[1]: lambda: data_manager.menu(MAIN_MENU_OPTIONS[1]),
+        MAIN_MENU_OPTIONS[1]: lambda: data_manager.menu(
+            MAIN_MENU_OPTIONS[1],
+        ),
         # Tarefas
-        MAIN_MENU_OPTIONS[2]: lambda: task_manager.menu(MAIN_MENU_OPTIONS[2]),
+        MAIN_MENU_OPTIONS[2]: lambda: task_manager.menu(
+            MAIN_MENU_OPTIONS[2],
+        ),
         # Configurações
-        MAIN_MENU_OPTIONS[3]: lambda: config.menu(MAIN_MENU_OPTIONS[3]),
+        MAIN_MENU_OPTIONS[3]: lambda: config.menu(
+            MAIN_MENU_OPTIONS[3],
+        ),
         # Sair
         MAIN_MENU_OPTIONS[4]: lambda: exit_program(),
     }
