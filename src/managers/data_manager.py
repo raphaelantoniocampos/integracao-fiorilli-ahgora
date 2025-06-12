@@ -5,7 +5,6 @@ from time import sleep
 import pandas as pd
 from InquirerPy import inquirer
 from pandas.errors import EmptyDataError
-from rich import print
 from rich.panel import Panel
 
 from src.managers.file_manager import FileManager as file_manager
@@ -93,7 +92,6 @@ class DataManager:
 
     def analyze(self):
         try:
-            ()
             with console.status(
                 "[bold green]Analisando dados...[/bold green]", spinner="dots"
             ):
@@ -132,19 +130,20 @@ class DataManager:
                 )
 
             Config.update_last_analisys()
-            print("[bold green]Dados sincronizados com sucesso![/bold green]\n")
+            console.print("[bold green]Dados sincronizados com sucesso![/bold green]\n")
             sleep(1)
         except KeyboardInterrupt as e:
-            print(f"[bold red]Erro ao sincronizar dados: {e}[/bold red]\n")
+            console.print(f"[bold red]Erro ao sincronizar dados: {e}[/bold red]\n")
             sleep(1)
 
         except FileNotFoundError as e:
-            print(
+            console.print(
                 f"[bold red]Erro ao analisar dados: {
                     e
                 }[/bold red]\nFaça o download primeiro."
             )
-            sleep(1)
+            console.print("Pressione [green]qualquer tecla[/] para continuar...")
+            input()
 
     def get_view_absences(
         self,

@@ -157,8 +157,7 @@ class Config:
             self._update_downloads_time_since(last_download, "ahgora_employees", now)
             self._update_downloads_time_since(last_download, "fiorilli_employees", now)
             self._update_downloads_time_since(last_download, "absences", now)
-        except FileNotFoundError as error:
-            print(f"{error}\n")
+        except FileNotFoundError:
             return
 
     def toggle_headless_mode(self):
