@@ -1,5 +1,6 @@
 import unicodedata
 from datetime import datetime
+from pathlib import Path
 from time import sleep
 
 import pandas as pd
@@ -54,25 +55,36 @@ class DataManager:
     def visualizer(self):
         ahgora_files = [file for file in AHGORA_DIR.iterdir()]
         fiorilli_files = [file for file in FIORILLI_DIR.iterdir()]
+        tasks_file = [file for file in TASKS_DIR.iterdir()]
         files = {
             str(file.parent).split("\\")[-1] + "\\" + str(file.name): file
-            for file in ahgora_files + fiorilli_files
+            for file in ahgora_files + fiorilli_files + tasks_file
         }
         files["Voltar"] = None
-
         while True:
-            option = inquirer.rawlist(
+            option = inquirer.select(
                 message="Selecione um arquivo",
-                choices=files.keys(),
+                choices=[
+                    f"{i + 1}) {item[0]}"
+                    for i, item in enumerate(
+                        files.items(),
+                    )
+                ],
                 mandatory=False,
                 keybindings=INQUIRER_KEYBINDINGS,
             ).execute()
+            if not option:
+                continue
 
-            if not option or "Voltar" in option:
+            if "Voltar" in option:
                 spinner()
                 return
 
-            df = self.read_csv(files[option])
+            df = self.read_csv(files[option[3:].strip()])
+            if df.empty:
+                console.print("Vazio.")
+                continue
+
             columns = df.columns.to_list()
 
             choices = []
@@ -182,42 +194,84 @@ class DataManager:
 
     def read_csv(
         self,
-        path: str,
+        path: Path,
         sep: str = ",",
         encoding: str = "utf-8",
         header: str | None = "infer",
         columns: list[str] = [],
     ):
-        if "raw_employees.txt" in str(path):
-            sep = "|"
-            encoding = "latin1"
-            header = None
-            columns = RAW_FIORILLI_EMPLOYEES_COLUMNS
+        match path.name:
+            case "raw_employees.txt":
+                return self.prepare_dataframe(
+                    df=pd.read_csv(
+                        path,
+                        sep="|",
+                        encoding="latin1",
+                        index_col=False,
+                        header=None,
+                    ),
+                    columns=RAW_FIORILLI_EMPLOYEES_COLUMNS,
+                )
 
-        if "raw_employees.csv" in str(path):
-            header = None
-            columns = RAW_AHGORA_EMPLOYEES_COLUMNS
+            case "raw_employees.csv":
+                return self.prepare_dataframe(
+                    df=pd.read_csv(
+                        path,
+                        index_col=False,
+                        header=None,
+                    ),
+                    columns=RAW_AHGORA_EMPLOYEES_COLUMNS,
+                )
 
-        if "absences.csv" in str(path):
-            header = None
-            columns = ABSENCES_COLUMNS
+            case "add_absences.csv":
+                return self.prepare_dataframe(
+                    df=pd.read_csv(
+                        path,
+                        index_col=False,
+                        header=None,
+                    ),
+                    columns=UPLOAD_ABSENCES_COLUMNS,
+                )
 
-        if "raw_vacations.txt" in str(path):
-            header = None
-            columns = UPLOAD_ABSENCES_COLUMNS
+            case "absences.csv":
+                return self.prepare_dataframe(
+                    df=pd.read_csv(
+                        path,
+                        index_col=False,
+                        header=None,
+                    ),
+                    columns=ABSENCES_COLUMNS,
+                )
+            case "raw_vacations.txt":
+                return self.prepare_dataframe(
+                    df=pd.read_csv(
+                        path,
+                        index_col=False,
+                        header=None,
+                    ),
+                    columns=UPLOAD_ABSENCES_COLUMNS,
+                )
 
-        if "raw_absences.txt" in str(path):
-            header = None
-            columns = UPLOAD_ABSENCES_COLUMNS
-
-        df = pd.read_csv(
-            path,
-            sep=sep,
-            encoding=encoding,
-            index_col=False,
-            header=header,
-        )
-        return self.prepare_dataframe(df=df, columns=columns)
+            case "raw_absences.txt":
+                return self.prepare_dataframe(
+                    df=pd.read_csv(
+                        path,
+                        index_col=False,
+                        header=None,
+                    ),
+                    columns=UPLOAD_ABSENCES_COLUMNS,
+                )
+            case _:
+                return self.prepare_dataframe(
+                    df=pd.read_csv(
+                        path,
+                        sep=sep,
+                        encoding=encoding,
+                        index_col=False,
+                        header=header,
+                    ),
+                    columns=columns,
+                )
 
     def prepare_dataframe(
         self,
