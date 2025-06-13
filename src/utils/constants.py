@@ -23,11 +23,9 @@ INQUIRER_KEYBINDINGS = {
     ],
     "down": [
         {"key": "down"},
-        {"key": "j"},
     ],
     "up": [
         {"key": "up"},
-        {"key": "k"},
     ],
     "toggle": [
         {"key": "space"},
