@@ -11,7 +11,7 @@ class Task:
         self.option = option
         self.url = (
             "https://app.ahgora.com.br/funcionarios"
-            if name != "add_leaves"
+            if "leaves" not in name
             else "https://app.ahgora.com.br/afastamentos/importa"
         )
 
