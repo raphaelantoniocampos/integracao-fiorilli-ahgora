@@ -1,6 +1,7 @@
 from src.managers.data_manager import DataManager
 from src.managers.download_manager import DownloadManager
 from src.managers.task_manager import TaskManager
+from src.managers.file_manager import FileManager
 from src.utils.config import Config
 from src.utils.constants import MAIN_MENU_OPTIONS
 from src.utils.ui import console, menu_table, spinner
@@ -10,6 +11,7 @@ def main():
     task_manager = TaskManager()
     data_manager = DataManager()
     download_manager = DownloadManager()
+    FileManager.setup()
 
     MENU_ACTIONS = {
         # Downloads

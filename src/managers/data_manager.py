@@ -8,7 +8,7 @@ from InquirerPy import inquirer
 from pandas.errors import EmptyDataError
 from rich.panel import Panel
 
-from src.managers.file_manager import FileManager as file_manager
+from src.managers.file_manager import FileManager
 from src.utils.config import Config
 from src.utils.constants import (
     ABSENCES_COLUMNS,
@@ -119,16 +119,16 @@ class DataManager:
                     leave_codes=leave_codes,
                 )
 
-                file_manager.save_df(
+                FileManager.save_df(
                     df=ahgora_employees,
                     path=AHGORA_DIR / "employees.csv",
                 )
-                file_manager.save_df(
+                FileManager.save_df(
                     df=fiorilli_employees,
                     path=FIORILLI_DIR / "employees.csv",
                 )
 
-                file_manager.save_df(
+                FileManager.save_df(
                     df=all_leaves,
                     path=FIORILLI_DIR / "leaves.csv",
                     header=False,
@@ -536,19 +536,19 @@ class DataManager:
         changed_employees_df,
         new_leaves_df,
     ):
-        file_manager.save_df(
+        FileManager.save_df(
             df=new_employees_df,
             path=TASKS_DIR / "add_employees.csv",
         )
-        file_manager.save_df(
+        FileManager.save_df(
             df=dismissed_employees_df,
             path=TASKS_DIR / "remove_employees.csv",
         )
-        file_manager.save_df(
+        FileManager.save_df(
             df=changed_employees_df,
             path=TASKS_DIR / "update_employees.csv",
         )
-        file_manager.save_df(
+        FileManager.save_df(
             df=new_leaves_df,
             path=TASKS_DIR / "add_leaves.csv",
         )

@@ -5,9 +5,11 @@ from pathlib import Path
 from InquirerPy import inquirer
 from rich.panel import Panel
 
-from src.managers.file_manager import FileManager as file_manager
+from src.managers.file_manager import FileManager
 from src.utils.constants import (
     DATA_DIR,
+    FIORILLI_DIR,
+    TASKS_DIR,
     INQUIRER_KEYBINDINGS,
     JSON_INIT_CONFIG,
 )
@@ -17,8 +19,6 @@ from src.utils.ui import console, spinner
 
 class Config:
     def __init__(self):
-        file_manager.check_dirs()
-        file_manager.move_downloads_to_data_dir()
         self.json_path: Path = DATA_DIR / "config.json"
         self.data: dict = self._load()
         self.update_time_since()
@@ -67,6 +67,7 @@ class Config:
 
         choices = [
             "Configurar Variaveis de Ambiente",
+            "Adicionar Afastamentos Manual",
             "Alterar Headless Mode",
             "Voltar",
         ]
@@ -83,17 +84,21 @@ class Config:
                 return
             case "Alterar Headless Mode":
                 self.toggle_headless_mode()
-                self.menu()
+                self.menu(name)
+            case "Adicionar Afastamentos Manual":
+                FileManager.copy_file(
+                    source=FIORILLI_DIR / "leaves.csv",
+                    destination=TASKS_DIR / "manual_leaves.csv",
+                )
             case "Configurar Variaveis de Ambiente":
                 Creds()
-                self.menu()
+                self.menu(name)
 
     @staticmethod
     def update_last_analisys():
         now = datetime.now()
         last_analisys = {"datetime": now.strftime("%d/%m/%Y, %H:%M"), "time_since": now}
-        config = Config()
-        config._update_analysis_time_since(last_analisys, now)
+        Config()._update_analysis_time_since(last_analisys, now)
 
     def _load(self) -> dict:
         if self.json_path.exists():
@@ -193,7 +198,7 @@ class Config:
         self._update("last_download", file_name, value=file_last_download)
 
     def _get_last_download(self, file_name: str) -> str:
-        file_path = file_manager.file_name_to_file_path(file_name)
+        file_path = FileManager.file_name_to_file_path(file_name)
 
         return datetime.strftime(
             datetime.fromtimestamp(file_path.stat().st_mtime),

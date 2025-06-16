@@ -9,7 +9,7 @@ from rich import print
 from rich.table import Table
 
 from src.managers.data_manager import DataManager
-from src.managers.file_manager import FileManager as file_manager
+from src.managers.file_manager import FileManager
 from src.models.key import Key, wait_key_press
 from src.models.task import Task
 from src.tasks.task_runner import TaskRunner
@@ -22,7 +22,7 @@ from src.utils.constants import (
 from src.utils.ui import spinner, console
 
 
-class AddAbsencesTask(TaskRunner):
+class AddLeavesTask(TaskRunner):
     KEY_CONTINUE = Key("F2", "green", "continuar")
     KEY_STOP = Key("F4", "red3", "sair")
     KEY_REPEAT = Key("F3", "yellow", "repetir")
@@ -124,7 +124,7 @@ class AddAbsencesTask(TaskRunner):
         return
 
     def df_to_upload(self, leaves_df: pd.DataFrame, file_path: Path):
-        file_manager.save_df(
+        FileManager.save_df(
             df=leaves_df,
             path=file_path,
             header=False,
@@ -319,7 +319,7 @@ class AddAbsencesTask(TaskRunner):
         )
 
     def finalize(self, temp_leaves):
-        file_manager.move_file(
+        FileManager.move_file(
             source=temp_leaves,
             destination=TASKS_DIR / "add_leaves.csv",
         )

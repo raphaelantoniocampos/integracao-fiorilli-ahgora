@@ -48,8 +48,7 @@ class CoreBrowser(ABC):
     def _get_web_driver(self) -> webdriver.Firefox:
         """Configures and returns an instance of the Firefox WebDriver"""
         options = webdriver.FirefoxOptions()
-        config = Config()
-        if config.headless_mode:
+        if Config().headless_mode:
             options.add_argument("-headless")
         options.set_preference("browser.download.folderList", 2)
         options.set_preference("browser.download.dir", str(DOWNLOADS_DIR))

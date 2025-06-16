@@ -1,3 +1,4 @@
+import shutil
 from pathlib import Path
 
 from pandas import DataFrame
@@ -13,6 +14,12 @@ from src.utils.constants import (
 
 
 class FileManager:
+    @staticmethod
+    def setup():
+        FileManager.check_dirs()
+        FileManager.move_downloads_to_data_dir()
+        FileManager.clean_manual_leaves()
+
     @staticmethod
     def move_downloads_to_data_dir():
         for file in DOWNLOADS_DIR.iterdir():
@@ -45,6 +52,10 @@ class FileManager:
         print(f"[bold green]Arquivo movido:[/bold green]{source.name} -> {destination}")
 
     @staticmethod
+    def copy_file(source: Path, destination: Path):
+        shutil.copy2(source, destination)
+
+    @staticmethod
     def save_df(
         df: DataFrame,
         path: Path,
@@ -75,3 +86,9 @@ class FileManager:
 
         for dir in dirs_to_check:
             dir.mkdir(exist_ok=True)
+
+    @staticmethod
+    def clean_manual_leaves():
+        manual_leaves_path = TASKS_DIR / "manual_leaves.csv"
+        if manual_leaves_path.exists():
+            manual_leaves_path.unlink()

@@ -6,7 +6,7 @@ from rich.panel import Panel
 
 from src.managers.data_manager import DataManager
 from src.models.task import Task
-from src.tasks.add_leaves_task import AddAbsencesTask
+from src.tasks.add_leaves_task import AddLeavesTask
 from src.tasks.add_employees_task import AddEmployeesTask
 from src.tasks.remove_employees_task import RemoveEmployeesTask
 from src.tasks.update_employees_task import UpdateEmployeesTask
@@ -24,11 +24,6 @@ class TaskManager:
             )
         )
         tasks_choices = {task.option: task for task in tasks if not task.df.empty}
-
-        if not tasks_choices:
-            tasks_choices["Adicionar Afastamentos Manual"] = self.name_to_task(
-                "add_leaves"
-            )
 
         tasks_choices["Voltar"] = ""
 
@@ -53,7 +48,9 @@ class TaskManager:
             case "update_employees":
                 UpdateEmployeesTask(task)
             case "add_leaves":
-                AddAbsencesTask(task)
+                AddLeavesTask(task)
+            case "manual_leaves":
+                AddLeavesTask(task)
 
     @staticmethod
     def get_tasks() -> list[Task]:
@@ -63,6 +60,7 @@ class TaskManager:
             tm.name_to_task("remove_employees"),
             tm.name_to_task("update_employees"),
             tm.name_to_task("add_leaves"),
+            tm.name_to_task("manual_leaves"),
         ]
 
     def name_to_task(self, name: str) -> Task:
@@ -90,18 +88,18 @@ class TaskManager:
         return TASKS_DIR / f"{name}.csv"
 
     def _get_option(self, name: str, df: DataFrame) -> str:
-        if df.empty:
-            return ""
-
         match name:
             case "add_employees":
-                return f"Adicionar {len(df)} funcionários"
+                return "" if df.empty else f"Adicionar {len(df)} funcionários"
 
             case "remove_employees":
-                return f"Remover {len(df)} funcionários"
+                return "" if df.empty else f"Remover {len(df)} funcionários"
 
             case "update_employees":
-                return f"Atualizar {len(df)} funcionários"
+                return "" if df.empty else f"Atualizar {len(df)} funcionários"
 
             case "add_leaves":
-                return f"Adicionar (+/- {len(df)}) afastamentos"
+                return "" if df.empty else f"Adicionar (+/- {len(df)}) afastamentos"
+
+            case "manual_leaves":
+                return "" if df.empty else "Adicionar Afastamentos Manual"
