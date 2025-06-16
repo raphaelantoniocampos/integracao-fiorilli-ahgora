@@ -527,10 +527,10 @@ class DataManager:
 
     def save_tasks_dfs(
         self,
-        new_employees_df,
-        dismissed_employees_df,
-        changed_employees_df,
-        new_leaves_df,
+        new_employees_df: pd.DataFrame,
+        dismissed_employees_df: pd.DataFrame,
+        changed_employees_df: pd.DataFrame,
+        new_leaves_df: pd.DataFrame | None,
     ):
         FileManager.save_df(
             df=new_employees_df,
@@ -559,7 +559,7 @@ class DataManager:
         return ahgora_employees, fiorilli_employees
 
     def get_leaves_data(self) -> pd.DataFrame:
-        last_leaves_path = TASKS_DIR / "add_leaves.csv"
+        last_leaves_path = FIORILLI_DIR / "leaves.csv"
         raw_leaves_path = FIORILLI_DIR / "raw_leaves.txt"
         raw_vacations_path = FIORILLI_DIR / "raw_vacations.txt"
 

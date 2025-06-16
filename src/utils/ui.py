@@ -25,7 +25,7 @@ def header():
 
 def spinner(
     wait_string: str = "Voltando",
-    wait_time: float = 0.40,
+    wait_time: float = 0.15,
 ):
     with console.status(
         f"[bold green]{wait_string}...[/bold green]",

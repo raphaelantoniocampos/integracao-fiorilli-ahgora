@@ -99,7 +99,7 @@ class TaskManager:
                 return "" if df.empty else f"Atualizar {len(df)} funcionários"
 
             case "add_leaves":
-                return "" if df.empty else f"Adicionar (+/- {len(df)}) afastamentos"
+                return "" if df.empty else f"Adicionar +/- {len(df)} afastamentos"
 
             case "manual_leaves":
                 return "" if df.empty else "Adicionar Afastamentos Manual"
