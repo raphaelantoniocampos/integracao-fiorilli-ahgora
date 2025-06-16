@@ -40,8 +40,13 @@ class TaskRunner(ABC):
 
         if inquirer.confirm(message="Iniciar?", default=True).execute():
             url = self.task.url
-            if inquirer.confirm(message="Abrir navegador?", default=True).execute():
+            open_browser_prompt = inquirer.confirm(
+                message="Abrir navegador?", default=True
+            ).execute()
+            if open_browser_prompt:
                 self._open_browser(url)
+                self.run()
+                return
             print(f"URL '{url}' copiada para a área de transferência!)")
             copy(url)
             wait_key_press(self.KEY_CONTINUE)

@@ -15,11 +15,10 @@ from src.models.task import Task
 from src.tasks.task_runner import TaskRunner
 from src.utils.constants import (
     FIORILLI_DIR,
-    TASKS_DIR,
     LEAVES_COLUMNS,
     UPLOAD_LEAVES_COLUMNS,
 )
-from src.utils.ui import spinner, console
+from src.utils.ui import console, spinner
 
 
 class AddLeavesTask(TaskRunner):
@@ -46,9 +45,7 @@ class AddLeavesTask(TaskRunner):
 
         data_manager = DataManager()
 
-        leaves_df = data_manager.read_csv(
-            view_leaves_path, columns=LEAVES_COLUMNS
-        )
+        leaves_df = data_manager.read_csv(view_leaves_path, columns=LEAVES_COLUMNS)
         while True:
             self.df_to_upload(leaves_df, upload_leaves_path)
             self.ask_to_insert_file(upload_leaves_path)
@@ -76,9 +73,7 @@ class AddLeavesTask(TaskRunner):
             ).execute():
                 repeat = True
                 while repeat:
-                    leaves_df = self.edit_leaves_interactive(
-                        leaves_df, filter_path
-                    )
+                    leaves_df = self.edit_leaves_interactive(leaves_df, filter_path)
                     if leaves_df is not None:
                         self.df_to_upload(leaves_df, upload_leaves_path)
                     if not inquirer.confirm(
@@ -104,7 +99,6 @@ class AddLeavesTask(TaskRunner):
         spinner("Aguarde")
         if file_size == 0:
             print("\nNenhum novo afastamento.")
-            self.finalize(view_leaves_path)
             self.exit_task()
             return
 
@@ -120,7 +114,7 @@ class AddLeavesTask(TaskRunner):
         wait_key_press(self.KEY_CONTINUE)
 
         spinner("Aguarde")
-        self.finalize(view_leaves_path)
+        self.exit_task()
         return
 
     def df_to_upload(self, leaves_df: pd.DataFrame, file_path: Path):
@@ -317,10 +311,3 @@ class AddLeavesTask(TaskRunner):
                 str(self.temp_dir_path)
             }' copiado para a área de transferência!)\n"
         )
-
-    def finalize(self, temp_leaves):
-        FileManager.move_file(
-            source=temp_leaves,
-            destination=TASKS_DIR / "add_leaves.csv",
-        )
-        spinner()
