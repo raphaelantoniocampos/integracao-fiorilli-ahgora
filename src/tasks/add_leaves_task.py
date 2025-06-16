@@ -16,8 +16,8 @@ from src.tasks.task_runner import TaskRunner
 from src.utils.constants import (
     FIORILLI_DIR,
     TASKS_DIR,
-    ABSENCES_COLUMNS,
-    UPLOAD_ABSENCES_COLUMNS,
+    LEAVES_COLUMNS,
+    UPLOAD_LEAVES_COLUMNS,
 )
 from src.utils.ui import spinner, console
 
@@ -47,7 +47,7 @@ class AddLeavesTask(TaskRunner):
         data_manager = DataManager()
 
         leaves_df = data_manager.read_csv(
-            view_leaves_path, columns=ABSENCES_COLUMNS
+            view_leaves_path, columns=LEAVES_COLUMNS
         )
         while True:
             self.df_to_upload(leaves_df, upload_leaves_path)
@@ -128,7 +128,7 @@ class AddLeavesTask(TaskRunner):
             df=leaves_df,
             path=file_path,
             header=False,
-            columns=UPLOAD_ABSENCES_COLUMNS,
+            columns=UPLOAD_LEAVES_COLUMNS,
         )
 
     def filter_lines(self, leaves_path, upload_file_path, filter_numbers) -> int:

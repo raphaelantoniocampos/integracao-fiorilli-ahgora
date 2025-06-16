@@ -11,7 +11,7 @@ from rich.panel import Panel
 from src.managers.file_manager import FileManager
 from src.utils.config import Config
 from src.utils.constants import (
-    ABSENCES_COLUMNS,
+    LEAVES_COLUMNS,
     AHGORA_DIR,
     DATA_DIR,
     FIORILLI_DIR,
@@ -20,7 +20,7 @@ from src.utils.constants import (
     RAW_AHGORA_EMPLOYEES_COLUMNS,
     RAW_FIORILLI_EMPLOYEES_COLUMNS,
     TASKS_DIR,
-    UPLOAD_ABSENCES_COLUMNS,
+    UPLOAD_LEAVES_COLUMNS,
 )
 from src.utils.ui import console, spinner
 
@@ -142,6 +142,7 @@ class DataManager:
                 )
 
             Config.update_last_analisys()
+            FileManager.setup()
             console.print("[bold green]Dados sincronizados com sucesso![/bold green]\n")
             sleep(1)
         except KeyboardInterrupt as e:
@@ -185,7 +186,7 @@ class DataManager:
         ).dt.days + 1
         leaves_df["duration"] = leaves_df["duration"].clip(lower=1)
 
-        leaves_df = leaves_df[ABSENCES_COLUMNS]
+        leaves_df = leaves_df[LEAVES_COLUMNS]
         return leaves_df
 
     @staticmethod
@@ -199,7 +200,7 @@ class DataManager:
         encoding: str = "utf-8",
         header: str | None = "infer",
         columns: list[str] = [],
-    ):
+    ) -> pd.DataFrame:
         match path.name:
             case "raw_employees.txt":
                 return self.prepare_dataframe(
@@ -230,7 +231,7 @@ class DataManager:
                         index_col=False,
                         header=None,
                     ),
-                    columns=ABSENCES_COLUMNS,
+                    columns=LEAVES_COLUMNS,
                 )
             case "raw_vacations.txt":
                 return self.prepare_dataframe(
@@ -239,7 +240,7 @@ class DataManager:
                         index_col=False,
                         header=None,
                     ),
-                    columns=UPLOAD_ABSENCES_COLUMNS,
+                    columns=UPLOAD_LEAVES_COLUMNS,
                 )
 
             case "raw_leaves.txt":
@@ -249,7 +250,7 @@ class DataManager:
                         index_col=False,
                         header=None,
                     ),
-                    columns=UPLOAD_ABSENCES_COLUMNS,
+                    columns=UPLOAD_LEAVES_COLUMNS,
                 )
             case _:
                 return self.prepare_dataframe(
@@ -265,9 +266,9 @@ class DataManager:
 
     def prepare_dataframe(
         self,
-        df,
+        df: pd.DataFrame,
         columns: list[str] = [],
-    ):
+    ) -> pd.DataFrame:
         if columns:
             df.columns = columns
         else:
@@ -483,19 +484,6 @@ class DataManager:
 
         return changed_employees_df
 
-        # position_changed = (
-        #     merged_employees["position_fiorilli_norm"]
-        #     != merged_employees["position_ahgora_norm"]
-        # )
-        # location_changed = (
-        #     merged_employees["department_fiorilli_norm"]
-        #     != merged_employees["department_ahgora_norm"]
-        # )
-
-        # changed_employees_df = merged_employees[position_changed | location_changed]
-        #
-        # return changed_employees_df
-
     def _get_new_leaves_df(
         self,
         last_leaves: pd.DataFrame,
@@ -510,12 +498,20 @@ class DataManager:
                             format="%d/%m/%Y",
                         )
 
-            merged = pd.merge(last_leaves, all_leaves, how="outer", indicator=True)
-            new_leaves = merged[merged["_merge"] == "right_only"].drop("_merge", axis=1)
+            merged = pd.merge(
+                last_leaves,
+                all_leaves,
+                how="outer",
+                indicator=True,
+            )
+            new_leaves = merged[merged["_merge"] == "right_only"].drop(
+                "_merge",
+                axis=1,
+            )
             return new_leaves
 
         except TypeError:
-            return all_leaves
+            return pd.DataFrame(columns=LEAVES_COLUMNS)
 
     def normalize_text(self, text):
         if pd.isna(text):
@@ -572,7 +568,7 @@ class DataManager:
                 last_leaves_path,
             )
         except FileNotFoundError:
-            last_leaves = pd.DataFrame
+            last_leaves = pd.DataFrame(columns=LEAVES_COLUMNS)
         try:
             all_leaves = pd.concat(
                 [
