@@ -22,10 +22,10 @@ class FiorilliBrowser(CoreBrowser):
         )
 
     @staticmethod
-    def download_absences_data() -> None:
+    def download_leaves_data() -> None:
         fiorilli_browser = FiorilliBrowser()
         fiorilli_browser.retry_func(
-            func=lambda: fiorilli_browser._start_absences_download(),
+            func=lambda: fiorilli_browser._start_leaves_download(),
             max_tries=2,
         )
 
@@ -59,7 +59,7 @@ class FiorilliBrowser(CoreBrowser):
             self.close_driver()
         print("[bold green]Download de funcionários do FIORILLI concluído[/bold green]")
 
-    def _start_absences_download(self) -> None:
+    def _start_leaves_download(self) -> None:
         ()
         with self.console.status(
             "Baixando [yellow]afastamentos[/] do FIORILLI", spinner="dots"

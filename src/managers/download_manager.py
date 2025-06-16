@@ -13,7 +13,7 @@ DOWNLOAD_MESSAGE = "Selecione as opções de download"
 
 class DownloadManager:
     DOWNLOAD_OPTIONS = {
-        "Afastamentos": FiorilliBrowser.download_absences_data,
+        "Afastamentos": FiorilliBrowser.download_leaves_data,
         "Funcionários Ahgora": AhgoraBrowser.download_employees_data,
         "Funcionários Fiorilli": FiorilliBrowser.download_employees_data,
     }

@@ -35,23 +35,23 @@ class AddAbsencesTask(TaskRunner):
     def run(self):
         print(f"\n[bold yellow]{'-' * 15} AFASTAMENTOS! {'-' * 15}[/bold yellow]")
 
-        absences_bytes = (FIORILLI_DIR / "absences.csv").read_bytes()
+        leaves_bytes = (FIORILLI_DIR / "leaves.csv").read_bytes()
 
-        view_absences_path = self.temp_dir_path / "absences.csv"
-        upload_absences_path = self.temp_dir_path / "upload_absences.csv"
+        view_leaves_path = self.temp_dir_path / "leaves.csv"
+        upload_leaves_path = self.temp_dir_path / "upload_leaves.csv"
         filter_path = self.temp_dir_path / "filter.txt"
         upload_file_path = self.temp_dir_path / "upload.txt"
 
-        view_absences_path.write_bytes(absences_bytes)
+        view_leaves_path.write_bytes(leaves_bytes)
 
         data_manager = DataManager()
 
-        absences_df = data_manager.read_csv(
-            view_absences_path, columns=ABSENCES_COLUMNS
+        leaves_df = data_manager.read_csv(
+            view_leaves_path, columns=ABSENCES_COLUMNS
         )
         while True:
-            self.df_to_upload(absences_df, upload_absences_path)
-            self.ask_to_insert_file(upload_absences_path)
+            self.df_to_upload(leaves_df, upload_leaves_path)
+            self.ask_to_insert_file(upload_leaves_path)
 
             if wait_key_press([self.KEY_CONTINUE, self.KEY_STOP]) == "sair":
                 return
@@ -76,11 +76,11 @@ class AddAbsencesTask(TaskRunner):
             ).execute():
                 repeat = True
                 while repeat:
-                    absences_df = self.edit_absences_interactive(
-                        absences_df, filter_path
+                    leaves_df = self.edit_leaves_interactive(
+                        leaves_df, filter_path
                     )
-                    if absences_df is not None:
-                        self.df_to_upload(absences_df, upload_absences_path)
+                    if leaves_df is not None:
+                        self.df_to_upload(leaves_df, upload_leaves_path)
                     if not inquirer.confirm(
                         message="Continuar editando?",
                         default=True,
@@ -96,7 +96,7 @@ class AddAbsencesTask(TaskRunner):
         filter_numbers = self.read_filter_numbers(filter_path)
 
         file_size = self.filter_lines(
-            upload_absences_path,
+            upload_leaves_path,
             upload_file_path,
             filter_numbers,
         )
@@ -104,36 +104,36 @@ class AddAbsencesTask(TaskRunner):
         spinner("Aguarde")
         if file_size == 0:
             print("\nNenhum novo afastamento.")
-            self.finalize(view_absences_path)
+            self.finalize(view_leaves_path)
             self.exit_task()
             return
 
-        self.show_absences(
-            absences_df.drop(
+        self.show_leaves(
+            leaves_df.drop(
                 [x - 1 for x in filter_numbers],
                 axis=0,
             )
         )
-        print("Arquivo '[bold green]new_absences.txt[/bold green]' gerado com sucesso!")
+        print("Arquivo '[bold green]new_leaves.txt[/bold green]' gerado com sucesso!")
 
         self.ask_to_insert_file(upload_file_path)
         wait_key_press(self.KEY_CONTINUE)
 
         spinner("Aguarde")
-        self.finalize(view_absences_path)
+        self.finalize(view_leaves_path)
         return
 
-    def df_to_upload(self, absences_df: pd.DataFrame, file_path: Path):
+    def df_to_upload(self, leaves_df: pd.DataFrame, file_path: Path):
         file_manager.save_df(
-            df=absences_df,
+            df=leaves_df,
             path=file_path,
             header=False,
             columns=UPLOAD_ABSENCES_COLUMNS,
         )
 
-    def filter_lines(self, absences_path, upload_file_path, filter_numbers) -> int:
+    def filter_lines(self, leaves_path, upload_file_path, filter_numbers) -> int:
         with (
-            open(absences_path, "r", encoding="utf-8") as infile,
+            open(leaves_path, "r", encoding="utf-8") as infile,
             open(upload_file_path, "w", encoding="utf-8") as outfile,
         ):
             lines_written = 0
@@ -192,7 +192,7 @@ class AddAbsencesTask(TaskRunner):
                 for error in errors:
                     print(f"  - {error}")
 
-    def edit_absences_interactive(self, df, filter_path):
+    def edit_leaves_interactive(self, df, filter_path):
         """Permite edição interativa dos afastamentos"""
         choices = []
         for i, series in df.iterrows():
@@ -261,7 +261,7 @@ class AddAbsencesTask(TaskRunner):
         print("\n[bold green]Afastamento atualizado com sucesso![/bold green]")
         return df
 
-    def show_absences(self, df):
+    def show_leaves(self, df):
         """Mostra todos os afastamentos de forma formatada"""
         table = Table(show_header=True, header_style="bold magenta")
         table.add_column("ID", style="dim")
@@ -318,9 +318,9 @@ class AddAbsencesTask(TaskRunner):
             }' copiado para a área de transferência!)\n"
         )
 
-    def finalize(self, temp_absences):
+    def finalize(self, temp_leaves):
         file_manager.move_file(
-            source=temp_absences,
-            destination=TASKS_DIR / "add_absences.csv",
+            source=temp_leaves,
+            destination=TASKS_DIR / "add_leaves.csv",
         )
         spinner()

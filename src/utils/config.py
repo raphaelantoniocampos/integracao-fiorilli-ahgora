@@ -32,7 +32,7 @@ class Config:
             "fiorilli_employees"
         ]
         self.last_download_ahgora = self.data.get("last_download")["ahgora_employees"]
-        self.last_download_absences = self.data.get("last_download")["absences"]
+        self.last_download_leaves = self.data.get("last_download")["leaves"]
 
     def menu(self, name) -> None:
         self.update_time_since()
@@ -53,8 +53,8 @@ class Config:
             }[/] atrás)
 
 [cyan]•[/] [bold]Downloads[/]:
-  • Afastamentos - {self.last_download_absences["datetime"]} ([bold]{
-                self.last_download_absences["time_since"]
+  • Afastamentos - {self.last_download_leaves["datetime"]} ([bold]{
+                self.last_download_leaves["time_since"]
             }[/] atrás)
   • Funcionários Fiorilli - {self.last_download_fiorilli["datetime"]} ([bold]{
                 self.last_download_fiorilli["time_since"]
@@ -156,7 +156,7 @@ class Config:
             last_download = self.data.get("last_download")
             self._update_downloads_time_since(last_download, "ahgora_employees", now)
             self._update_downloads_time_since(last_download, "fiorilli_employees", now)
-            self._update_downloads_time_since(last_download, "absences", now)
+            self._update_downloads_time_since(last_download, "leaves", now)
         except FileNotFoundError:
             return
 

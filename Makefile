@@ -27,7 +27,7 @@ build:
 	@echo "--------------------------------------------------"
 	$(PYINSTALLER_CMD)
 	@echo "--------------------------------------------------"
-	@xcopy /Y /I "$(PROJECT_ROOT)\data\absence_codes.csv" "$(PROJECT_ROOT)\dist\$(APP_NAME)\data\"
+	@xcopy /Y /I "$(PROJECT_ROOT)\data\leave_codes.csv" "$(PROJECT_ROOT)\dist\$(APP_NAME)\data\"
 	@echo "Build concluido!"
 	@echo "Executavel em: $(PROJECT_ROOT)/dist/$(APP_NAME)/"
 	@echo "--------------------------------------------------"

@@ -29,7 +29,7 @@ class FileManager:
             elif "pontoafastamentos" in file.name.lower():
                 FileManager.move_file(
                     source=file,
-                    destination=FIORILLI_DIR / "raw_absences.txt",
+                    destination=FIORILLI_DIR / "raw_leaves.txt",
                 )
             elif "pontoferias" in file.name.lower():
                 FileManager.move_file(
@@ -66,8 +66,8 @@ class FileManager:
                 return AHGORA_DIR / "raw_employees.csv"
             case "fiorilli_employees":
                 return FIORILLI_DIR / "raw_employees.txt"
-            case "absences":
-                return FIORILLI_DIR / "raw_absences.txt"
+            case "leaves":
+                return FIORILLI_DIR / "raw_leaves.txt"
 
     @staticmethod
     def check_dirs():

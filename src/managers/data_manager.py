@@ -108,15 +108,15 @@ class DataManager:
                 "[bold green]Analisando dados...[/bold green]", spinner="dots"
             ):
                 ahgora_employees, fiorilli_employees = self.get_employees_data()
-                last_absences, all_absences = self.get_absences_data()
+                last_leaves, all_leaves = self.get_leaves_data()
 
-                absence_codes = self.read_csv(
-                    DATA_DIR / "absence_codes.csv", columns=["cod", "desc"]
+                leave_codes = self.read_csv(
+                    DATA_DIR / "leave_codes.csv", columns=["cod", "desc"]
                 )
-                all_absences = self.get_view_absences(
-                    all_absences,
+                all_leaves = self.get_view_leaves(
+                    all_leaves,
                     fiorilli_employees,
-                    absence_codes=absence_codes,
+                    leave_codes=leave_codes,
                 )
 
                 file_manager.save_df(
@@ -129,16 +129,16 @@ class DataManager:
                 )
 
                 file_manager.save_df(
-                    df=all_absences,
-                    path=FIORILLI_DIR / "absences.csv",
+                    df=all_leaves,
+                    path=FIORILLI_DIR / "leaves.csv",
                     header=False,
                 )
 
                 self.generate_tasks_dfs(
                     fiorilli_employees=fiorilli_employees,
                     ahgora_employees=ahgora_employees,
-                    last_absences=last_absences,
-                    all_absences=all_absences,
+                    last_leaves=last_leaves,
+                    all_leaves=all_leaves,
                 )
 
             Config.update_last_analisys()
@@ -157,36 +157,36 @@ class DataManager:
             console.print("Pressione [green]qualquer tecla[/] para continuar...")
             input()
 
-    def get_view_absences(
+    def get_view_leaves(
         self,
-        absences_df: pd.DataFrame,
+        leaves_df: pd.DataFrame,
         fiorilli_employees: pd.DataFrame,
-        absence_codes: pd.DataFrame,
+        leave_codes: pd.DataFrame,
     ) -> pd.DataFrame:
-        absences_df["start_date"] = pd.to_datetime(
-            absences_df["start_date"],
+        leaves_df["start_date"] = pd.to_datetime(
+            leaves_df["start_date"],
             format="%d/%m/%Y",
         )
-        absences_df["end_date"] = pd.to_datetime(
-            absences_df["end_date"],
+        leaves_df["end_date"] = pd.to_datetime(
+            leaves_df["end_date"],
             format="%d/%m/%Y",
         )
 
-        absences_df = absences_df.merge(
+        leaves_df = leaves_df.merge(
             fiorilli_employees[["id", "name"]], on="id", how="left"
         )
 
-        absences_df = absences_df.merge(
-            absence_codes[["cod", "desc"]], on="cod", how="left"
+        leaves_df = leaves_df.merge(
+            leave_codes[["cod", "desc"]], on="cod", how="left"
         ).rename(columns={"desc": "cod_name"})
 
-        absences_df["duration"] = (
-            absences_df["end_date"] - absences_df["start_date"]
+        leaves_df["duration"] = (
+            leaves_df["end_date"] - leaves_df["start_date"]
         ).dt.days + 1
-        absences_df["duration"] = absences_df["duration"].clip(lower=1)
+        leaves_df["duration"] = leaves_df["duration"].clip(lower=1)
 
-        absences_df = absences_df[ABSENCES_COLUMNS]
-        return absences_df
+        leaves_df = leaves_df[ABSENCES_COLUMNS]
+        return leaves_df
 
     @staticmethod
     def filter_df(df: pd.DataFrame, ids: list[str]) -> pd.DataFrame:
@@ -223,17 +223,7 @@ class DataManager:
                     columns=RAW_AHGORA_EMPLOYEES_COLUMNS,
                 )
 
-            case "add_absences.csv":
-                return self.prepare_dataframe(
-                    df=pd.read_csv(
-                        path,
-                        index_col=False,
-                        header=None,
-                    ),
-                    columns=UPLOAD_ABSENCES_COLUMNS,
-                )
-
-            case "absences.csv":
+            case "leaves.csv":
                 return self.prepare_dataframe(
                     df=pd.read_csv(
                         path,
@@ -252,7 +242,7 @@ class DataManager:
                     columns=UPLOAD_ABSENCES_COLUMNS,
                 )
 
-            case "raw_absences.txt":
+            case "raw_leaves.txt":
                 return self.prepare_dataframe(
                     df=pd.read_csv(
                         path,
@@ -359,8 +349,8 @@ class DataManager:
         self,
         fiorilli_employees: pd.DataFrame,
         ahgora_employees: pd.DataFrame,
-        last_absences: pd.DataFrame,
-        all_absences: pd.DataFrame,
+        last_leaves: pd.DataFrame,
+        all_leaves: pd.DataFrame,
     ) -> None:
         fiorilli_dismissed_df = fiorilli_employees[
             fiorilli_employees["dismissal_date"].notna()
@@ -392,16 +382,16 @@ class DataManager:
             fiorilli_active_employees=fiorilli_active_employees,
             ahgora_employees=ahgora_employees,
         )
-        new_absences_df = self._get_new_absences_df(
-            last_absences=last_absences,
-            all_absences=all_absences,
+        new_leaves_df = self._get_new_leaves_df(
+            last_leaves=last_leaves,
+            all_leaves=all_leaves,
         )
 
         self.save_tasks_dfs(
             new_employees_df=new_employees_df,
             dismissed_employees_df=dismissed_employees_df,
             changed_employees_df=changed_employees_df,
-            new_absences_df=new_absences_df,
+            new_leaves_df=new_leaves_df,
         )
 
     def _get_new_employees_df(
@@ -506,13 +496,13 @@ class DataManager:
         #
         # return changed_employees_df
 
-    def _get_new_absences_df(
+    def _get_new_leaves_df(
         self,
-        last_absences: pd.DataFrame,
-        all_absences: pd.DataFrame,
+        last_leaves: pd.DataFrame,
+        all_leaves: pd.DataFrame,
     ) -> pd.DataFrame:
         try:
-            for df in [last_absences, all_absences]:
+            for df in [last_leaves, all_leaves]:
                 for col in ["start_date", "end_date"]:
                     if col in df.columns:
                         df[col] = pd.to_datetime(
@@ -520,14 +510,12 @@ class DataManager:
                             format="%d/%m/%Y",
                         )
 
-            merged = pd.merge(last_absences, all_absences, how="outer", indicator=True)
-            new_absences = merged[merged["_merge"] == "right_only"].drop(
-                "_merge", axis=1
-            )
-            return new_absences
+            merged = pd.merge(last_leaves, all_leaves, how="outer", indicator=True)
+            new_leaves = merged[merged["_merge"] == "right_only"].drop("_merge", axis=1)
+            return new_leaves
 
         except TypeError:
-            return all_absences
+            return all_leaves
 
     def normalize_text(self, text):
         if pd.isna(text):
@@ -546,7 +534,7 @@ class DataManager:
         new_employees_df,
         dismissed_employees_df,
         changed_employees_df,
-        new_absences_df,
+        new_leaves_df,
     ):
         file_manager.save_df(
             df=new_employees_df,
@@ -561,8 +549,8 @@ class DataManager:
             path=TASKS_DIR / "update_employees.csv",
         )
         file_manager.save_df(
-            df=new_absences_df,
-            path=TASKS_DIR / "add_abcenses.csv",
+            df=new_leaves_df,
+            path=TASKS_DIR / "add_leaves.csv",
         )
 
     def get_employees_data(self) -> (pd.DataFrame, pd.DataFrame):
@@ -574,28 +562,28 @@ class DataManager:
         ahgora_employees = self.read_csv(raw_ahgora_employees)
         return ahgora_employees, fiorilli_employees
 
-    def get_absences_data(self) -> pd.DataFrame:
-        last_absences_path = TASKS_DIR / "add_absences.csv"
-        raw_absences_path = FIORILLI_DIR / "raw_absences.txt"
+    def get_leaves_data(self) -> pd.DataFrame:
+        last_leaves_path = TASKS_DIR / "add_leaves.csv"
+        raw_leaves_path = FIORILLI_DIR / "raw_leaves.txt"
         raw_vacations_path = FIORILLI_DIR / "raw_vacations.txt"
 
         try:
-            last_absences = self.read_csv(
-                last_absences_path,
+            last_leaves = self.read_csv(
+                last_leaves_path,
             )
         except FileNotFoundError:
-            last_absences = pd.DataFrame
+            last_leaves = pd.DataFrame
         try:
-            all_absences = pd.concat(
+            all_leaves = pd.concat(
                 [
                     self.read_csv(raw_vacations_path),
-                    self.read_csv(raw_absences_path),
+                    self.read_csv(raw_leaves_path),
                 ]
             )
         except EmptyDataError:
-            all_absences = pd.DataFrame
+            all_leaves = pd.DataFrame
 
-        return last_absences, all_absences
+        return last_leaves, all_leaves
 
     def treat_exceptions_and_typos(self, text: str) -> str:
         if text == "VIGILACIA EM SAUDE":

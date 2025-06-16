@@ -6,7 +6,7 @@ from rich.panel import Panel
 
 from src.managers.data_manager import DataManager
 from src.models.task import Task
-from src.tasks.add_absences_task import AddAbsencesTask
+from src.tasks.add_leaves_task import AddAbsencesTask
 from src.tasks.add_employees_task import AddEmployeesTask
 from src.tasks.remove_employees_task import RemoveEmployeesTask
 from src.tasks.update_employees_task import UpdateEmployeesTask
@@ -23,12 +23,18 @@ class TaskManager:
                 style="bold cyan",
             )
         )
-        choice = {task.option: task for task in tasks if not task.df.empty}
-        choice["Voltar"] = ""
+        tasks_choices = {task.option: task for task in tasks if not task.df.empty}
+
+        if not tasks_choices:
+            tasks_choices["Adicionar Afastamentos Manual"] = self.name_to_task(
+                "add_leaves"
+            )
+
+        tasks_choices["Voltar"] = ""
 
         option = inquirer.rawlist(
             message="Selecione uma tarefa",
-            choices=choice.keys(),
+            choices=tasks_choices.keys(),
             keybindings=INQUIRER_KEYBINDINGS,
         ).execute()
 
@@ -36,7 +42,7 @@ class TaskManager:
             spinner()
             return
 
-        self.run_task(choice[option])
+        self.run_task(tasks_choices[option])
 
     def run_task(self, task: Task):
         match task.name:
@@ -46,7 +52,7 @@ class TaskManager:
                 RemoveEmployeesTask(task)
             case "update_employees":
                 UpdateEmployeesTask(task)
-            case "add_absences":
+            case "add_leaves":
                 AddAbsencesTask(task)
 
     @staticmethod
@@ -56,7 +62,7 @@ class TaskManager:
             tm.name_to_task("add_employees"),
             tm.name_to_task("remove_employees"),
             tm.name_to_task("update_employees"),
-            tm.name_to_task("add_absences"),
+            tm.name_to_task("add_leaves"),
         ]
 
     def name_to_task(self, name: str) -> Task:
@@ -97,5 +103,5 @@ class TaskManager:
             case "update_employees":
                 return f"Atualizar {len(df)} funcionários"
 
-            case "add_absences":
+            case "add_leaves":
                 return f"Adicionar (+/- {len(df)}) afastamentos"
