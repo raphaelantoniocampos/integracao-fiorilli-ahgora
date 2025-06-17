@@ -33,7 +33,7 @@ class TaskManager:
             keybindings=INQUIRER_KEYBINDINGS,
         ).execute()
 
-        if "Voltar" in option:
+        if option == "Voltar":
             spinner()
             return
 

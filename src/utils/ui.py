@@ -7,20 +7,15 @@ from rich.panel import Panel
 from src.models.task import Task
 from src.utils.constants import (
     INQUIRER_KEYBINDINGS,
-    MAIN_MENU_OPTIONS,
+    MAIN_MENU_CHOICES,
 )
 
+
+DEFAULT_MESSAGE = "Selecione uma opção"
+DEFAULT_INSTRUCTIONS = "Selecione o número ou navegue com as setas do teclado."
+DEFAULT_LONG_INSTRUCTIONS = "[Enter] seleciona • [Esc + Esc] cancela [Ctrl+C] sair\nMIT License • © 2025 Raphael Campos"
+
 console = Console()
-
-
-def header():
-    console.print(
-        Panel.fit(
-            "[bold magenta]Integração Fiorilli Ahgora[/bold magenta] - [gold1]Automação de Sistemas de Ponto Eletrônico e RH[/gold1]",
-            subtitle="[green]github.com/raphaelantoniocampos/integracao_fiorilli_ahgora[/green]",
-        )
-    )
-    console.print()
 
 
 def spinner(
@@ -34,20 +29,60 @@ def spinner(
         time.sleep(wait_time)
 
 
-def menu_table(tasks: list[Task]):
-    header()
+def main_header():
+    console.print(
+        Panel.fit(
+            "[bold magenta]Integração Fiorilli Ahgora[/bold magenta] - [gold1]Automação de Sistemas de Ponto Eletrônico e RH[/gold1]",
+            subtitle="[green]github.com/raphaelantoniocampos/integracao_fiorilli_ahgora[/green]",
+        )
+    )
+    console.print()
+
+
+def main_menu(tasks: list[Task]):
+    console.clear()
+    main_header()
 
     tasks_panel = get_tasks_panel(tasks)
     console.print(tasks_panel)
 
-    answers = inquirer.rawlist(
-        message="Selecione uma opção",
-        choices=MAIN_MENU_OPTIONS,
+    return menu(
+        name="Main",
+        choices={choice: spinner for choice in MAIN_MENU_CHOICES},
+        go_back_text="Sair",
+    )
+    # answers = inquirer.rawlist(
+    #     message=DEFAULT_MESSAGE,
+    #     choices=MAIN_MENU_CHOICES,
+    #     keybindings=INQUIRER_KEYBINDINGS,
+    # ).execute()
+    # return answers
+
+
+def menu(
+    name: str,
+    choices: dict[str, any],
+    message: str = DEFAULT_MESSAGE,
+    go_back_text: str = "Voltar",
+):
+    console.print(
+        Panel.fit(
+            name.upper(),
+            style="bold cyan",
+        )
+    )
+    choices[go_back_text] = spinner
+
+    choice_name = inquirer.rawlist(
+        message=message,
+        choices=choices.keys(),
         keybindings=INQUIRER_KEYBINDINGS,
-        instruction="Selecione o número ou navegue com as setas do teclado.",
-        long_instruction="[Enter] seleciona • [Esc + Esc] cancela [Ctrl+C] sair\nMIT License • © 2025 Raphael Campos",
+        instruction=DEFAULT_INSTRUCTIONS,
+        long_instruction=DEFAULT_LONG_INSTRUCTIONS,
     ).execute()
-    return answers
+    action = choices.get(choice_name)
+
+    action()
 
 
 def get_tasks_panel(tasks: list[Task]) -> Panel:

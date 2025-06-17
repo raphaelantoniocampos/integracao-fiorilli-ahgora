@@ -10,15 +10,21 @@ from src.utils.ui import console, spinner
 
 DOWNLOAD_MESSAGE = "Selecione as opções de download"
 
+DOWNLOAD_MENU_CHOICES = [
+    "Baixar tudo",
+    "Escolher",
+    "Voltar",
+]
+
+DOWNLOAD_ACTIONS = {
+    "Afastamentos": lambda: FiorilliBrowser.download_leaves_data(),
+    "Funcionários Ahgora": lambda: AhgoraBrowser.download_employees_data(),
+    "Funcionários Fiorilli": lambda: FiorilliBrowser.download_employees_data(),
+    "Voltar": lambda: None,
+}
+
 
 class DownloadManager:
-    DOWNLOAD_ACTIONS = {
-        "Afastamentos": lambda: FiorilliBrowser.download_leaves_data(),
-        "Funcionários Ahgora": lambda: AhgoraBrowser.download_employees_data(),
-        "Funcionários Fiorilli": lambda: FiorilliBrowser.download_employees_data(),
-        "Voltar": lambda: None,
-    }
-
     def menu(self, name):
         console.print(
             Panel.fit(
@@ -28,25 +34,20 @@ class DownloadManager:
         )
 
         while True:
-            choices = [
-                "Baixar tudo",
-                "Escolher",
-                "Voltar",
-            ]
             selected_actions = []
             match inquirer.rawlist(
                 message=DOWNLOAD_MESSAGE,
-                choices=choices,
-                default=choices[0],
+                choices=DOWNLOAD_MENU_CHOICES,
+                default=DOWNLOAD_MENU_CHOICES[0],
                 keybindings=INQUIRER_KEYBINDINGS,
             ).execute():
                 case "Baixar tudo":
                     selected_actions = [
-                        action for _, action in self.DOWNLOAD_ACTIONS.items()
+                        action for _, action in DOWNLOAD_ACTIONS.items()
                     ][:-1]
                     break
                 case "Escolher":
-                    choices = [option for option in self.DOWNLOAD_ACTIONS.keys()]
+                    choices = [option for option in DOWNLOAD_ACTIONS.keys()]
 
                     option = inquirer.rawlist(
                         message=DOWNLOAD_MESSAGE,
@@ -54,7 +55,7 @@ class DownloadManager:
                         keybindings=INQUIRER_KEYBINDINGS,
                     ).execute()
 
-                    selected = self.DOWNLOAD_ACTIONS.get(option)
+                    selected = DOWNLOAD_ACTIONS.get(option)
 
                     if not selected():
                         spinner()

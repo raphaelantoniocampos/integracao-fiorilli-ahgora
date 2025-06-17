@@ -17,6 +17,14 @@ from src.utils.creds import Creds
 from src.utils.ui import console, spinner
 
 
+CONFIG_MENU_CHOICES = [
+    "Configurar Variaveis de Ambiente",
+    "Adicionar Afastamentos Manual",
+    "Alterar Headless Mode",
+    "Voltar",
+]
+
+
 class Config:
     def __init__(self):
         self.json_path: Path = DATA_DIR / "config.json"
@@ -65,20 +73,12 @@ class Config:
 """
         )
 
-        choices = [
-            "Configurar Variaveis de Ambiente",
-            "Adicionar Afastamentos Manual",
-            "Alterar Headless Mode",
-            "Voltar",
-        ]
-        answer = inquirer.rawlist(
+        match inquirer.rawlist(
             message="Selecione as opções de download",
-            choices=choices[1:] if self.is_env_ok else choices,
+            choices=CONFIG_MENU_CHOICES[1:] if self.is_env_ok else CONFIG_MENU_CHOICES,
             keybindings=INQUIRER_KEYBINDINGS,
             multiselect=True,
-        ).execute()
-
-        match answer[0]:
+        ).execute()[0]:
             case "Voltar":
                 spinner()
                 return

@@ -5,9 +5,16 @@ from src.managers.download_manager import DownloadManager
 from src.managers.file_manager import FileManager
 from src.managers.task_manager import TaskManager
 from src.utils.config import Config
-from src.utils.constants import MAIN_MENU_OPTIONS
-from src.utils.ui import console, menu_table, spinner
+from src.utils.constants import MAIN_MENU_CHOICES
+from src.utils.ui import main_menu, spinner
 
+MAIN_MENU_CHOICES = [
+    "Downloads",
+    "Dados",
+    "Tarefas",
+    "Configurações",
+    "Sair",
+]
 
 def main():
     task_manager = TaskManager()
@@ -17,31 +24,30 @@ def main():
 
     MENU_ACTIONS = {
         # Downloads
-        MAIN_MENU_OPTIONS[0]: lambda: download_manager.menu(
-            MAIN_MENU_OPTIONS[0],
+        MAIN_MENU_CHOICES[0]: lambda: download_manager.menu(
+            MAIN_MENU_CHOICES[0],
         ),
         # Dados
-        MAIN_MENU_OPTIONS[1]: lambda: data_manager.menu(
-            MAIN_MENU_OPTIONS[1],
+        MAIN_MENU_CHOICES[1]: lambda: data_manager.menu(
+            MAIN_MENU_CHOICES[1],
         ),
         # Tarefas
-        MAIN_MENU_OPTIONS[2]: lambda: task_manager.menu(
-            MAIN_MENU_OPTIONS[2],
+        MAIN_MENU_CHOICES[2]: lambda: task_manager.menu(
+            MAIN_MENU_CHOICES[2],
         ),
         # Configurações
-        MAIN_MENU_OPTIONS[3]: lambda: config.menu(
-            MAIN_MENU_OPTIONS[3],
+        MAIN_MENU_CHOICES[3]: lambda: config.menu(
+            MAIN_MENU_CHOICES[3],
         ),
         # Sair
-        MAIN_MENU_OPTIONS[4]: lambda: sys.exit(0),
+        MAIN_MENU_CHOICES[4]: lambda: sys.exit(0),
     }
 
     while True:
-        console.clear()
         config = Config()
         tasks = task_manager.get_tasks()
 
-        option = menu_table(tasks)
+        option = main_menu(tasks)
         action = MENU_ACTIONS.get(option)
         action()
 

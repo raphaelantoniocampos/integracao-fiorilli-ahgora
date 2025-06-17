@@ -24,6 +24,8 @@ from src.utils.constants import (
 )
 from src.utils.ui import console, spinner
 
+DATA_MENU_CHOICES = ["Visualizar Dados", "Analisar Dados", "Voltar"]
+
 
 class DataManager:
     def menu(self, name):
@@ -33,24 +35,21 @@ class DataManager:
                 style="bold cyan",
             )
         )
-        choices = ["Visualizar Dados", "Analisar Dados"]
-        choices.append("Voltar")
 
-        option = inquirer.rawlist(
+        match inquirer.rawlist(
             message="Selecione uma opção",
-            choices=choices,
+            choices=DATA_MENU_CHOICES,
             keybindings=INQUIRER_KEYBINDINGS,
-        ).execute()
+        ).execute():
+            case "Visualizar Dados":
+                self.visualizer()
 
-        if "Visualizar" in option:
-            self.visualizer()
+            case "Analisar Dados":
+                self.analyze()
 
-        if "Analisar" in option:
-            self.analyze()
-
-        if "Voltar" in option:
-            spinner()
-            return
+            case "Voltar":
+                spinner()
+                return
 
     def visualizer(self):
         ahgora_files = [file for file in AHGORA_DIR.iterdir()]

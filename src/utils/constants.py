@@ -41,12 +41,11 @@ JSON_INIT_CONFIG = {
     },
 }
 
-MAIN_MENU_OPTIONS = [
+MAIN_MENU_CHOICES = [
     "Downloads",
     "Dados",
     "Tarefas",
     "Configurações",
-    "Sair",
 ]
 
 PT_MONTHS = {
