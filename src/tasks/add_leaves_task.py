@@ -84,7 +84,7 @@ class AddLeavesTask(TaskRunner):
 
             if not inquirer.confirm(
                 message="Repetir importação?",
-                default=True,
+                default=False,
             ).execute():
                 break
 

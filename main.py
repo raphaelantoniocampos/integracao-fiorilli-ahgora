@@ -1,7 +1,9 @@
+import sys
+
 from src.managers.data_manager import DataManager
 from src.managers.download_manager import DownloadManager
-from src.managers.task_manager import TaskManager
 from src.managers.file_manager import FileManager
+from src.managers.task_manager import TaskManager
 from src.utils.config import Config
 from src.utils.constants import MAIN_MENU_OPTIONS
 from src.utils.ui import console, menu_table, spinner
@@ -31,7 +33,7 @@ def main():
             MAIN_MENU_OPTIONS[3],
         ),
         # Sair
-        MAIN_MENU_OPTIONS[4]: lambda: exit_program(),
+        MAIN_MENU_OPTIONS[4]: lambda: sys.exit(0),
     }
 
     while True:
@@ -42,10 +44,6 @@ def main():
         option = menu_table(tasks)
         action = MENU_ACTIONS.get(option)
         action()
-
-
-def exit_program():
-    raise KeyboardInterrupt()
 
 
 if __name__ == "__main__":
