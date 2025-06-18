@@ -41,13 +41,6 @@ JSON_INIT_CONFIG = {
     },
 }
 
-MAIN_MENU_CHOICES = [
-    "Downloads",
-    "Dados",
-    "Tarefas",
-    "Configurações",
-]
-
 PT_MONTHS = {
     "Jan": "Jan",
     "Fev": "Feb",

@@ -1,11 +1,9 @@
 import sys
-
 from src.managers.data_manager import DataManager
 from src.managers.download_manager import DownloadManager
 from src.managers.file_manager import FileManager
 from src.managers.task_manager import TaskManager
 from src.utils.config import Config
-from src.utils.constants import MAIN_MENU_CHOICES
 from src.utils.ui import main_menu, spinner
 
 MAIN_MENU_CHOICES = [
@@ -15,6 +13,7 @@ MAIN_MENU_CHOICES = [
     "Configurações",
     "Sair",
 ]
+
 
 def main():
     task_manager = TaskManager()
@@ -47,9 +46,10 @@ def main():
         config = Config()
         tasks = task_manager.get_tasks()
 
-        option = main_menu(tasks)
-        action = MENU_ACTIONS.get(option)
-        action()
+        main_menu(
+            tasks=tasks,
+            choices=MENU_ACTIONS,
+        )()
 
 
 if __name__ == "__main__":

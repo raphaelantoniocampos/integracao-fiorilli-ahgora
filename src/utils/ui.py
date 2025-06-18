@@ -5,10 +5,7 @@ from rich.console import Console
 from rich.panel import Panel
 
 from src.models.task import Task
-from src.utils.constants import (
-    INQUIRER_KEYBINDINGS,
-    MAIN_MENU_CHOICES,
-)
+from src.utils.constants import INQUIRER_KEYBINDINGS
 
 
 DEFAULT_MESSAGE = "Selecione uma opção"
@@ -39,7 +36,10 @@ def main_header():
     console.print()
 
 
-def main_menu(tasks: list[Task]):
+def main_menu(
+    tasks: list[Task],
+    choices: dict[str, callable],
+):
     console.clear()
     main_header()
 
@@ -48,15 +48,9 @@ def main_menu(tasks: list[Task]):
 
     return menu(
         name="Main",
-        choices={choice: spinner for choice in MAIN_MENU_CHOICES},
-        go_back_text="Sair",
+        choices=choices,
+        go_back_text="",
     )
-    # answers = inquirer.rawlist(
-    #     message=DEFAULT_MESSAGE,
-    #     choices=MAIN_MENU_CHOICES,
-    #     keybindings=INQUIRER_KEYBINDINGS,
-    # ).execute()
-    # return answers
 
 
 def menu(
@@ -71,7 +65,8 @@ def menu(
             style="bold cyan",
         )
     )
-    choices[go_back_text] = spinner
+    if go_back_text:
+        choices[go_back_text] = spinner
 
     choice_name = inquirer.rawlist(
         message=message,
@@ -80,9 +75,7 @@ def menu(
         instruction=DEFAULT_INSTRUCTIONS,
         long_instruction=DEFAULT_LONG_INSTRUCTIONS,
     ).execute()
-    action = choices.get(choice_name)
-
-    action()
+    return choices.get(choice_name)
 
 
 def get_tasks_panel(tasks: list[Task]) -> Panel:
