@@ -30,9 +30,7 @@ def main():
             tasks=tasks,
             choices=MENU_OPTIONS,
         )
-        while True:
-            if not callable(action):
-                break
+        while callable(action):
             action = action()
 
 
