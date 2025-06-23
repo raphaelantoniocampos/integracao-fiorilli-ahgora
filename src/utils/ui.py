@@ -26,6 +26,39 @@ def spinner(
         time.sleep(wait_time)
 
 
+def default_header(name: str):
+    console.print(
+        Panel.fit(
+            name.upper(),
+            style="bold cyan",
+        )
+    )
+
+
+def menu(
+    name: str,
+    choices: dict[str, any],
+    header=default_header,
+    message: str = DEFAULT_MESSAGE,
+    go_back_text: str = "Voltar",
+):
+    header(name)
+    if go_back_text:
+        choices[go_back_text] = spinner
+
+    choice_name = inquirer.rawlist(
+        message=message,
+        choices=choices.keys(),
+        keybindings=INQUIRER_KEYBINDINGS,
+        instruction=DEFAULT_INSTRUCTIONS,
+        long_instruction=DEFAULT_LONG_INSTRUCTIONS,
+        mandatory=False,
+    ).execute()
+    if not choice_name:
+        return spinner
+    return choices.get(choice_name)
+
+
 def main_header():
     console.print(
         Panel.fit(
@@ -49,33 +82,9 @@ def main_menu(
     return menu(
         name="Main",
         choices=choices,
+        header=lambda str: None,
         go_back_text="",
     )
-
-
-def menu(
-    name: str,
-    choices: dict[str, any],
-    message: str = DEFAULT_MESSAGE,
-    go_back_text: str = "Voltar",
-):
-    console.print(
-        Panel.fit(
-            name.upper(),
-            style="bold cyan",
-        )
-    )
-    if go_back_text:
-        choices[go_back_text] = spinner
-
-    choice_name = inquirer.rawlist(
-        message=message,
-        choices=choices.keys(),
-        keybindings=INQUIRER_KEYBINDINGS,
-        instruction=DEFAULT_INSTRUCTIONS,
-        long_instruction=DEFAULT_LONG_INSTRUCTIONS,
-    ).execute()
-    return choices.get(choice_name)
 
 
 def get_tasks_panel(tasks: list[Task]) -> Panel:

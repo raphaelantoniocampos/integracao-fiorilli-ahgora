@@ -6,7 +6,6 @@ from time import sleep
 import pandas as pd
 from InquirerPy import inquirer
 from pandas.errors import EmptyDataError
-from rich.panel import Panel
 
 from src.managers.file_manager import FileManager
 from src.utils.config import Config
@@ -22,34 +21,20 @@ from src.utils.constants import (
     TASKS_DIR,
     UPLOAD_LEAVES_COLUMNS,
 )
-from src.utils.ui import console, spinner
-
-DATA_MENU_CHOICES = ["Visualizar Dados", "Analisar Dados", "Voltar"]
+from src.utils.ui import console, spinner, menu
 
 
 class DataManager:
-    def menu(self, name):
-        console.print(
-            Panel.fit(
-                name.upper(),
-                style="bold cyan",
-            )
-        )
-
-        match inquirer.rawlist(
-            message="Selecione uma opção",
+    def open(self):
+        DATA_MENU_CHOICES = {
+            "Visualizar Dados": self.visualizer,
+            "Analisar Dados": self.analyze,
+        }
+        action = menu(
+            name="Dados",
             choices=DATA_MENU_CHOICES,
-            keybindings=INQUIRER_KEYBINDINGS,
-        ).execute():
-            case "Visualizar Dados":
-                self.visualizer()
-
-            case "Analisar Dados":
-                self.analyze()
-
-            case "Voltar":
-                spinner()
-                return
+        )
+        action()
 
     def visualizer(self):
         ahgora_files = [file for file in AHGORA_DIR.iterdir()]

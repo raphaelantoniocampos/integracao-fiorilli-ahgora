@@ -2,54 +2,45 @@ import json
 from datetime import datetime, timedelta
 from pathlib import Path
 
-from InquirerPy import inquirer
-from rich.panel import Panel
 
 from src.managers.file_manager import FileManager
 from src.utils.constants import (
     DATA_DIR,
     FIORILLI_DIR,
     TASKS_DIR,
-    INQUIRER_KEYBINDINGS,
     JSON_INIT_CONFIG,
 )
 from src.utils.creds import Creds
-from src.utils.ui import console, spinner
-
-
-CONFIG_MENU_CHOICES = [
-    "Configurar Variaveis de Ambiente",
-    "Adicionar Afastamentos Manual",
-    "Alterar Headless Mode",
-    "Voltar",
-]
+from src.utils.ui import console, menu
 
 
 class Config:
     def __init__(self):
-        self.json_path: Path = DATA_DIR / "config.json"
-        self.data: dict = self._load()
-        self.update_time_since()
-        self.is_env_ok = Creds.is_env_ok()
-        if not self.is_env_ok:
-            Creds()
+        self.setup()
 
-        self.last_analisys = self.data.get("last_analisys")
-        self.headless_mode = bool(self.data.get("headless_mode"))
-        self.last_download_fiorilli = self.data.get("last_download")[
-            "fiorilli_employees"
-        ]
-        self.last_download_ahgora = self.data.get("last_download")["ahgora_employees"]
-        self.last_download_leaves = self.data.get("last_download")["leaves"]
+    def open(self, result=" ") -> None:
+        if not result:
+            return
+        self.setup()
+        CONFIG_MENU_CHOICES = {
+            "Adicionar Afastamentos Manual": lambda: FileManager.copy_file(
+                source=FIORILLI_DIR / "leaves.csv",
+                destination=TASKS_DIR / "manual_leaves.csv",
+            ),
+            "Alterar Headless Mode": self.toggle_headless_mode,
+            "Configurar Variaveis de Ambiente": lambda: Creds().load_or_create_env(),
+        }
 
-    def menu(self, name) -> None:
         self.update_time_since()
-        console.print(
-            Panel.fit(
-                name.upper(),
-                style="bold cyan",
-            )
+        console.print(result)
+        self.config_header()
+        action = menu(
+            name="Configurações",
+            choices=CONFIG_MENU_CHOICES,
         )
+        self.open(action())
+
+    def config_header(self):
         console.print(
             f"""
 [bold orange]Opções[/bold orange]
@@ -73,26 +64,21 @@ class Config:
 """
         )
 
-        match inquirer.rawlist(
-            message="Selecione as opções de download",
-            choices=CONFIG_MENU_CHOICES[1:] if self.is_env_ok else CONFIG_MENU_CHOICES,
-            keybindings=INQUIRER_KEYBINDINGS,
-            multiselect=True,
-        ).execute()[0]:
-            case "Voltar":
-                spinner()
-                return
-            case "Alterar Headless Mode":
-                self.toggle_headless_mode()
-                self.menu(name)
-            case "Adicionar Afastamentos Manual":
-                FileManager.copy_file(
-                    source=FIORILLI_DIR / "leaves.csv",
-                    destination=TASKS_DIR / "manual_leaves.csv",
-                )
-            case "Configurar Variaveis de Ambiente":
-                Creds()
-                self.menu(name)
+    def setup(self):
+        self.json_path: Path = DATA_DIR / "config.json"
+        self.data: dict = self._load()
+        self.update_time_since()
+        self.is_env_ok = Creds.is_env_ok()
+        if not self.is_env_ok:
+            Creds()
+
+        self.last_analisys = self.data.get("last_analisys")
+        self.headless_mode = bool(self.data.get("headless_mode"))
+        self.last_download_fiorilli = self.data.get("last_download")[
+            "fiorilli_employees"
+        ]
+        self.last_download_ahgora = self.data.get("last_download")["ahgora_employees"]
+        self.last_download_leaves = self.data.get("last_download")["leaves"]
 
     @staticmethod
     def update_last_analisys():
@@ -167,7 +153,9 @@ class Config:
 
     def toggle_headless_mode(self):
         headless_mode = self.data.get("headless_mode")
-        self._update("headless_mode", value=not headless_mode)
+        change_to = not headless_mode
+        self._update("headless_mode", value=change_to)
+        return f"Headless mode alterado para {change_to}"
 
     def _update_analysis_time_since(self, last_analisys: dict, now: timedelta) -> None:
         if last_analisys["datetime"]:

@@ -1,8 +1,6 @@
 from pathlib import Path
 
-from InquirerPy import inquirer
 from pandas import DataFrame
-from rich.panel import Panel
 
 from src.managers.data_manager import DataManager
 from src.models.task import Task
@@ -10,34 +8,18 @@ from src.tasks.add_leaves_task import AddLeavesTask
 from src.tasks.add_employees_task import AddEmployeesTask
 from src.tasks.remove_employees_task import RemoveEmployeesTask
 from src.tasks.update_employees_task import UpdateEmployeesTask
-from src.utils.constants import INQUIRER_KEYBINDINGS, TASKS_DIR
-from src.utils.ui import console, spinner
+from src.utils.constants import TASKS_DIR
+from src.utils.ui import menu
 
 
 class TaskManager:
-    def menu(self, name):
+    def open(self):
         tasks = self.get_tasks()
-        console.print(
-            Panel.fit(
-                name.upper(),
-                style="bold cyan",
-            )
-        )
         tasks_choices = {task.option: task for task in tasks if not task.df.empty}
 
-        tasks_choices["Voltar"] = ""
+        task = menu(name="Tarefas", choices=tasks_choices)
 
-        option = inquirer.rawlist(
-            message="Selecione uma tarefa",
-            choices=tasks_choices.keys(),
-            keybindings=INQUIRER_KEYBINDINGS,
-        ).execute()
-
-        if option == "Voltar":
-            spinner()
-            return
-
-        self.run_task(tasks_choices[option])
+        self.run_task(task)
 
     def run_task(self, task: Task):
         match task.name:
