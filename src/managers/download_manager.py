@@ -6,7 +6,7 @@ from src.managers.data_manager import DataManager
 from src.managers.file_manager import FileManager
 from src.utils.ui import menu
 
-DOWNLOAD_ACTIONS = {
+DOWNLOAD_CHOICES = {
     "Afastamentos": FiorilliBrowser.download_leaves_data,
     "Funcionários Ahgora": AhgoraBrowser.download_employees_data,
     "Funcionários Fiorilli": FiorilliBrowser.download_employees_data,
@@ -24,20 +24,20 @@ class DownloadManager:
         )
 
     def download_all(self):
-        options = [action for _, action in DOWNLOAD_ACTIONS.items()]
-        self.start_downloads(options)
+        actions = [action for _, action in DOWNLOAD_CHOICES.items()]
+        return self.start_downloads(actions)
 
     def select_download(self):
-        option = menu(name="Escolher", choices=DOWNLOAD_ACTIONS)
-        if option.__name__ == "spinner":
-            return option()
-        self.start_downloads([option])
+        action = menu(name="Escolher", choices=DOWNLOAD_CHOICES)
+        if action.__name__ == "spinner":
+            return action
+        return self.start_downloads([action])
 
-    def start_downloads(self, options):
+    def start_downloads(self, actions):
         if not inquirer.confirm(message="Continuar?", default=True).execute():
             return
 
-        for download_option in options:
+        for download_option in actions:
             download_option()
 
         FileManager.move_downloads_to_data_dir()

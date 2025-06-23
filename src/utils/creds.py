@@ -16,9 +16,6 @@ class Creds:
 
         missing_vars = [var for var in REQUIRED_VARS if os.getenv(var) is None]
 
-        if not missing_vars:
-            return "Variáveis de ambiente OK"
-
         if missing_vars:
             print(f"Variáveis de ambiente faltando: {', '.join(missing_vars)}")
             self.create_missing_vars(missing_vars)
@@ -26,6 +23,9 @@ class Creds:
 
         for var in REQUIRED_VARS:
             setattr(self, var.lower(), os.getenv(var))
+
+        if not missing_vars:
+            return "Variáveis de ambiente OK"
 
     def create_missing_vars(self, missing_vars):
         env_vars = {}

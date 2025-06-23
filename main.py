@@ -26,14 +26,14 @@ def main():
         config.setup()
         tasks = task_manager.get_tasks()
 
-        option = main_menu(
+        action = main_menu(
             tasks=tasks,
             choices=MENU_OPTIONS,
         )
-        if option:
-            action = option()
-            if action:
-                action()
+        while True:
+            if not callable(action):
+                break
+            action = action()
 
 
 if __name__ == "__main__":
