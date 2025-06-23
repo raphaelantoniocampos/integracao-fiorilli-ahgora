@@ -55,7 +55,7 @@ def menu(
         mandatory=False,
     ).execute()
     if not choice_name:
-        return spinner
+        choice_name = go_back_text
     return choices.get(choice_name)
 
 

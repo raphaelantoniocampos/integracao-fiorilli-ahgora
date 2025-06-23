@@ -17,11 +17,11 @@ class TaskManager:
         tasks = self.get_tasks()
         tasks_choices = {task.option: task for task in tasks if not task.df.empty}
 
-        task = menu(name="Tarefas", choices=tasks_choices)
-
-        self.run_task(task)
+        return self.run_task(menu(name="Tarefas", choices=tasks_choices))
 
     def run_task(self, task: Task):
+        if not isinstance(task, Task):
+            return task
         match task.name:
             case "add_employees":
                 AddEmployeesTask(task)

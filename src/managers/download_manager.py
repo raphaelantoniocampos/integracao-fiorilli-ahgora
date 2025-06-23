@@ -15,14 +15,13 @@ DOWNLOAD_ACTIONS = {
 
 class DownloadManager:
     def open(self):
-        action = menu(
+        return menu(
             name="Downloads",
             choices={
                 "Baixar tudo": self.download_all,
                 "Escolher": self.select_download,
             },
         )
-        action()
 
     def download_all(self):
         options = [action for _, action in DOWNLOAD_ACTIONS.items()]

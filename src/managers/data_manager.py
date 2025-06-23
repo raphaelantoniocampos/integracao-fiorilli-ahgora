@@ -30,11 +30,10 @@ class DataManager:
             "Visualizar Dados": self.visualizer,
             "Analisar Dados": self.analyze,
         }
-        action = menu(
+        return menu(
             name="Dados",
             choices=DATA_MENU_CHOICES,
         )
-        action()
 
     def visualizer(self):
         ahgora_files = [file for file in AHGORA_DIR.iterdir()]
@@ -46,6 +45,7 @@ class DataManager:
         }
         files["Voltar"] = None
         while True:
+            #TODO: update menu
             option = inquirer.select(
                 message="Selecione um arquivo",
                 choices=[

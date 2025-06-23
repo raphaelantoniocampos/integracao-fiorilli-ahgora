@@ -14,7 +14,7 @@ def main():
     FileManager.setup()
 
     config = Config()
-    MENU_ACTIONS = {
+    MENU_OPTIONS = {
         "Downloads": download_manager.open,
         "Dados": data_manager.open,
         "Tarefas": task_manager.open,
@@ -26,11 +26,14 @@ def main():
         config.setup()
         tasks = task_manager.get_tasks()
 
-        action = main_menu(
+        option = main_menu(
             tasks=tasks,
-            choices=MENU_ACTIONS,
+            choices=MENU_OPTIONS,
         )
-        action()
+        if option:
+            action = option()
+            if action:
+                action()
 
 
 if __name__ == "__main__":
