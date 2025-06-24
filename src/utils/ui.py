@@ -103,6 +103,6 @@ def get_tasks_panel(tasks: list[Task]) -> Panel:
     return Panel.fit(
         "\n".join(task_options),
         title="[bold]Tarefas Pendentes[/bold]",
-        border_style="yellow",
+        border_style="gold1",
         padding=(1, 2),
     )

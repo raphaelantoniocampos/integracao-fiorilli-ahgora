@@ -22,13 +22,13 @@ class AhgoraBrowser(CoreBrowser):
     def __init__(self):
         self.console = Console()
         with self.console.status(
-            "[yellow]Iniciando AHGORA webdriver[/]", spinner="dots"
+            "[gold1]Iniciando AHGORA webdriver[/]", spinner="dots"
         ):
             super().__init__(url=self.URL)
 
     def _start_employees_download(self) -> None:
         with self.console.status(
-            "Baixando [yellow]funcionários[/] do AHGORA", spinner="dots"
+            "Baixando [gold1]funcionários[/] do AHGORA", spinner="dots"
         ):
             self._login()
             self.driver.get("https://app.ahgora.com.br/funcionarios")

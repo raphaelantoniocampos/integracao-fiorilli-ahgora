@@ -15,7 +15,7 @@ class UpdateEmployeesTask(TaskRunner):
     KEY_CONTINUE = Key("F2", "green", "continuar")
     KEY_POSITION = Key("F1", "cyan", "escrever o cargo")
     KEY_DEPARTMENT = Key("F2", "violet", "escrever o departamento")
-    KEY_NEXT = Key("F3", "yellow", "próximo")
+    KEY_NEXT = Key("F3", "gold1", "próximo")
     KEY_STOP = Key("F4", "red", "sair")
 
     def __init__(self, task: Task):
@@ -47,7 +47,7 @@ class UpdateEmployeesTask(TaskRunner):
                 changes.append("[violet]DEPARTAMENTO[/]")
 
             print(
-                f"\n[bold yellow]{'-' * 15} FUNCIONÁRIO ALTERADO! {'-' * 15}[/bold yellow]"
+                f"\n[bold gold1]{'-' * 15} FUNCIONÁRIO ALTERADO! {'-' * 15}[/bold gold1]"
             )
             print(f"{name} - {id}")
             print(f"Alterar {' e '.join(changes)}")

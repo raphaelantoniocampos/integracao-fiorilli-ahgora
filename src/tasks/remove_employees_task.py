@@ -11,7 +11,7 @@ from src.utils.ui import spinner
 
 class RemoveEmployeesTask(TaskRunner):
     KEY_CONTINUE = Key("F2", "green", "continuar")
-    KEY_NEXT = Key("F3", "yellow", "próximo")
+    KEY_NEXT = Key("F3", "gold1", "próximo")
     KEY_STOP = Key("F4", "red3", "sair")
 
     def __init__(self, task: Task):
@@ -21,7 +21,7 @@ class RemoveEmployeesTask(TaskRunner):
         df = self.task.df
         for i, series in df.iterrows():
             print(
-                f"\n[bold yellow]{'-' * 15} FUNCIONÁRIO DESLIGADO! {'-' * 15}[/bold yellow]"
+                f"\n[bold gold1]{'-' * 15} FUNCIONÁRIO DESLIGADO! {'-' * 15}[/bold gold1]"
             )
             print(series)
             name = series["name"]

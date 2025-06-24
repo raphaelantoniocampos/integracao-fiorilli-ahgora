@@ -32,14 +32,14 @@ class FiorilliBrowser(CoreBrowser):
     def __init__(self):
         self.console = Console()
         with self.console.status(
-            "[yellow]Iniciando FIORILLI webdriver[/]", spinner="dots"
+            "[gold1]Iniciando FIORILLI webdriver[/]", spinner="dots"
         ):
             super().__init__(url=self.URL)
 
     def _start_employees_download(self) -> None:
         ()
         with self.console.status(
-            "Baixando [yellow]funcionários[/] do FIORILLI", spinner="dots"
+            "Baixando [gold1]funcionários[/] do FIORILLI", spinner="dots"
         ):
             self._login()
             self._navigate_to_maintenance_section()
@@ -62,7 +62,7 @@ class FiorilliBrowser(CoreBrowser):
     def _start_leaves_download(self) -> None:
         ()
         with self.console.status(
-            "Baixando [yellow]afastamentos[/] do FIORILLI", spinner="dots"
+            "Baixando [gold1]afastamentos[/] do FIORILLI", spinner="dots"
         ):
             self._login()
             self._navigate_to_utilities_section()

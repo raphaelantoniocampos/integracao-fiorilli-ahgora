@@ -17,9 +17,9 @@ PYINSTALLER_FLAGS = --noconfirm --onedir --console \
 PYINSTALLER_CMD = uv run pyinstaller $(PYINSTALLER_FLAGS) "$(PROJECT_ROOT)/$(MAIN_SCRIPT)"
 
 # --- Targets ---
-.PHONY: all build clean update help
+.PHONY: all clean build shortcut update help
 
-all: build
+all: clean build shortcut
 
 build:
 	@echo "--------------------------------------------------"
@@ -70,7 +70,7 @@ clean:
 	@echo "--------------------------------------------------"
 	@$(PYTHON_CMD) -c "import shutil, os, glob; \
 		print('Removendo diretorio: build/'); shutil.rmtree('build', ignore_errors=True); \
-		# print('Removendo diretorio: dist/'); shutil.rmtree('dist', ignore_errors=True); \
+		print('Removendo diretorio: dist/'); shutil.rmtree('dist', ignore_errors=True); \
 		spec_files = glob.glob('*.spec'); \
 		print(f'Removendo arquivos .spec: {spec_files}'); \
 		[os.remove(f) for f in spec_files if os.path.isfile(f)]"

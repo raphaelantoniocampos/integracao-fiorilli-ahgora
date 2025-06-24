@@ -12,8 +12,8 @@ from src.utils.ui import spinner
 
 class AddEmployeesTask(TaskRunner):
     KEY_CONTINUE = Key("F2", "green", "continuar")
-    KEY_NEXT = Key("F3", "yellow", "próximo")
-    KEY_BACK = Key("F3", "yellow", "voltar")
+    KEY_NEXT = Key("F3", "gold1", "próximo")
+    KEY_BACK = Key("F3", "gold1", "voltar")
     KEY_STOP = Key("F4", "red3", "sair")
 
     def __init__(self, task: Task):
@@ -23,7 +23,7 @@ class AddEmployeesTask(TaskRunner):
         df = self.task.df
         for i, series in df.iterrows():
             print(
-                f"\n[bold yellow]{'-' * 15} NOVO FUNCIONÁRIO! {'-' * 15}[/bold yellow]"
+                f"\n[bold gold1]{'-' * 15} NOVO FUNCIONÁRIO! {'-' * 15}[/bold gold1]"
             )
             print(series)
             name = series.get("name")
@@ -65,13 +65,13 @@ class AddEmployeesTask(TaskRunner):
         time.sleep(0.2)
 
         spinner(
-            wait_string="[yellow]Processando PIS-PASEP[/yellow]",
+            wait_string="[gold1]Processando PIS-PASEP[/gold1]",
             wait_time=2,
         )
         formatted_pis_pasep = (
             f"{pis_pasep[:3]}.{pis_pasep[3:8]}.{pis_pasep[8:10]}-{pis_pasep[10]}"
         )
-        print(f"PIS-PASEP: [yellow]{formatted_pis_pasep}[/]")
+        print(f"PIS-PASEP: [gold1]{formatted_pis_pasep}[/]")
 
         wait_key_press(self.KEY_CONTINUE)
         print("[bold green]Continuando![/bold green]")
@@ -140,6 +140,6 @@ class AddEmployeesTask(TaskRunner):
         pyautogui.press("space")
         time.sleep(0.2)
 
-        print(f"Insira o Departamento\n[yellow]{row['department']}[/]")
+        print(f"Insira o Departamento\n[gold1]{row['department']}[/]")
 
         wait_key_press(self.KEY_NEXT)

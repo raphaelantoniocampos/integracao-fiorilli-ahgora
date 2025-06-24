@@ -24,7 +24,7 @@ from src.utils.ui import console, spinner
 class AddLeavesTask(TaskRunner):
     KEY_CONTINUE = Key("F2", "green", "continuar")
     KEY_STOP = Key("F4", "red3", "sair")
-    KEY_REPEAT = Key("F3", "yellow", "repetir")
+    KEY_REPEAT = Key("F3", "gold1", "repetir")
 
     def __init__(self, task: Task):
         with tempfile.TemporaryDirectory() as tmpdirname:
@@ -32,7 +32,7 @@ class AddLeavesTask(TaskRunner):
             super().__init__(task)
 
     def run(self):
-        print(f"\n[bold yellow]{'-' * 15} AFASTAMENTOS! {'-' * 15}[/bold yellow]")
+        print(f"\n[bold gold1]{'-' * 15} AFASTAMENTOS! {'-' * 15}[/bold gold1]")
 
         leaves_bytes = (FIORILLI_DIR / "leaves.csv").read_bytes()
 
@@ -171,7 +171,7 @@ class AddLeavesTask(TaskRunner):
     def display_error_groups(self, error_groups):
         """Exibe os erros agrupados por categoria"""
 
-        print("\n[bold yellow]RESUMO DE ERROS ENCONTRADOS:[/bold yellow]")
+        print("\n[bold gold1]RESUMO DE ERROS ENCONTRADOS:[/bold gold1]")
 
         for error_type, errors in error_groups.items():
             if not errors:
