@@ -7,9 +7,9 @@ from src.managers.file_manager import FileManager
 from src.utils.ui import menu
 
 DOWNLOAD_CHOICES = {
-    "Afastamentos": FiorilliBrowser.download_leaves_data,
-    "Funcionários Ahgora": AhgoraBrowser.download_employees_data,
     "Funcionários Fiorilli": FiorilliBrowser.download_employees_data,
+    "Funcionários Ahgora": AhgoraBrowser.download_employees_data,
+    "Afastamentos": FiorilliBrowser.download_leaves_data,
 }
 
 
