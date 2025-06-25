@@ -110,3 +110,11 @@ RAW_FIORILLI_EMPLOYEES_COLUMNS = [
     "admission_date",
     "dismissal_date",
 ]
+
+COLUMNS_TO_VERIFY_CHANGE = [
+    # "name",
+    "admission_date",
+    # "dismissal_date",
+    "position",
+    "department",
+]

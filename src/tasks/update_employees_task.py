@@ -11,10 +11,25 @@ from src.tasks.task_runner import TaskRunner
 from src.utils.ui import spinner
 
 
+class ColumnConfig:
+    def __init__(self, label: str, color: str, key_char: str, key_color: str):
+        self.label = label
+        self.style = f"[{color}]"
+        self.styled_label = f"[{color}]{self.label}[/]"
+        self.key_message = f"escrever o/a {self.label.lower()}"
+        self.key = Key(key_char, key_color, self.key_message)
+
+
 class UpdateEmployeesTask(TaskRunner):
+    COLUMN_CONFIG = {
+        "name": ColumnConfig("NOME", "white", "shift+n", "white"),
+        "admission_date": ColumnConfig("DATA ADMISSÃO", "green", "shift+a", "green"),
+        "dismissal_date": ColumnConfig("DATA DEMISSÃO", "red", "shift+i", "red"),
+        "position": ColumnConfig("CARGO", "cyan", "shift+p", "cyan"),
+        "department": ColumnConfig("DEPARTAMENTO", "violet", "shift+d", "violet"),
+    }
+
     KEY_CONTINUE = Key("F2", "green", "continuar")
-    KEY_POSITION = Key("F1", "cyan", "escrever o cargo")
-    KEY_DEPARTMENT = Key("F2", "violet", "escrever o departamento")
     KEY_NEXT = Key("F3", "gold1", "próximo")
     KEY_STOP = Key("F4", "red", "sair")
 
@@ -25,71 +40,80 @@ class UpdateEmployeesTask(TaskRunner):
         df = self.task.df
 
         for i, series in df.iterrows():
-            name = series["name_fiorilli"]
-            id = series["id"]
+            employee_name = series["name_fiorilli"]
+            employee_id = series["id"]
 
-            position_changed = (
-                series["position_fiorilli_norm"] != series["position_ahgora_norm"]
-            )
-            department_changed = (
-                series["department_fiorilli_norm"] != series["department_ahgora_norm"]
-            )
+            detected_changes = []
+            for col_name, config in self.COLUMN_CONFIG.items():
+                fiorilli_col = f"{col_name}_fiorilli_norm"
+                ahgora_col = f"{col_name}_ahgora_norm"
+                if fiorilli_col in series and ahgora_col in series:
+                    if series[fiorilli_col] != series[ahgora_col]:
+                        detected_changes.append(
+                            {
+                                "config": config,
+                                "name": col_name,
+                                "old_value": series[f"{col_name}_ahgora"],
+                                "new_value": series[f"{col_name}_fiorilli"],
+                            }
+                        )
 
-            position_fiorilli = series["position_fiorilli"]
-            position_ahgora = series["position_ahgora"]
-            department_fiorilli = series["department_fiorilli"]
-            department_ahgora = series["department_ahgora"]
-
-            changes = []
-            if position_changed:
-                changes.append("[cyan]CARGO[/]")
-            if department_changed:
-                changes.append("[violet]DEPARTAMENTO[/]")
+            if not detected_changes:
+                continue
 
             print(
-                f"\n[bold gold1]{'-' * 15} FUNCIONÁRIO ALTERADO! {'-' * 15}[/bold gold1]"
+                f"\n[bold gold1]{'-' * 15} FUNCIONÁRIO ALTERADO! {
+                    '-' * 15
+                }[/bold gold1]"
             )
-            print(f"{name} - {id}")
-            print(f"Alterar {' e '.join(changes)}")
-            print(f"Antigo Cargo (Ahgora): {position_ahgora}")
-            print(
-                f"Novo Cargo (Fiorilli): {f'[cyan]{position_fiorilli}[/]' if '[cyan]CARGO[/]' in changes else f'{position_fiorilli}'}"
-            )
-            print(f"Antigo Departamento (Ahgora): [bold]{department_ahgora}[/bold]")
-            print(
-                f"Novo Departamento (Fiorilli): {f'[violet]{department_fiorilli}[/]' if '[violet]DEPARTAMENTO[/]' in changes else f'{department_fiorilli}'}"
-            )
+            print(f"{employee_name} - {employee_id}")
+
+            change_labels = [
+                change["config"].styled_label for change in detected_changes
+            ]
+            print(f"Alterar {' e '.join(change_labels)}")
+
+            for change in detected_changes:
+                config = change["config"]
+                print(f"Antigo {config.label} (Ahgora): {change['old_value']}")
+                print(
+                    f"Novo {config.label} (Fiorilli): {config.style}{
+                        change['new_value']
+                    }[/]"
+                )
+
             print("\n")
-            copy(name)
-            print(f"(Nome '{name}' copiado para a área de transferência!)")
+            copy(employee_name)
+            print(f"(Nome '{employee_name}' copiado para a área de transferência!)")
 
             while True:
-                match wait_key_press(
-                    [
-                        self.KEY_POSITION,
-                        self.KEY_DEPARTMENT,
-                        self.KEY_NEXT,
-                        self.KEY_STOP,
-                    ]
-                ):
-                    case "escrever o cargo":
-                        copy(position_fiorilli)
-                        pyautogui.write(position_fiorilli, interval=0.02)
-                        time.sleep(0.5)
-                    case "escrever o departamento":
-                        copy(department_fiorilli)
-                        pyautogui.write(department_fiorilli, interval=0.02)
-                        time.sleep(0.5)
-                    case "próximo":
-                        spinner("Continuando")
-                        break
-                    case "sair":
-                        self.exit_task()
-                        spinner()
-                        return
+                active_keys = [change["config"].key for change in detected_changes]
+                action_map = {
+                    change["config"].key_message: change["new_value"]
+                    for change in detected_changes
+                }
 
-                if not inquirer.confirm(message="Repetir", default=False).execute():
+                keys_to_wait = active_keys + [self.KEY_NEXT, self.KEY_STOP]
+
+                pressed_action = wait_key_press(keys_to_wait)
+
+                if pressed_action in action_map:
+                    value_to_write = action_map[pressed_action]
+                    copy(str(value_to_write))
+                    pyautogui.write(str(value_to_write), interval=0.02)
+                    time.sleep(0.5)
+                elif pressed_action == self.KEY_NEXT.action:
+                    spinner("Continuando")
+                    break
+                elif pressed_action == self.KEY_STOP.action:
+                    self.exit_task()
+                    spinner()
+                    return
+
+                if not inquirer.confirm(
+                    message="Repetir ação?", default=False
+                ).execute():
                     break
 
-        print("[bold green]Não há mais cargos para alterar![/bold green]")
+        print("[bold green]Não há mais funcionários para alterar![/bold green]")
         self.exit_task()

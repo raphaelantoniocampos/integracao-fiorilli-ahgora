@@ -71,9 +71,10 @@ clean:
 	@$(PYTHON_CMD) -c "import shutil, os, glob; \
 		print('Removendo diretorio: build/'); shutil.rmtree('build', ignore_errors=True); \
 		print('Removendo diretorio: dist/'); shutil.rmtree('dist', ignore_errors=True); \
-		spec_files = glob.glob('*.spec'); \
-		print(f'Removendo arquivos .spec: {spec_files}'); \
-		[os.remove(f) for f in spec_files if os.path.isfile(f)]"
+		link_files = glob.glob('*.lnk'); spec_files = glob.glob('*.spec'); \
+		rm_files = link_files + spec_files; \
+		print(f'Removendo arquivos .spec e .lnk: {rm_files}'); \
+		[os.remove(f) for f in rm_files if os.path.isfile(f)];"
 	@echo "--------------------------------------------------"
 	@echo "Limpeza concluida."
 	@echo "--------------------------------------------------"

@@ -1,8 +1,9 @@
+import time
 import unicodedata
 from datetime import datetime
 from pathlib import Path
-from time import sleep
 
+import numpy as np
 import pandas as pd
 from InquirerPy import inquirer
 from pandas.errors import EmptyDataError
@@ -10,25 +11,26 @@ from pandas.errors import EmptyDataError
 from src.managers.file_manager import FileManager
 from src.utils.config import Config
 from src.utils.constants import (
-    LEAVES_COLUMNS,
     AHGORA_DIR,
+    COLUMNS_TO_VERIFY_CHANGE,
     DATA_DIR,
     FIORILLI_DIR,
     INQUIRER_KEYBINDINGS,
+    LEAVES_COLUMNS,
     PT_MONTHS,
     RAW_AHGORA_EMPLOYEES_COLUMNS,
     RAW_FIORILLI_EMPLOYEES_COLUMNS,
     TASKS_DIR,
     UPLOAD_LEAVES_COLUMNS,
 )
-from src.utils.ui import console, spinner, menu
+from src.utils.ui import console, menu, spinner
 
 
 class DataManager:
     def open(self):
         DATA_MENU_CHOICES = {
-            "Visualizar Dados": self.visualizer,
             "Analisar Dados": self.analyze,
+            "Visualizar Dados": self.visualizer,
         }
         return menu(
             name="Dados",
@@ -128,10 +130,10 @@ class DataManager:
             Config.update_last_analisys()
             FileManager.setup()
             console.print("[bold green]Dados sincronizados com sucesso![/bold green]\n")
-            sleep(1)
+            time.sleep(1)
         except KeyboardInterrupt as e:
             console.print(f"[bold red]Erro ao sincronizar dados: {e}[/bold red]\n")
-            sleep(1)
+            time.sleep(1)
 
         except FileNotFoundError as e:
             console.print(
@@ -435,27 +437,36 @@ class DataManager:
         merged_employees = fiorilli_active_employees.merge(
             ahgora_employees, on="id", suffixes=("_fiorilli", "_ahgora"), how="inner"
         )
-        change_conditions = []
-        columns_to_check = [
-            "name",
-            "admission_date",
-            "dismissal_date",
-            "position",
-            "department",
-        ]
-        for col in columns_to_check:
-            merged_employees[f"{col}_fiorilli_norm"] = merged_employees[
-                f"{col}_fiorilli"
-            ].apply(self.normalize_text)
-            merged_employees[f"{col}_ahgora_norm"] = merged_employees[
-                f"{col}_ahgora"
-            ].apply(self.normalize_text)
 
-        condition = (
-            merged_employees[f"{col}_fiorilli_norm"]
-            != merged_employees[f"{col}_ahgora_norm"]
-        )
-        change_conditions.append(condition)
+        for col in COLUMNS_TO_VERIFY_CHANGE:
+            if f"{col}_fiorilli" in merged_employees:
+                merged_employees[f"{col}_fiorilli_norm"] = merged_employees[
+                    f"{col}_fiorilli"
+                ].apply(self.normalize_text)
+
+            if f"{col}_ahgora" in merged_employees:
+                merged_employees[f"{col}_ahgora_norm"] = merged_employees[
+                    f"{col}_ahgora"
+                ].apply(self.normalize_text)
+
+        change_conditions = []
+        placeholder = "___VALOR_NULO_TEMPORARIO___"
+
+        for col in COLUMNS_TO_VERIFY_CHANGE:
+            fiorilli_norm_col = f"{col}_fiorilli_norm"
+            ahgora_norm_col = f"{col}_ahgora_norm"
+
+            if (
+                fiorilli_norm_col in merged_employees
+                and ahgora_norm_col in merged_employees
+            ):
+                series_fiorilli = merged_employees[fiorilli_norm_col]
+                series_ahgora = merged_employees[ahgora_norm_col]
+
+                condition = series_fiorilli.fillna(placeholder) != series_ahgora.fillna(
+                    placeholder
+                )
+                change_conditions.append(condition)
 
         if change_conditions:
             combined_condition = change_conditions[0]
@@ -499,7 +510,7 @@ class DataManager:
 
     def normalize_text(self, text):
         if pd.isna(text):
-            return ""
+            return np.nan
         text = str(text)
         normalized = (
             unicodedata.normalize("NFKD", text)
