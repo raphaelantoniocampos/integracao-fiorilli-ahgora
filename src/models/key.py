@@ -26,3 +26,10 @@ def wait_key_press(keys: list[Key]):
             if keyboard.is_pressed(key.key):
                 time.sleep(0.5)
                 return key.action
+
+
+KEY_CONTINUE = Key("F2", "green", "continuar")
+KEY_NEXT = Key("F3", "gold1", "próximo")
+KEY_BACK = Key("F3", "gold1", "voltar")
+KEY_STOP = Key("F4", "red3", "sair")
+KEY_REPEAT = Key("F3", "gold1", "repetir")

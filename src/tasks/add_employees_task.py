@@ -4,32 +4,25 @@ import pyautogui
 from pyperclip import copy
 from rich import print
 
-from src.models.key import Key, wait_key_press
+from src.models.key import wait_key_press, KEY_CONTINUE, KEY_NEXT, KEY_BACK, KEY_STOP
 from src.models.task import Task
 from src.tasks.task_runner import TaskRunner
 from src.utils.ui import spinner
 
 
 class AddEmployeesTask(TaskRunner):
-    KEY_CONTINUE = Key("F2", "green", "continuar")
-    KEY_NEXT = Key("F3", "gold1", "próximo")
-    KEY_BACK = Key("F3", "gold1", "voltar")
-    KEY_STOP = Key("F4", "red3", "sair")
-
     def __init__(self, task: Task):
         super().__init__(task)
 
     def run(self) -> None:
         df = self.task.df
         for i, series in df.iterrows():
-            print(
-                f"\n[bold gold1]{'-' * 15} NOVO FUNCIONÁRIO! {'-' * 15}[/bold gold1]"
-            )
+            print(f"\n[bold gold1]{'-' * 15} NOVO FUNCIONÁRIO! {'-' * 15}[/bold gold1]")
             print(series)
             name = series.get("name")
             copy(name)
             print(f"Nome '{name}' copiado para a área de transferência!)")
-            match wait_key_press([self.KEY_CONTINUE, self.KEY_NEXT, self.KEY_STOP]):
+            match wait_key_press([KEY_CONTINUE, KEY_NEXT, KEY_STOP]):
                 case "continuar":
                     spinner("Continuando")
                     self._auto_new(series)
@@ -47,7 +40,7 @@ class AddEmployeesTask(TaskRunner):
         print(
             "Clique em [bright_blue]Novo Funcionário[/], clique no [bright_blue]Nome[/]"
         )
-        match wait_key_press([self.KEY_CONTINUE, self.KEY_BACK]):
+        match wait_key_press([KEY_CONTINUE, KEY_BACK]):
             case "voltar":
                 spinner()
                 return
@@ -73,7 +66,7 @@ class AddEmployeesTask(TaskRunner):
         )
         print(f"PIS-PASEP: [gold1]{formatted_pis_pasep}[/]")
 
-        wait_key_press(self.KEY_CONTINUE)
+        wait_key_press(KEY_CONTINUE)
         print("[bold green]Continuando![/bold green]")
 
         pyautogui.press("tab")
@@ -142,4 +135,4 @@ class AddEmployeesTask(TaskRunner):
 
         print(f"Insira o Departamento\n[gold1]{row['department']}[/]")
 
-        wait_key_press(self.KEY_NEXT)
+        wait_key_press(KEY_NEXT)

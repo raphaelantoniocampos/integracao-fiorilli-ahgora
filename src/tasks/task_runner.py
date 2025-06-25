@@ -7,7 +7,7 @@ from rich import print
 from rich.panel import Panel
 
 from src.managers.data_manager import DataManager
-from src.models.key import wait_key_press
+from src.models.key import wait_key_press, KEY_CONTINUE
 from src.models.task import Task
 from src.utils.ui import console, spinner
 
@@ -49,7 +49,7 @@ class TaskRunner(ABC):
                 return
             print(f"URL '{url}' copiada para a área de transferência!)")
             copy(url)
-            wait_key_press(self.KEY_CONTINUE)
+            wait_key_press(KEY_CONTINUE)
             self.run()
 
         spinner()
@@ -59,7 +59,12 @@ class TaskRunner(ABC):
         """Runs the task"""
 
     def exit_task(self):
-        if inquirer.confirm(message="Marcar como finalizado?", default=True).execute():
+        confirm_exit = inquirer.confirm(
+            message="Marcar como finalizado?",
+            default=True,
+        ).execute()
+
+        if confirm_exit:
             self.task.path.unlink()
 
     def _choose_itens(

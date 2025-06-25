@@ -1,37 +1,34 @@
 import time
 
+import keyboard
 import pyautogui
 from InquirerPy import inquirer
 from pyperclip import copy
 from rich import print
 
-from src.models.key import Key, wait_key_press
+from src.models.key import Key, wait_key_press, KEY_STOP, KEY_NEXT
 from src.models.task import Task
 from src.tasks.task_runner import TaskRunner
 from src.utils.ui import spinner
 
 
 class ColumnConfig:
-    def __init__(self, label: str, color: str, key_char: str, key_color: str):
+    def __init__(self, label: str, color: str, key_char: str):
         self.label = label
         self.style = f"[{color}]"
         self.styled_label = f"[{color}]{self.label}[/]"
         self.key_message = f"escrever o/a {self.label.lower()}"
-        self.key = Key(key_char, key_color, self.key_message)
+        self.key = Key(key_char, color, self.key_message)
 
 
 class UpdateEmployeesTask(TaskRunner):
     COLUMN_CONFIG = {
-        "name": ColumnConfig("NOME", "white", "shift+n", "white"),
-        "admission_date": ColumnConfig("DATA ADMISSÃO", "green", "shift+a", "green"),
-        "dismissal_date": ColumnConfig("DATA DEMISSÃO", "red", "shift+i", "red"),
-        "position": ColumnConfig("CARGO", "cyan", "shift+p", "cyan"),
-        "department": ColumnConfig("DEPARTAMENTO", "violet", "shift+d", "violet"),
+        "name": ColumnConfig("NOME", "white", "shift+1"),
+        "admission_date": ColumnConfig("DATA ADMISSÃO", "green", "shift+2"),
+        "dismissal_date": ColumnConfig("DATA DEMISSÃO", "red", "shift+3"),
+        "position": ColumnConfig("CARGO", "cyan", "shift+4"),
+        "department": ColumnConfig("DEPARTAMENTO", "violet", "shift+5"),
     }
-
-    KEY_CONTINUE = Key("F2", "green", "continuar")
-    KEY_NEXT = Key("F3", "gold1", "próximo")
-    KEY_STOP = Key("F4", "red", "sair")
 
     def __init__(self, task: Task):
         super().__init__(task)
@@ -93,19 +90,20 @@ class UpdateEmployeesTask(TaskRunner):
                     for change in detected_changes
                 }
 
-                keys_to_wait = active_keys + [self.KEY_NEXT, self.KEY_STOP]
+                keys_to_wait = active_keys + [KEY_NEXT, KEY_STOP]
 
                 pressed_action = wait_key_press(keys_to_wait)
 
                 if pressed_action in action_map:
-                    value_to_write = action_map[pressed_action]
-                    copy(str(value_to_write))
-                    pyautogui.write(str(value_to_write), interval=0.02)
+                    value_to_write = str(action_map[pressed_action])
+                    copy(value_to_write)
+                    keyboard.send("backspace")
+                    pyautogui.write(value_to_write, interval=0.02)
                     time.sleep(0.5)
-                elif pressed_action == self.KEY_NEXT.action:
+                elif pressed_action == KEY_NEXT.action:
                     spinner("Continuando")
                     break
-                elif pressed_action == self.KEY_STOP.action:
+                elif pressed_action == KEY_STOP.action:
                     self.exit_task()
                     spinner()
                     return

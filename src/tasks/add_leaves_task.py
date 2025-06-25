@@ -10,7 +10,8 @@ from rich.table import Table
 
 from src.managers.data_manager import DataManager
 from src.managers.file_manager import FileManager
-from src.models.key import Key, wait_key_press
+
+from src.models.key import wait_key_press, KEY_CONTINUE, KEY_STOP
 from src.models.task import Task
 from src.tasks.task_runner import TaskRunner
 from src.utils.constants import (
@@ -22,10 +23,6 @@ from src.utils.ui import console, spinner
 
 
 class AddLeavesTask(TaskRunner):
-    KEY_CONTINUE = Key("F2", "green", "continuar")
-    KEY_STOP = Key("F4", "red3", "sair")
-    KEY_REPEAT = Key("F3", "gold1", "repetir")
-
     def __init__(self, task: Task):
         with tempfile.TemporaryDirectory() as tmpdirname:
             self.temp_dir_path = Path(tmpdirname)
@@ -50,7 +47,7 @@ class AddLeavesTask(TaskRunner):
             self.df_to_upload(leaves_df, upload_leaves_path)
             self.ask_to_insert_file(upload_leaves_path)
 
-            if wait_key_press([self.KEY_CONTINUE, self.KEY_STOP]) == "sair":
+            if wait_key_press([KEY_CONTINUE, KEY_STOP]) == "sair":
                 return
 
             spinner("Aguarde")
@@ -60,7 +57,7 @@ class AddLeavesTask(TaskRunner):
             filter_path.touch()
             os.startfile(filter_path)
 
-            if wait_key_press([self.KEY_CONTINUE, self.KEY_STOP]) == "sair":
+            if wait_key_press([KEY_CONTINUE, KEY_STOP]) == "sair":
                 return
 
             spinner("Aguarde")
@@ -110,8 +107,15 @@ class AddLeavesTask(TaskRunner):
         )
         print("Arquivo '[bold green]new_leaves.txt[/bold green]' gerado com sucesso!")
 
+        proceed = False
+        while not proceed:
+            proceed = inquirer.confirm(
+                message="Copiar caminho da importação.",
+                default=True,
+            ).execute()
+
         self.ask_to_insert_file(upload_file_path)
-        wait_key_press(self.KEY_CONTINUE)
+        wait_key_press(KEY_CONTINUE)
 
         spinner("Aguarde")
         self.exit_task()
