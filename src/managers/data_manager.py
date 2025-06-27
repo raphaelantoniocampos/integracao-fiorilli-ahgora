@@ -1,7 +1,6 @@
 import time
 import unicodedata
 from datetime import datetime
-from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -18,10 +17,7 @@ from src.utils.constants import (
     INQUIRER_KEYBINDINGS,
     LEAVES_COLUMNS,
     PT_MONTHS,
-    RAW_AHGORA_EMPLOYEES_COLUMNS,
-    RAW_FIORILLI_EMPLOYEES_COLUMNS,
     TASKS_DIR,
-    UPLOAD_LEAVES_COLUMNS,
 )
 from src.utils.ui import console, menu, spinner
 
@@ -36,6 +32,66 @@ class DataManager:
             name="Dados",
             choices=DATA_MENU_CHOICES,
         )
+
+    def analyze(self):
+        try:
+            with console.status(
+                "[bold green]Analisando dados...[/bold green]", spinner="dots"
+            ):
+                ahgora_employees, fiorilli_employees = self.get_employees_data()
+                last_leaves, all_leaves = self.get_leaves_data()
+
+                leave_codes = self.read_csv(
+                    DATA_DIR / "leave_codes.csv", columns=["cod", "desc"]
+                )
+                all_leaves = self.get_view_leaves(
+                    all_leaves,
+                    fiorilli_employees,
+                    leave_codes=leave_codes,
+                )
+
+                self.update_saved_dfs(
+                    ahgora_employees=ahgora_employees,
+                    fiorilli_employees=fiorilli_employees,
+                    all_leaves=all_leaves,
+                )
+
+                (
+                    new_employees_df,
+                    dismissed_employees_df,
+                    changed_employees_df,
+                    new_leaves_df,
+                ) = self.generate_tasks_dfs(
+                    fiorilli_employees=fiorilli_employees,
+                    ahgora_employees=ahgora_employees,
+                    last_leaves=last_leaves,
+                    all_leaves=all_leaves,
+                )
+
+                self.save_tasks_dfs(
+                    new_employees_df=new_employees_df,
+                    dismissed_employees_df=dismissed_employees_df,
+                    changed_employees_df=changed_employees_df,
+                    new_leaves_df=new_leaves_df,
+                )
+
+            Config.update_last_analisys()
+            FileManager.setup()
+            console.print(
+                "[bold green]Dados sincronizados com sucesso![/bold green]\n",
+            )
+            time.sleep(1)
+
+        except FileNotFoundError as e:
+            console.print(
+                f"[bold red]Erro ao analisar dados[/bold red]:\n {
+                    e
+                }\nFaça o download primeiro."
+            )
+            console.print(
+                "Pressione [green]qualquer tecla[/] para continuar...",
+            )
+            input()
 
     def visualizer(self):
         ahgora_files = [file for file in AHGORA_DIR.iterdir()]
@@ -88,62 +144,6 @@ class DataManager:
                 border=True,
             ).execute()
 
-    def analyze(self):
-        try:
-            with console.status(
-                "[bold green]Analisando dados...[/bold green]", spinner="dots"
-            ):
-                ahgora_employees, fiorilli_employees = self.get_employees_data()
-                last_leaves, all_leaves = self.get_leaves_data()
-
-                leave_codes = self.read_csv(
-                    DATA_DIR / "leave_codes.csv", columns=["cod", "desc"]
-                )
-                all_leaves = self.get_view_leaves(
-                    all_leaves,
-                    fiorilli_employees,
-                    leave_codes=leave_codes,
-                )
-
-                FileManager.save_df(
-                    df=ahgora_employees,
-                    path=AHGORA_DIR / "employees.csv",
-                )
-
-                FileManager.save_df(
-                    df=fiorilli_employees,
-                    path=FIORILLI_DIR / "employees.csv",
-                )
-
-                FileManager.save_df(
-                    df=all_leaves,
-                    path=FIORILLI_DIR / "leaves.csv",
-                    header=False,
-                )
-                self.generate_tasks_dfs(
-                    fiorilli_employees=fiorilli_employees,
-                    ahgora_employees=ahgora_employees,
-                    last_leaves=last_leaves,
-                    all_leaves=all_leaves,
-                )
-
-            Config.update_last_analisys()
-            FileManager.setup()
-            console.print("[bold green]Dados sincronizados com sucesso![/bold green]\n")
-            time.sleep(1)
-        except KeyboardInterrupt as e:
-            console.print(f"[bold red]Erro ao sincronizar dados: {e}[/bold red]\n")
-            time.sleep(1)
-
-        except FileNotFoundError as e:
-            console.print(
-                f"[bold red]Erro ao analisar dados: {
-                    e
-                }[/bold red]\nFaça o download primeiro."
-            )
-            console.print("Pressione [green]qualquer tecla[/] para continuar...")
-            input()
-
     def get_view_leaves(
         self,
         leaves_df: pd.DataFrame,
@@ -174,123 +174,6 @@ class DataManager:
 
         leaves_df = leaves_df[LEAVES_COLUMNS]
         return leaves_df
-
-    @staticmethod
-    def filter_df(df: pd.DataFrame, ids: list[str]) -> pd.DataFrame:
-        return df[df["id"].isin(ids)]
-
-    def read_csv(
-        self,
-        path: Path,
-        sep: str = ",",
-        encoding: str = "utf-8",
-        header: str | None = "infer",
-        columns: list[str] = [],
-    ) -> pd.DataFrame:
-        match path.name:
-            case "raw_employees.txt":
-                return self.prepare_dataframe(
-                    df=pd.read_csv(
-                        path,
-                        sep="|",
-                        encoding="latin1",
-                        index_col=False,
-                        header=None,
-                    ),
-                    columns=RAW_FIORILLI_EMPLOYEES_COLUMNS,
-                )
-
-            case "raw_employees.csv":
-                return self.prepare_dataframe(
-                    df=pd.read_csv(
-                        path,
-                        index_col=False,
-                        header=None,
-                    ),
-                    columns=RAW_AHGORA_EMPLOYEES_COLUMNS,
-                )
-
-            case "leaves.csv":
-                return self.prepare_dataframe(
-                    df=pd.read_csv(
-                        path,
-                        index_col=False,
-                        header=None,
-                    ),
-                    columns=LEAVES_COLUMNS,
-                )
-            case "raw_vacations.txt":
-                return self.prepare_dataframe(
-                    df=pd.read_csv(
-                        path,
-                        index_col=False,
-                        header=None,
-                    ),
-                    columns=UPLOAD_LEAVES_COLUMNS,
-                )
-
-            case "raw_leaves.txt":
-                return self.prepare_dataframe(
-                    df=pd.read_csv(
-                        path,
-                        index_col=False,
-                        header=None,
-                    ),
-                    columns=UPLOAD_LEAVES_COLUMNS,
-                )
-            case _:
-                return self.prepare_dataframe(
-                    df=pd.read_csv(
-                        path,
-                        sep=sep,
-                        encoding=encoding,
-                        index_col=False,
-                        header=header,
-                    ),
-                    columns=columns,
-                )
-
-    def prepare_dataframe(
-        self,
-        df: pd.DataFrame,
-        columns: list[str] = [],
-    ) -> pd.DataFrame:
-        if columns:
-            df.columns = columns
-        else:
-            columns = df.columns
-
-        for col in df.columns:
-            if "date" in col:
-                df[col] = df[col].apply(self.convert_date)
-                df[col] = pd.to_datetime(
-                    df[col],
-                    dayfirst=True,
-                    format="%d/%m/%Y",
-                    errors="coerce",
-                )
-                df[col] = df[col].dt.strftime("%d/%m/%Y")
-
-        if "cpf" in df.columns:
-            df["cpf"] = df["cpf"].fillna("").astype(str).str.zfill(11)
-
-        if "cod" in df.columns:
-            df["cod"] = df["cod"].fillna("").astype(str).str.zfill(3)
-
-        if "name" in df.columns:
-            df["name"] = df["name"].str.strip().str.upper()
-
-        if "pis_pasep" in df.columns:
-            if not pd.api.types.is_string_dtype(df["pis_pasep"]):
-                df["pis_pasep"] = df["pis_pasep"].fillna(0).astype(int).astype(str)
-
-        if "id" in df.columns:
-            df["id"] = df["id"].astype(str).str.zfill(6)
-
-        if "desc" in df.columns:
-            df["desc"] = df["desc"].astype(str)
-
-        return df
 
     def convert_date(self, date_str: str):
         not_a_date = (
@@ -374,11 +257,11 @@ class DataManager:
             all_leaves=all_leaves,
         )
 
-        self.save_tasks_dfs(
-            new_employees_df=new_employees_df,
-            dismissed_employees_df=dismissed_employees_df,
-            changed_employees_df=changed_employees_df,
-            new_leaves_df=new_leaves_df,
+        return (
+            new_employees_df,
+            dismissed_employees_df,
+            changed_employees_df,
+            new_leaves_df,
         )
 
     def _get_new_employees_df(
@@ -539,9 +422,36 @@ class DataManager:
             df=changed_employees_df,
             path=TASKS_DIR / "update_employees.csv",
         )
+        leaves_task_path = TASKS_DIR / "add_leaves.csv"
+        not_done_leaves = self.read_csv(leaves_task_path)
+        print(not_done_leaves)
+
+        if not new_leaves_df.empty:
+            FileManager.save_df(
+                df=new_leaves_df,
+                path=TASKS_DIR / "add_leaves.csv",
+            )
+
+    def update_saved_dfs(
+        self,
+        ahgora_employees: pd.DataFrame,
+        fiorilli_employees: pd.DataFrame,
+        all_leaves: pd.DataFrame,
+    ):
         FileManager.save_df(
-            df=new_leaves_df,
-            path=TASKS_DIR / "add_leaves.csv",
+            df=ahgora_employees,
+            path=AHGORA_DIR / "employees.csv",
+        )
+
+        FileManager.save_df(
+            df=fiorilli_employees,
+            path=FIORILLI_DIR / "employees.csv",
+        )
+
+        FileManager.save_df(
+            df=all_leaves,
+            path=FIORILLI_DIR / "leaves.csv",
+            header=False,
         )
 
     def get_employees_data(self) -> (pd.DataFrame, pd.DataFrame):
