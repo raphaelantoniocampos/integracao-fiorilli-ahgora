@@ -2,12 +2,12 @@ from datetime import date, datetime
 from time import sleep
 
 from dateutil.relativedelta import relativedelta
-from rich import print
 from rich.console import Console
 from selenium.webdriver.common.by import By
 
 from src.browsers.core_browser import CoreBrowser
 from src.utils.creds import Creds
+from src.utils.ui import console
 
 
 class FiorilliBrowser(CoreBrowser):
@@ -57,7 +57,9 @@ class FiorilliBrowser(CoreBrowser):
             self._click_export_txt_option()
             self._wait_for_export_to_complete()
             self.close_driver()
-        print("[bold green]Download de funcionários do FIORILLI concluído[/bold green]")
+        console.print(
+            "Download de funcionários do FIORILLI concluído",
+        )
 
     def _start_leaves_download(self) -> None:
         ()
@@ -73,7 +75,9 @@ class FiorilliBrowser(CoreBrowser):
             self._insert_date_for_input(name="PontoAfastamentos2")
             self._close_tab()
             self.close_driver()
-        print("[bold green]Download de afastamentos do FIORILLI concluído[/bold green]")
+        console.print(
+            "Download de afastamentos do FIORILLI concluído",
+        )
 
     def _login(self) -> None:
         creds = Creds()

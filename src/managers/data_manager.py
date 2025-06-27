@@ -60,11 +60,23 @@ class DataManager:
                     all_leaves=all_leaves,
                 )
 
-                self.generate_tasks_dfs(
+                (
+                    new_employees_df,
+                    dismissed_employees_df,
+                    changed_employees_df,
+                    new_leaves_df,
+                ) = self.generate_tasks_dfs(
                     fiorilli_employees=fiorilli_employees,
                     ahgora_employees=ahgora_employees,
                     last_leaves=last_leaves,
                     all_leaves=all_leaves,
+                )
+
+                self.save_tasks_dfs(
+                    new_employees_df=new_employees_df,
+                    dismissed_employees_df=dismissed_employees_df,
+                    changed_employees_df=changed_employees_df,
+                    new_leaves_df=new_leaves_df,
                 )
 
             Config.update_last_analisys()
@@ -330,6 +342,8 @@ class DataManager:
         last_leaves: pd.DataFrame,
         all_leaves: pd.DataFrame,
     ) -> None:
+        console.print("Gerando tabelas de tarefas")
+        time.sleep(0.5)
         fiorilli_dismissed_df = fiorilli_employees[
             fiorilli_employees["dismissal_date"].notna()
         ]
@@ -365,11 +379,11 @@ class DataManager:
             all_leaves=all_leaves,
         )
 
-        self.save_tasks_dfs(
-            new_employees_df=new_employees_df,
-            dismissed_employees_df=dismissed_employees_df,
-            changed_employees_df=changed_employees_df,
-            new_leaves_df=new_leaves_df,
+        return (
+            new_employees_df,
+            dismissed_employees_df,
+            changed_employees_df,
+            new_leaves_df,
         )
 
     def _get_new_employees_df(
@@ -378,6 +392,8 @@ class DataManager:
         ahgora_employees: pd.DataFrame,
         dismissed_ids: set[int],
     ) -> pd.DataFrame:
+        console.print("Buscando novos funcionários")
+        time.sleep(0.5)
         ahgora_ids = set(ahgora_employees["id"])
 
         new_employees_df = fiorilli_active_employees[
@@ -388,6 +404,10 @@ class DataManager:
             new_employees_df["binding"] != "AUXILIO RECLUSAO"
         ]
 
+        console.print(
+            f"{len(new_employees_df)} novos funcionários",
+        )
+        time.sleep(0.5)
         return new_employees_df
 
     def _get_dismissed_employees_df(
@@ -397,6 +417,8 @@ class DataManager:
         fiorilli_dismissed_ids: set[int],
         ahgora_dismissed_ids: set[int],
     ) -> pd.DataFrame:
+        console.print("Buscando funcionários desligados")
+        time.sleep(0.5)
         dismissed_employees_df = ahgora_employees[
             ahgora_employees["id"].isin(fiorilli_dismissed_ids)
             & ~ahgora_employees["id"].isin(ahgora_dismissed_ids)
@@ -418,6 +440,11 @@ class DataManager:
             dismissed_employees_df["dismissal_date"] <= today
         ]
 
+        console.print(
+            f"{len(dismissed_employees_df)} funcionários desligados",
+        )
+        time.sleep(0.5)
+
         return dismissed_employees_df
 
     def _get_changed_employees_df(
@@ -425,6 +452,8 @@ class DataManager:
         fiorilli_active_employees: pd.DataFrame,
         ahgora_employees: pd.DataFrame,
     ) -> pd.DataFrame:
+        console.print("Buscando funcionários atualizados")
+        time.sleep(0.5)
         merged_employees = fiorilli_active_employees.merge(
             ahgora_employees, on="id", suffixes=("_fiorilli", "_ahgora"), how="inner"
         )
@@ -468,6 +497,10 @@ class DataManager:
 
         changed_employees_df = merged_employees[combined_condition]
 
+        console.print(
+            f"{len(changed_employees_df)} funcionários atualizados",
+        )
+        time.sleep(0.5)
         return changed_employees_df
 
     def _get_new_leaves_df(
@@ -475,6 +508,8 @@ class DataManager:
         last_leaves: pd.DataFrame,
         all_leaves: pd.DataFrame,
     ) -> pd.DataFrame:
+        console.print("Buscando afastamentos")
+        time.sleep(0.5)
         try:
             for df in [last_leaves, all_leaves]:
                 for col in ["start_date", "end_date"]:
@@ -498,8 +533,12 @@ class DataManager:
             not_done_task_df = self.read_csv(TASKS_DIR / "add_leaves.csv")
 
             if leaves_df.empty and not not_done_task_df.empty:
-                return not_done_task_df
+                leaves_df = not_done_task_df
 
+            console.print(
+                text=f"{len(leaves_df)} novos afastamentos",
+            )
+            time.sleep(0.5)
             return leaves_df
 
         except TypeError:
@@ -523,6 +562,8 @@ class DataManager:
         fiorilli_employees: pd.DataFrame,
         all_leaves: pd.DataFrame,
     ):
+        console.print("Salvando novos dados")
+        time.sleep(0.5)
         FileManager.save_df(
             df=ahgora_employees,
             path=AHGORA_DIR / "employees.csv",
@@ -567,6 +608,8 @@ class DataManager:
         )
 
     def get_employees_data(self) -> (pd.DataFrame, pd.DataFrame):
+        console.print("Recuperando dados de funcionários")
+        time.sleep(0.5)
         raw_fiorilli_employees = FIORILLI_DIR / "raw_employees.txt"
         raw_ahgora_employees = AHGORA_DIR / "raw_employees.csv"
 
@@ -576,6 +619,8 @@ class DataManager:
         return ahgora_employees, fiorilli_employees
 
     def get_leaves_data(self) -> (pd.DataFrame, pd.DataFrame):
+        console.print("Recuperando dados de afastamentos")
+        time.sleep(0.5)
         last_leaves_path = FIORILLI_DIR / "leaves.csv"
         raw_leaves_path = FIORILLI_DIR / "raw_leaves.txt"
         raw_vacations_path = FIORILLI_DIR / "raw_vacations.txt"

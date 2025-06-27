@@ -1,11 +1,11 @@
 import time
 
-from rich import print
 from rich.console import Console
 from selenium.webdriver.common.by import By
 
 from src.browsers.core_browser import CoreBrowser
 from src.utils.creds import Creds
+from src.utils.ui import console
 
 
 class AhgoraBrowser(CoreBrowser):
@@ -36,7 +36,8 @@ class AhgoraBrowser(CoreBrowser):
             self._click_plus_button()
             self._export_to_csv()
             self.close_driver()
-        print("[bold green]Download de funcionários do AHGORA concluído[/bold green]")
+
+            console.print("Download de funcionários do AHGORA concluído")
 
     def _login(self) -> None:
         creds = Creds()
