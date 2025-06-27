@@ -37,6 +37,53 @@ class DataManager:
             choices=DATA_MENU_CHOICES,
         )
 
+    def analyze(self):
+        try:
+            with console.status(
+                "[bold green]Analisando dados...[/bold green]", spinner="dots"
+            ):
+                ahgora_employees, fiorilli_employees = self.get_employees_data()
+                last_leaves, all_leaves = self.get_leaves_data()
+
+                leave_codes = self.read_csv(
+                    DATA_DIR / "leave_codes.csv", columns=["cod", "desc"]
+                )
+                all_leaves = self.get_view_leaves(
+                    all_leaves,
+                    fiorilli_employees,
+                    leave_codes=leave_codes,
+                )
+
+                self.update_saved_dfs(
+                    ahgora_employees=ahgora_employees,
+                    fiorilli_employees=fiorilli_employees,
+                    all_leaves=all_leaves,
+                )
+
+                self.generate_tasks_dfs(
+                    fiorilli_employees=fiorilli_employees,
+                    ahgora_employees=ahgora_employees,
+                    last_leaves=last_leaves,
+                    all_leaves=all_leaves,
+                )
+
+            Config.update_last_analisys()
+            FileManager.setup()
+            console.print("[bold green]Dados sincronizados com sucesso![/bold green]\n")
+            time.sleep(1)
+        except KeyboardInterrupt as e:
+            console.print(f"[bold red]Erro ao sincronizar dados: {e}[/bold red]\n")
+            time.sleep(1)
+
+        except FileNotFoundError as e:
+            console.print(
+                f"[bold red]Erro ao analisar dados: {
+                    e
+                }[/bold red]\nFaça o download primeiro."
+            )
+            console.print("Pressione [green]qualquer tecla[/] para continuar...")
+            input()
+
     def visualizer(self):
         ahgora_files = [file for file in AHGORA_DIR.iterdir()]
         fiorilli_files = [file for file in FIORILLI_DIR.iterdir()]
@@ -87,62 +134,6 @@ class DataManager:
                 mandatory=False,
                 border=True,
             ).execute()
-
-    def analyze(self):
-        try:
-            with console.status(
-                "[bold green]Analisando dados...[/bold green]", spinner="dots"
-            ):
-                ahgora_employees, fiorilli_employees = self.get_employees_data()
-                last_leaves, all_leaves = self.get_leaves_data()
-
-                leave_codes = self.read_csv(
-                    DATA_DIR / "leave_codes.csv", columns=["cod", "desc"]
-                )
-                all_leaves = self.get_view_leaves(
-                    all_leaves,
-                    fiorilli_employees,
-                    leave_codes=leave_codes,
-                )
-
-                FileManager.save_df(
-                    df=ahgora_employees,
-                    path=AHGORA_DIR / "employees.csv",
-                )
-
-                FileManager.save_df(
-                    df=fiorilli_employees,
-                    path=FIORILLI_DIR / "employees.csv",
-                )
-
-                FileManager.save_df(
-                    df=all_leaves,
-                    path=FIORILLI_DIR / "leaves.csv",
-                    header=False,
-                )
-                self.generate_tasks_dfs(
-                    fiorilli_employees=fiorilli_employees,
-                    ahgora_employees=ahgora_employees,
-                    last_leaves=last_leaves,
-                    all_leaves=all_leaves,
-                )
-
-            Config.update_last_analisys()
-            FileManager.setup()
-            console.print("[bold green]Dados sincronizados com sucesso![/bold green]\n")
-            time.sleep(1)
-        except KeyboardInterrupt as e:
-            console.print(f"[bold red]Erro ao sincronizar dados: {e}[/bold red]\n")
-            time.sleep(1)
-
-        except FileNotFoundError as e:
-            console.print(
-                f"[bold red]Erro ao analisar dados: {
-                    e
-                }[/bold red]\nFaça o download primeiro."
-            )
-            console.print("Pressione [green]qualquer tecla[/] para continuar...")
-            input()
 
     def get_view_leaves(
         self,
@@ -499,11 +490,17 @@ class DataManager:
                 how="outer",
                 indicator=True,
             )
-            new_leaves = merged[merged["_merge"] == "right_only"].drop(
+            leaves_df = merged[merged["_merge"] == "right_only"].drop(
                 "_merge",
                 axis=1,
             )
-            return new_leaves
+
+            not_done_task_df = self.read_csv(TASKS_DIR / "add_leaves.csv")
+
+            if leaves_df.empty and not not_done_task_df.empty:
+                return not_done_task_df
+
+            return leaves_df
 
         except TypeError:
             return pd.DataFrame(columns=LEAVES_COLUMNS)
@@ -520,6 +517,28 @@ class DataManager:
         normalized = self.treat_exceptions_and_typos(normalized)
         return normalized.lower().strip()
 
+    def update_saved_dfs(
+        self,
+        ahgora_employees: pd.DataFrame,
+        fiorilli_employees: pd.DataFrame,
+        all_leaves: pd.DataFrame,
+    ):
+        FileManager.save_df(
+            df=ahgora_employees,
+            path=AHGORA_DIR / "employees.csv",
+        )
+
+        FileManager.save_df(
+            df=fiorilli_employees,
+            path=FIORILLI_DIR / "employees.csv",
+        )
+
+        FileManager.save_df(
+            df=all_leaves,
+            path=FIORILLI_DIR / "leaves.csv",
+            header=False,
+        )
+
     def save_tasks_dfs(
         self,
         new_employees_df: pd.DataFrame,
@@ -531,14 +550,17 @@ class DataManager:
             df=new_employees_df,
             path=TASKS_DIR / "add_employees.csv",
         )
+
         FileManager.save_df(
             df=dismissed_employees_df,
             path=TASKS_DIR / "remove_employees.csv",
         )
+
         FileManager.save_df(
             df=changed_employees_df,
             path=TASKS_DIR / "update_employees.csv",
         )
+
         FileManager.save_df(
             df=new_leaves_df,
             path=TASKS_DIR / "add_leaves.csv",
