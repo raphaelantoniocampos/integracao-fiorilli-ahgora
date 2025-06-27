@@ -109,6 +109,7 @@ class DataManager:
                     df=ahgora_employees,
                     path=AHGORA_DIR / "employees.csv",
                 )
+
                 FileManager.save_df(
                     df=fiorilli_employees,
                     path=FIORILLI_DIR / "employees.csv",
@@ -119,7 +120,6 @@ class DataManager:
                     path=FIORILLI_DIR / "leaves.csv",
                     header=False,
                 )
-
                 self.generate_tasks_dfs(
                     fiorilli_employees=fiorilli_employees,
                     ahgora_employees=ahgora_employees,
@@ -553,18 +553,13 @@ class DataManager:
         ahgora_employees = self.read_csv(raw_ahgora_employees)
         return ahgora_employees, fiorilli_employees
 
-    def get_leaves_data(self) -> pd.DataFrame:
+    def get_leaves_data(self) -> (pd.DataFrame, pd.DataFrame):
         last_leaves_path = FIORILLI_DIR / "leaves.csv"
         raw_leaves_path = FIORILLI_DIR / "raw_leaves.txt"
         raw_vacations_path = FIORILLI_DIR / "raw_vacations.txt"
 
         try:
-            last_leaves = self.read_csv(
-                last_leaves_path,
-            )
-        except FileNotFoundError:
-            last_leaves = pd.DataFrame(columns=LEAVES_COLUMNS)
-        try:
+            last_leaves = self.read_csv(last_leaves_path)
             all_leaves = pd.concat(
                 [
                     self.read_csv(raw_vacations_path),
@@ -572,7 +567,9 @@ class DataManager:
                 ]
             )
         except EmptyDataError:
-            all_leaves = pd.DataFrame
+            all_leaves = pd.DataFrame(columns=LEAVES_COLUMNS)
+        except FileNotFoundError:
+            last_leaves = pd.DataFrame(columns=LEAVES_COLUMNS)
 
         return last_leaves, all_leaves
 
