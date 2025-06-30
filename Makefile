@@ -4,7 +4,7 @@
 PROJECT_ROOT := $(CURDIR)
 APP_NAME     := Integracao Fiorilli Ahgora
 MAIN_SCRIPT  := main.py
-ICON_FILE    := ifa2.ico
+ICON_FILE    := ifa3.ico
 
 # --- Comandos ---
 PYTHON_CMD   := uv run python
