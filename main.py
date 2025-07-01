@@ -4,31 +4,45 @@ from src.managers.data_manager import DataManager
 from src.managers.download_manager import DownloadManager
 from src.managers.file_manager import FileManager
 from src.managers.task_manager import TaskManager
-from src.utils.config import Config, Status
 from src.utils.creds import Creds
-from src.utils.ui import main_menu, spinner
+from src.utils.config import Config
+from src.utils.ui import main_menu, spinner, console
+import time
 
 
 def main():
     config = Config()
-    print(config)
-    print(type(config))
-    import time
-    time.sleep(10)
-    if isinstance(config, Status):
-        status = config
-        if status.missing_directories:
+    if not config.status.working:
+        if config.status.missing_directories:
+            console.print(
+                f"Criando diretórios.\n{config.status.missing_directories}",
+            )
+            time.sleep(1)
             FileManager.create_directories(
-                directories=status.missing_directories,
+                directories=config.status.missing_directories,
             )
-        if status.missing_vars:
+        if config.status.missing_vars:
+            console.print(
+                f"É necessária a configuração das variáveis de ambiente.\n{
+                    config.status.missing_vars
+                }",
+            )
+            time.sleep(1)
             Creds.create_vars(
-                vars=status.missing_vars,
+                vars=config.status.missing_vars,
             )
-        if status.missing_files:
+        if config.status.missing_files:
+            console.print(
+                f"Arquivos necessários ausentes. Iniciando download\n{
+                    config.status.missing_files
+                }",
+            )
+            time.sleep(1)
             DownloadManager.download_files(
-                files=status.missing_files,
+                files=config.status.missing_files,
             )
+        print(config.status)
+        return
         config = Config()
 
     task_manager = TaskManager()

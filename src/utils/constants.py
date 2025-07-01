@@ -33,7 +33,7 @@ INQUIRER_KEYBINDINGS = {
 JSON_INIT_CONFIG = {
     "init_date": "",
     "status": {
-        "desc": "",
+        "working": "",
         "missing_vars": [],
         "missing_directories": [],
         "missing_files": [],

@@ -46,8 +46,19 @@ class DownloadManager:
 
     @staticmethod
     def download_files(files):
-        import time
+        needed_downloads = []
         for file in files:
-            print(file)
-            time.sleep(3)
-
+            if "raw_employees.txt" in file:
+                needed_downloads.append(
+                    FiorilliBrowser.download_employees_data,
+                )
+            if "raw_employees.csv" in file:
+                needed_downloads.append(
+                    AhgoraBrowser.download_employees_data,
+                )
+            if "raw_leaves.txt" or "raw_vacations.txt" in file:
+                needed_downloads.append(
+                    FiorilliBrowser.download_leaves_data,
+                )
+        for download in needed_downloads:
+            download()

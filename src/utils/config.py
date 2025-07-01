@@ -18,7 +18,7 @@ from dataclasses import dataclass
 
 @dataclass
 class Status:
-    desc: str
+    working: bool
     missing_vars: list
     missing_directories: list
     missing_files: list
@@ -26,9 +26,6 @@ class Status:
 
 class Config:
     def __init__(self):
-        self.status = self.check_status()
-        if self.status.desc != "ok":
-            return self.status
         self.setup()
 
     def open(self, result=" ") -> None:
@@ -80,6 +77,7 @@ class Config:
         self.json_path: Path = DATA_DIR / "config.json"
         self.data: dict = self._load()
         Creds().load_vars()
+        self.status = self.check_status()
         self.update_status()
         self.update_time_since()
         self.last_analisys = self.data.get("last_analisys")
@@ -94,30 +92,21 @@ class Config:
         missing_vars = Creds.get_missing_vars()
         missing_directories = FileManager.get_missing_directories()
         missing_files = FileManager.get_missing_files()
-        desc = ""
-        desc += (
-            f"Faltando variáveis de ambiente: \n{missing_vars}\n"
-            if missing_vars
-            else ""
-        )
-        desc += f"Faltando pastas: \n{missing_directories}\n" if missing_vars else ""
-        desc += f"Faltando arquivos: \n{missing_files}\n" if missing_vars else ""
 
-        if desc == "":
-            desc = "ok"
+        working = not any(missing_vars + missing_directories + missing_files)
 
         return Status(
-            desc=desc,
+            working=working,
             missing_vars=missing_vars,
-            missing_directories=missing_directories,
-            missing_files=missing_files,
+            missing_directories=[str(dir) for dir in missing_directories],
+            missing_files=[str(file) for file in missing_files],
         )
 
     def update_status(self):
         self._update(
             "status",
-            "desc",
-            value=self.status.desc,
+            "working",
+            value=self.status.working,
         )
         self._update(
             "status",
