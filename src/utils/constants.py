@@ -1,7 +1,6 @@
 from pathlib import Path
 
-# Program diresctories
-
+# PROGRAM DIRESCTORIES
 BASE_DIR = Path(Path.cwd())
 DATA_DIR = BASE_DIR / "data"
 DOWNLOADS_DIR = BASE_DIR / "downloads"
@@ -9,6 +8,7 @@ FIORILLI_DIR = DATA_DIR / "fiorilli"
 AHGORA_DIR = DATA_DIR / "ahgora"
 TASKS_DIR = BASE_DIR / "tasks"
 
+# COMMON INQUIRER KEYBINDINGS
 INQUIRER_KEYBINDINGS = {
     "answer": [
         {"key": "enter"},
@@ -32,6 +32,12 @@ INQUIRER_KEYBINDINGS = {
 
 JSON_INIT_CONFIG = {
     "init_date": "",
+    "status": {
+        "desc": "",
+        "missing_vars": [],
+        "missing_directories": [],
+        "missing_files": [],
+    },
     "headless_mode": True,
     "last_analisys": {"datetime": "", "time_since": ""},
     "last_download": {
@@ -85,7 +91,7 @@ LEAVES_COLUMNS = [
     "end_time",
 ]
 
-RAW_AHGORA_EMPLOYEES_COLUMNS = [
+AHGORA_EMPLOYEES_COLUMNS = [
     "id",
     "name",
     "position",
@@ -96,7 +102,7 @@ RAW_AHGORA_EMPLOYEES_COLUMNS = [
     "dismissal_date",
 ]
 
-RAW_FIORILLI_EMPLOYEES_COLUMNS = [
+FIORILLI_EMPLOYEES_COLUMNS = [
     "id",
     "name",
     "cpf",

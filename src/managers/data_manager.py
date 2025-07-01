@@ -18,8 +18,8 @@ from src.utils.constants import (
     INQUIRER_KEYBINDINGS,
     LEAVES_COLUMNS,
     PT_MONTHS,
-    RAW_AHGORA_EMPLOYEES_COLUMNS,
-    RAW_FIORILLI_EMPLOYEES_COLUMNS,
+    AHGORA_EMPLOYEES_COLUMNS,
+    FIORILLI_EMPLOYEES_COLUMNS,
     TASKS_DIR,
     UPLOAD_LEAVES_COLUMNS,
 )
@@ -52,12 +52,6 @@ class DataManager:
                     all_leaves,
                     fiorilli_employees,
                     leave_codes=leave_codes,
-                )
-
-                self.update_saved_dfs(
-                    ahgora_employees=ahgora_employees,
-                    fiorilli_employees=fiorilli_employees,
-                    all_leaves=all_leaves,
                 )
 
                 (
@@ -176,7 +170,14 @@ class DataManager:
         leaves_df["duration"] = leaves_df["duration"].clip(lower=1)
 
         leaves_df = leaves_df[LEAVES_COLUMNS]
-        return leaves_df
+
+        self.update_leaves_dfs(
+            all_leaves=leaves_df,
+        )
+        all_leaves_path = FIORILLI_DIR / "leaves.csv"
+        all_leaves = self.read_csv(all_leaves_path)
+
+        return all_leaves
 
     @staticmethod
     def filter_df(df: pd.DataFrame, ids: list[str]) -> pd.DataFrame:
@@ -200,7 +201,7 @@ class DataManager:
                         index_col=False,
                         header=None,
                     ),
-                    columns=RAW_FIORILLI_EMPLOYEES_COLUMNS,
+                    columns=FIORILLI_EMPLOYEES_COLUMNS,
                 )
 
             case "raw_employees.csv":
@@ -210,7 +211,25 @@ class DataManager:
                         index_col=False,
                         header=None,
                     ),
-                    columns=RAW_AHGORA_EMPLOYEES_COLUMNS,
+                    columns=AHGORA_EMPLOYEES_COLUMNS,
+                )
+
+            case "ahgora_employees.csv":
+                return self.prepare_dataframe(
+                    df=pd.read_csv(
+                        path,
+                        index_col=False,
+                    ),
+                    columns=AHGORA_EMPLOYEES_COLUMNS,
+                )
+
+            case "fiorilli_employees.csv":
+                return self.prepare_dataframe(
+                    df=pd.read_csv(
+                        path,
+                        index_col=False,
+                    ),
+                    columns=FIORILLI_EMPLOYEES_COLUMNS,
                 )
 
             case "leaves.csv":
@@ -556,23 +575,30 @@ class DataManager:
         normalized = self.treat_exceptions_and_typos(normalized)
         return normalized.lower().strip()
 
-    def update_saved_dfs(
+    def update_employees_dfs(
         self,
-        ahgora_employees: pd.DataFrame,
         fiorilli_employees: pd.DataFrame,
-        all_leaves: pd.DataFrame,
+        ahgora_employees: pd.DataFrame,
     ):
-        console.print("Salvando novos dados")
+        console.print("Salvando dados de funcionários")
         time.sleep(0.5)
-        FileManager.save_df(
-            df=ahgora_employees,
-            path=AHGORA_DIR / "employees.csv",
-        )
 
         FileManager.save_df(
             df=fiorilli_employees,
-            path=FIORILLI_DIR / "employees.csv",
+            path=FIORILLI_DIR / "fiorilli_employees.csv",
         )
+
+        FileManager.save_df(
+            df=ahgora_employees,
+            path=AHGORA_DIR / "ahgora_employees.csv",
+        )
+
+    def update_leaves_dfs(
+        self,
+        all_leaves: pd.DataFrame,
+    ):
+        console.print("Salvando dados de afastamentos")
+        time.sleep(0.5)
 
         FileManager.save_df(
             df=all_leaves,
@@ -610,13 +636,25 @@ class DataManager:
     def get_employees_data(self) -> (pd.DataFrame, pd.DataFrame):
         console.print("Recuperando dados de funcionários")
         time.sleep(0.5)
-        raw_fiorilli_employees = FIORILLI_DIR / "raw_employees.txt"
-        raw_ahgora_employees = AHGORA_DIR / "raw_employees.csv"
+        raw_fiorilli_employees_path = FIORILLI_DIR / "raw_employees.txt"
+        raw_ahgora_employees_path = AHGORA_DIR / "raw_employees.csv"
 
-        fiorilli_employees = self.read_csv(raw_fiorilli_employees)
+        raw_fiorilli_employees = self.read_csv(raw_fiorilli_employees_path)
+        raw_ahgora_employees = self.read_csv(raw_ahgora_employees_path)
 
-        ahgora_employees = self.read_csv(raw_ahgora_employees)
-        return ahgora_employees, fiorilli_employees
+        self.update_employees_dfs(
+            fiorilli_employees=raw_fiorilli_employees,
+            ahgora_employees=raw_ahgora_employees,
+        )
+
+        fiorilli_employees = self.read_csv(
+            FIORILLI_DIR / "fiorilli_employees.csv",
+        )
+        ahgora_employees = self.read_csv(
+            AHGORA_DIR / "ahgora_employees.csv",
+        )
+
+        return fiorilli_employees, ahgora_employees
 
     def get_leaves_data(self) -> (pd.DataFrame, pd.DataFrame):
         console.print("Recuperando dados de afastamentos")

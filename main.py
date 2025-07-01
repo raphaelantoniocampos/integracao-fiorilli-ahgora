@@ -1,19 +1,41 @@
 import sys
+
 from src.managers.data_manager import DataManager
 from src.managers.download_manager import DownloadManager
 from src.managers.file_manager import FileManager
 from src.managers.task_manager import TaskManager
-from src.utils.config import Config
+from src.utils.config import Config, Status
+from src.utils.creds import Creds
 from src.utils.ui import main_menu, spinner
 
 
 def main():
+    config = Config()
+    print(config)
+    print(type(config))
+    import time
+    time.sleep(10)
+    if isinstance(config, Status):
+        status = config
+        if status.missing_directories:
+            FileManager.create_directories(
+                directories=status.missing_directories,
+            )
+        if status.missing_vars:
+            Creds.create_vars(
+                vars=status.missing_vars,
+            )
+        if status.missing_files:
+            DownloadManager.download_files(
+                files=status.missing_files,
+            )
+        config = Config()
+
     task_manager = TaskManager()
     data_manager = DataManager()
     download_manager = DownloadManager()
     FileManager.setup()
 
-    config = Config()
     MENU_OPTIONS = {
         "Downloads": download_manager.open,
         "Dados": data_manager.open,

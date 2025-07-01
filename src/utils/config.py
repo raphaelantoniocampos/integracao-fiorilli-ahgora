@@ -13,9 +13,22 @@ from src.utils.constants import (
 from src.utils.creds import Creds
 from src.utils.ui import console, menu
 
+from dataclasses import dataclass
+
+
+@dataclass
+class Status:
+    desc: str
+    missing_vars: list
+    missing_directories: list
+    missing_files: list
+
 
 class Config:
     def __init__(self):
+        self.status = self.check_status()
+        if self.status.desc != "ok":
+            return self.status
         self.setup()
 
     def open(self, result=" ") -> None:
@@ -28,7 +41,6 @@ class Config:
                 destination=TASKS_DIR / "manual_leaves.csv",
             ),
             "Alterar Headless Mode": self.toggle_headless_mode,
-            "Configurar Variaveis de Ambiente": lambda: Creds().load_or_create_env(),
         }
 
         self.update_time_since()
@@ -67,11 +79,9 @@ class Config:
     def setup(self):
         self.json_path: Path = DATA_DIR / "config.json"
         self.data: dict = self._load()
+        Creds().load_vars()
+        self.update_status()
         self.update_time_since()
-        self.is_env_ok = Creds.is_env_ok()
-        if not self.is_env_ok:
-            Creds()
-
         self.last_analisys = self.data.get("last_analisys")
         self.headless_mode = bool(self.data.get("headless_mode"))
         self.last_download_fiorilli = self.data.get("last_download")[
@@ -79,6 +89,51 @@ class Config:
         ]
         self.last_download_ahgora = self.data.get("last_download")["ahgora_employees"]
         self.last_download_leaves = self.data.get("last_download")["leaves"]
+
+    def check_status(self):
+        missing_vars = Creds.get_missing_vars()
+        missing_directories = FileManager.get_missing_directories()
+        missing_files = FileManager.get_missing_files()
+        desc = ""
+        desc += (
+            f"Faltando variáveis de ambiente: \n{missing_vars}\n"
+            if missing_vars
+            else ""
+        )
+        desc += f"Faltando pastas: \n{missing_directories}\n" if missing_vars else ""
+        desc += f"Faltando arquivos: \n{missing_files}\n" if missing_vars else ""
+
+        if desc == "":
+            desc = "ok"
+
+        return Status(
+            desc=desc,
+            missing_vars=missing_vars,
+            missing_directories=missing_directories,
+            missing_files=missing_files,
+        )
+
+    def update_status(self):
+        self._update(
+            "status",
+            "desc",
+            value=self.status.desc,
+        )
+        self._update(
+            "status",
+            "missing_vars",
+            value=self.status.missing_vars,
+        )
+        self._update(
+            "status",
+            "missing_directories",
+            value=self.status.missing_directories,
+        )
+        self._update(
+            "status",
+            "missing_files",
+            value=self.status.missing_files,
+        )
 
     @staticmethod
     def update_last_analisys():

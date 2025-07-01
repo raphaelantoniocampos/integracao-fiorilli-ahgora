@@ -8,26 +8,24 @@ from src.utils.constants import REQUIRED_VARS
 
 
 class Creds:
-    def __init__(self):
-        self.load_or_create_env()
+    def load_vars(self):
+        for var in REQUIRED_VARS:
+            setattr(self, var.lower(), os.getenv(var))
+        load_dotenv()
 
-    def load_or_create_env(self):
+    @staticmethod
+    def get_missing_vars():
         load_dotenv()
 
         missing_vars = [var for var in REQUIRED_VARS if os.getenv(var) is None]
 
-        if missing_vars:
-            print(f"Variáveis de ambiente faltando: {', '.join(missing_vars)}")
-            self.create_missing_vars(missing_vars)
-            load_dotenv()
-
-        for var in REQUIRED_VARS:
-            setattr(self, var.lower(), os.getenv(var))
-
         if not missing_vars:
-            return "Variáveis de ambiente OK"
+            missing_vars = []
 
-    def create_missing_vars(self, missing_vars):
+        return missing_vars
+
+    @staticmethod
+    def create_vars(vars):
         env_vars = {}
 
         if os.path.exists(".env"):
@@ -38,7 +36,7 @@ class Creds:
                         env_vars[key] = value
 
         print("\nPor favor, insira as credenciais faltantes:")
-        for var in missing_vars:
+        for var in vars:
             env_vars[var] = (
                 inquirer.text(message=f"{var}: ", is_password="PASSWORD" in var)
                 .execute()
@@ -52,13 +50,3 @@ class Creds:
             print("\nArquivo .env atualizado com sucesso!")
         except Exception as e:
             print(f"\nErro ao salvar no arquivo .env: {e}")
-
-    @staticmethod
-    def is_env_ok():
-        load_dotenv()
-        missing = [var for var in REQUIRED_VARS if os.getenv(var) is None]
-
-        if missing:
-            return False
-
-        return True

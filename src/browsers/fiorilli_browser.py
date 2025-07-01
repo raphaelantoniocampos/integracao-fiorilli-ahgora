@@ -80,9 +80,8 @@ class FiorilliBrowser(CoreBrowser):
         )
 
     def _login(self) -> None:
-        creds = Creds()
-        user = creds.fiorilli_user
-        psw = creds.fiorilli_psw
+        user = Creds.fiorilli_user
+        psw = Creds.fiorilli_psw
 
         self._enter_username("O30_id-inputEl", user)
         self._enter_password("O34_id-inputEl", psw)

@@ -43,3 +43,11 @@ class DownloadManager:
         FileManager.move_downloads_to_data_dir()
         dm = DataManager()
         dm.analyze()
+
+    @staticmethod
+    def download_files(files):
+        import time
+        for file in files:
+            print(file)
+            time.sleep(3)
+

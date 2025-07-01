@@ -12,11 +12,12 @@ from src.utils.constants import (
     AHGORA_DIR,
 )
 
+DIRECTORIES = [DATA_DIR, DOWNLOADS_DIR, TASKS_DIR, FIORILLI_DIR, AHGORA_DIR]
+
 
 class FileManager:
     @staticmethod
     def setup():
-        FileManager.check_dirs()
         FileManager.move_downloads_to_data_dir()
         FileManager.clean_manual_leaves()
 
@@ -81,11 +82,31 @@ class FileManager:
                 return FIORILLI_DIR / "raw_leaves.txt"
 
     @staticmethod
-    def check_dirs():
-        dirs_to_check = [DATA_DIR, DOWNLOADS_DIR, TASKS_DIR, FIORILLI_DIR, AHGORA_DIR]
+    def get_missing_directories():
+        missing_dirs = []
+        for dir in DIRECTORIES:
+            if not dir.exists():
+                missing_dirs.append(dir)
+        return missing_dirs
 
-        for dir in dirs_to_check:
+    @staticmethod
+    def create_directories(directories=DIRECTORIES):
+        for dir in directories:
             dir.mkdir(exist_ok=True)
+
+    @staticmethod
+    def get_missing_files():
+        files_to_check = [
+            Path(FIORILLI_DIR / "raw_employees.txt"),
+            Path(AHGORA_DIR / "raw_employees.csv"),
+            Path(FIORILLI_DIR / "raw_leaves.txt"),
+            Path(FIORILLI_DIR / "raw_vacations.txt"),
+        ]
+        missing_files = []
+        for file in files_to_check:
+            if not file.exists():
+                missing_files.append(file)
+        return missing_files
 
     @staticmethod
     def clean_manual_leaves():

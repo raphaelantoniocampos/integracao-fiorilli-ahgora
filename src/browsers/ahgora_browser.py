@@ -40,10 +40,9 @@ class AhgoraBrowser(CoreBrowser):
             console.print("Download de funcionários do AHGORA concluído")
 
     def _login(self) -> None:
-        creds = Creds()
-        user = creds.ahgora_user
-        psw = creds.ahgora_psw
-        company = creds.ahgora_company
+        user = Creds.ahgora_user
+        psw = Creds.ahgora_psw
+        company = Creds.ahgora_company
 
         for i in range(2):
             self._enter_username("email", user)
