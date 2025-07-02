@@ -43,22 +43,3 @@ class DownloadManager:
         FileManager.move_downloads_to_data_dir()
         dm = DataManager()
         dm.analyze()
-
-    @staticmethod
-    def download_files(files):
-        needed_downloads = []
-        for file in files:
-            if "raw_employees.txt" in file:
-                needed_downloads.append(
-                    FiorilliBrowser.download_employees_data,
-                )
-            if "raw_employees.csv" in file:
-                needed_downloads.append(
-                    AhgoraBrowser.download_employees_data,
-                )
-            if "raw_leaves.txt" or "raw_vacations.txt" in file:
-                needed_downloads.append(
-                    FiorilliBrowser.download_leaves_data,
-                )
-        for download in needed_downloads:
-            download()

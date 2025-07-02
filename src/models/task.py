@@ -4,10 +4,16 @@ from pandas import DataFrame
 
 
 class Task:
-    def __init__(self, name: str, path: Path, df: DataFrame, option: str):
+    def __init__(
+        self,
+        name: str,
+        path: Path,
+        data: DataFrame | list[any],
+        option: str,
+    ):
         self.name = name
         self.path = path
-        self.df = df
+        self.data = data
         self.option = option
         self.url = (
             "https://app.ahgora.com.br/funcionarios"
@@ -17,16 +23,16 @@ class Task:
 
     def is_empty(self):
         try:
-            return self.df.empty
+            return self.data.empty
         except AttributeError:
             return True
 
     def __len__(self):
-        return len(self.df)
+        return len(self.data)
 
     def __str__(self):
         return f"""
 -name: {self.name}
--df: {self.df.head(5)}
+-df: {self.data.head(5)}
 -option: {self.option}
 -"""

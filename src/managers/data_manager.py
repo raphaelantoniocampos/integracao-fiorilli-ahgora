@@ -75,19 +75,19 @@ class DataManager:
 
             Config.update_last_analisys()
             FileManager.setup()
-            console.print("[bold green]Dados sincronizados com sucesso![/bold green]\n")
+            console.log("[bold green]Dados sincronizados com sucesso![/bold green]\n")
             time.sleep(1)
         except KeyboardInterrupt as e:
-            console.print(f"[bold red]Erro ao sincronizar dados: {e}[/bold red]\n")
+            console.log(f"[bold red]Erro ao sincronizar dados: {e}[/bold red]\n")
             time.sleep(1)
 
         except FileNotFoundError as e:
-            console.print(
+            console.log(
                 f"[bold red]Erro ao analisar dados: {
                     e
                 }[/bold red]\nFaça o download primeiro."
             )
-            console.print("Pressione [green]qualquer tecla[/] para continuar...")
+            console.log("Pressione [green]qualquer tecla[/] para continuar...")
             input()
 
     def visualizer(self):
@@ -121,7 +121,7 @@ class DataManager:
 
             df = self.read_csv(files[option[3:].strip()])
             if df.empty:
-                console.print("Vazio.")
+                console.log("Vazio.")
                 continue
 
             columns = df.columns.to_list()
@@ -361,7 +361,7 @@ class DataManager:
         last_leaves: pd.DataFrame,
         all_leaves: pd.DataFrame,
     ) -> None:
-        console.print("Gerando tabelas de tarefas")
+        console.log("Gerando tabelas de tarefas")
         time.sleep(0.5)
         fiorilli_dismissed_df = fiorilli_employees[
             fiorilli_employees["dismissal_date"].notna()
@@ -411,7 +411,7 @@ class DataManager:
         ahgora_employees: pd.DataFrame,
         dismissed_ids: set[int],
     ) -> pd.DataFrame:
-        console.print("Buscando novos funcionários")
+        console.log("Buscando novos funcionários")
         time.sleep(0.5)
         ahgora_ids = set(ahgora_employees["id"])
 
@@ -423,7 +423,7 @@ class DataManager:
             new_employees_df["binding"] != "AUXILIO RECLUSAO"
         ]
 
-        console.print(
+        console.log(
             f"{len(new_employees_df)} novos funcionários",
         )
         time.sleep(0.5)
@@ -436,7 +436,7 @@ class DataManager:
         fiorilli_dismissed_ids: set[int],
         ahgora_dismissed_ids: set[int],
     ) -> pd.DataFrame:
-        console.print("Buscando funcionários desligados")
+        console.log("Buscando funcionários desligados")
         time.sleep(0.5)
         dismissed_employees_df = ahgora_employees[
             ahgora_employees["id"].isin(fiorilli_dismissed_ids)
@@ -459,7 +459,7 @@ class DataManager:
             dismissed_employees_df["dismissal_date"] <= today
         ]
 
-        console.print(
+        console.log(
             f"{len(dismissed_employees_df)} funcionários desligados",
         )
         time.sleep(0.5)
@@ -471,7 +471,7 @@ class DataManager:
         fiorilli_active_employees: pd.DataFrame,
         ahgora_employees: pd.DataFrame,
     ) -> pd.DataFrame:
-        console.print("Buscando funcionários atualizados")
+        console.log("Buscando funcionários atualizados")
         time.sleep(0.5)
         merged_employees = fiorilli_active_employees.merge(
             ahgora_employees, on="id", suffixes=("_fiorilli", "_ahgora"), how="inner"
@@ -516,7 +516,7 @@ class DataManager:
 
         changed_employees_df = merged_employees[combined_condition]
 
-        console.print(
+        console.log(
             f"{len(changed_employees_df)} funcionários atualizados",
         )
         time.sleep(0.5)
@@ -527,7 +527,7 @@ class DataManager:
         last_leaves: pd.DataFrame,
         all_leaves: pd.DataFrame,
     ) -> pd.DataFrame:
-        console.print("Buscando afastamentos")
+        console.log("Buscando afastamentos")
         time.sleep(0.5)
         try:
             for df in [last_leaves, all_leaves]:
@@ -554,7 +554,7 @@ class DataManager:
             if leaves_df.empty and not not_done_task_df.empty:
                 leaves_df = not_done_task_df
 
-            console.print(
+            console.log(
                 text=f"{len(leaves_df)} novos afastamentos",
             )
             time.sleep(0.5)
@@ -580,7 +580,7 @@ class DataManager:
         fiorilli_employees: pd.DataFrame,
         ahgora_employees: pd.DataFrame,
     ):
-        console.print("Salvando dados de funcionários")
+        console.log("Salvando dados de funcionários")
         time.sleep(0.5)
 
         FileManager.save_df(
@@ -597,7 +597,7 @@ class DataManager:
         self,
         all_leaves: pd.DataFrame,
     ):
-        console.print("Salvando dados de afastamentos")
+        console.log("Salvando dados de afastamentos")
         time.sleep(0.5)
 
         FileManager.save_df(
@@ -634,7 +634,7 @@ class DataManager:
         )
 
     def get_employees_data(self) -> (pd.DataFrame, pd.DataFrame):
-        console.print("Recuperando dados de funcionários")
+        console.log("Recuperando dados de funcionários")
         time.sleep(0.5)
         raw_fiorilli_employees_path = FIORILLI_DIR / "raw_employees.txt"
         raw_ahgora_employees_path = AHGORA_DIR / "raw_employees.csv"
@@ -657,7 +657,7 @@ class DataManager:
         return fiorilli_employees, ahgora_employees
 
     def get_leaves_data(self) -> (pd.DataFrame, pd.DataFrame):
-        console.print("Recuperando dados de afastamentos")
+        console.log("Recuperando dados de afastamentos")
         time.sleep(0.5)
         last_leaves_path = FIORILLI_DIR / "leaves.csv"
         raw_leaves_path = FIORILLI_DIR / "raw_leaves.txt"

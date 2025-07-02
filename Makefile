@@ -50,7 +50,7 @@ update:
 
 shortcut:
 	@echo "--------------------------------------------------"
-	@echo "Criando atalho na area de trabalho publica..."
+	@echo "Criando atalho na pasta do projeto..."
 	@echo "--------------------------------------------------"
 	@$(PYTHON_CMD) -c "import os, sys, win32com.client; \
 		target_path = os.path.join('$(PROJECT_ROOT)', 'dist', '$(APP_NAME)', '$(APP_NAME).exe'); \

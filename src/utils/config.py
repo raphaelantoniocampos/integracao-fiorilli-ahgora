@@ -1,6 +1,7 @@
 import json
 from datetime import datetime, timedelta
 from pathlib import Path
+import pandas as pd
 
 
 from src.managers.file_manager import FileManager
@@ -41,7 +42,7 @@ class Config:
         }
 
         self.update_time_since()
-        console.print(result)
+        console.log(result)
         self.config_header()
         action = menu(
             name="Configurações",
@@ -50,7 +51,7 @@ class Config:
         self.open(action())
 
     def config_header(self):
-        console.print(
+        console.log(
             f"""
 [bold orange]Opções[/bold orange]
 [cyan]•[/] [bold]Modo de Download Headless[/bold]: {self.headless_mode}
@@ -87,13 +88,14 @@ class Config:
         ]
         self.last_download_ahgora = self.data.get("last_download")["ahgora_employees"]
         self.last_download_leaves = self.data.get("last_download")["leaves"]
+        self.generate_config_tasks()
 
     def check_status(self):
         missing_vars = Creds.get_missing_vars()
         missing_directories = FileManager.get_missing_directories()
         missing_files = FileManager.get_missing_files()
 
-        working = not any(missing_vars + missing_directories + missing_files)
+        working = not any(missing_vars + missing_directories)
 
         return Status(
             working=working,
@@ -123,6 +125,20 @@ class Config:
             "missing_files",
             value=self.status.missing_files,
         )
+
+    def generate_config_tasks(self):
+        missing_files_df = pd.DataFrame(self.status.missing_files)
+        if not missing_files_df.empty:
+            FileManager.save_df(
+                df=missing_files_df,
+                path=TASKS_DIR / "missing_files.csv",
+            )
+        missing_vars_df = pd.DataFrame(self.status.missing_vars)
+        if not missing_vars_df.empty:
+            FileManager.save_df(
+                df=missing_vars_df,
+                path=TASKS_DIR / "missing_vars.csv",
+            )
 
     @staticmethod
     def update_last_analisys():

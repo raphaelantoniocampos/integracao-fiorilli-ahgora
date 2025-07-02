@@ -8,14 +8,14 @@ from src.tasks.add_leaves_task import AddLeavesTask
 from src.tasks.add_employees_task import AddEmployeesTask
 from src.tasks.remove_employees_task import RemoveEmployeesTask
 from src.tasks.update_employees_task import UpdateEmployeesTask
-from src.utils.constants import TASKS_DIR
+from src.utils.constants import TASKS_DIR, DATA_DIR
 from src.utils.ui import menu
 
 
 class TaskManager:
     def open(self):
         tasks = self.get_tasks()
-        tasks_choices = {task.option: task for task in tasks if not task.df.empty}
+        tasks_choices = {task.option: task for task in tasks if not task.data.empty}
 
         task = menu(name="Tarefas", choices=tasks_choices)
         if not isinstance(task, Task):
@@ -44,22 +44,25 @@ class TaskManager:
             tm.name_to_task("update_employees"),
             tm.name_to_task("add_leaves"),
             tm.name_to_task("manual_leaves"),
+            tm.name_to_task("missing_files"),
+            tm.name_to_task("missing_vars"),
+            tm.name_to_task("analyze"),
         ]
 
     def name_to_task(self, name: str) -> Task:
         path = self._get_path(name)
-        df = self._get_df(path)
-        option = self._get_option(name, df)
+        data = self._get_data(path)
+        option = self._get_option(name, data)
 
         task = Task(
             name=name,
             path=path,
-            df=df,
+            data=data,
             option=option,
         )
         return task
 
-    def _get_df(self, path) -> DataFrame | None:
+    def _get_data(self, path) -> DataFrame | None:
         data_manager = DataManager()
         if isinstance(path, str):
             return DataFrame()
@@ -70,19 +73,28 @@ class TaskManager:
     def _get_path(self, name: str) -> Path:
         return TASKS_DIR / f"{name}.csv"
 
-    def _get_option(self, name: str, df: DataFrame) -> str:
+    def _get_option(self, name: str, data: DataFrame) -> str:
         match name:
             case "add_employees":
-                return "" if df.empty else f"Adicionar {len(df)} funcionários"
+                return "" if data.empty else f"Adicionar {len(data)} funcionários"
 
             case "remove_employees":
-                return "" if df.empty else f"Remover {len(df)} funcionários"
+                return "" if data.empty else f"Remover {len(data)} funcionários"
 
             case "update_employees":
-                return "" if df.empty else f"Atualizar {len(df)} funcionários"
+                return "" if data.empty else f"Atualizar {len(data)} funcionários"
 
             case "add_leaves":
-                return "" if df.empty else f"Adicionar +/- {len(df)} afastamentos"
+                return "" if data.empty else f"Adicionar +/- {len(data)} afastamentos"
 
             case "manual_leaves":
-                return "" if df.empty else "Adicionar Afastamentos Manual"
+                return "" if data.empty else "Adicionar Afastamentos Manual"
+
+            case "missing_files":
+                return "" if data.empty else "Baixar arquivos"
+
+            case "missing_vars":
+                return "" if data.empty else "Configurar variáveis de ambiente"
+
+            case "analyze":
+                return "" if data.empty else "Analisar dados"

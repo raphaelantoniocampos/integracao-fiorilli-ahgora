@@ -37,12 +37,13 @@ class AhgoraBrowser(CoreBrowser):
             self._export_to_csv()
             self.close_driver()
 
-            console.print("Download de funcionários do AHGORA concluído")
+            console.log("Download de funcionários do AHGORA concluído")
 
     def _login(self) -> None:
-        user = Creds.ahgora_user
-        psw = Creds.ahgora_psw
-        company = Creds.ahgora_company
+        creds = Creds()
+        user = creds.ahgora_user
+        psw = creds.ahgora_psw
+        company = creds.ahgora_company
 
         for i in range(2):
             self._enter_username("email", user)

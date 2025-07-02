@@ -21,7 +21,7 @@ class TaskRunner(ABC):
 
     def menu(self) -> None:
         """Displays the task menu"""
-        console.print(
+        console.log(
             Panel.fit(
                 self.task.option,
                 style="bold cyan",

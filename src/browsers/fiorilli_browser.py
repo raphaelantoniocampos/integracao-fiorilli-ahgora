@@ -57,7 +57,7 @@ class FiorilliBrowser(CoreBrowser):
             self._click_export_txt_option()
             self._wait_for_export_to_complete()
             self.close_driver()
-        console.print(
+        console.log(
             "Download de funcionários do FIORILLI concluído",
         )
 
@@ -75,13 +75,14 @@ class FiorilliBrowser(CoreBrowser):
             self._insert_date_for_input(name="PontoAfastamentos2")
             self._close_tab()
             self.close_driver()
-        console.print(
+        console.log(
             "Download de afastamentos do FIORILLI concluído",
         )
 
     def _login(self) -> None:
-        user = Creds.fiorilli_user
-        psw = Creds.fiorilli_psw
+        creds = Creds()
+        user = creds.fiorilli_user
+        psw = creds.fiorilli_psw
 
         self._enter_username("O30_id-inputEl", user)
         self._enter_password("O34_id-inputEl", psw)

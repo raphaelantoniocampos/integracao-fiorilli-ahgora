@@ -2,7 +2,7 @@ import shutil
 from pathlib import Path
 
 from pandas import DataFrame
-from rich import print
+from src.utils.ui import console
 
 from src.utils.constants import (
     DATA_DIR,
@@ -50,7 +50,7 @@ class FileManager:
         if not destination.parent.exists():
             destination.parent.mkdir(parents=True, exist_ok=True)
         source.replace(destination)
-        print(f"[bold green]Arquivo movido:[/bold green]{source.name} -> {destination}")
+        console.log(f"[bold green]Arquivo movido:[/bold green]{source.name} -> {destination}")
 
     @staticmethod
     def copy_file(source: Path, destination: Path):
@@ -92,6 +92,9 @@ class FileManager:
     @staticmethod
     def create_directories(directories=DIRECTORIES):
         for dir in directories:
+            if not isinstance(dir, Path):
+                dir = Path(dir)
+            console.log(f"Criando diretório: {dir.name}")
             dir.mkdir(exist_ok=True)
 
     @staticmethod

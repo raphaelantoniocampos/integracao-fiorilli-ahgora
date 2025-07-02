@@ -283,7 +283,7 @@ class AddLeavesTask(TaskRunner):
 
         print(f"\n[bold]{len(df)} NOVOS AFASTAMENTOS![/bold]\n")
 
-        console.print(table)
+        console.log(table)
 
     def read_filter_numbers(self, file_path):
         """Lê o arquivo TXT e retorna uma lista com os números dos registros."""
