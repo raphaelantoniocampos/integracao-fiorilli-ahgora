@@ -563,10 +563,10 @@ class DataManager:
                 axis=1,
             )
 
-            not_done_task.data = self.read_csv(TASKS_DIR / "add_leaves.csv")
+            not_done_task = self.read_csv(TASKS_DIR / "add_leaves.csv")
 
-            if leaves_df.empty and not not_done_task.data.empty:
-                leaves_df = not_done_task.data
+            if leaves_df.empty and not not_done_task.empty:
+                leaves_df = not_done_task
 
             console.log(
                 text=f"{len(leaves_df)} novos afastamentos",
