@@ -35,6 +35,36 @@ def main():
         while callable(action):
             action = action()
 
+# def get_config():
+#     console.log("[bold green]Iniciando configuração...")
+#     config = Config()
+#     while not config.status.working:
+#         console.log("Problemas encontrados:")
+#         if config.status.missing_directories:
+#             dirs = config.status.missing_directories
+#             console.log(f"{len(dirs)} diretórios necessários.")
+#
+#             time.sleep(1)
+#             FileManager.create_directories(
+#                 directories=dirs,
+#             )
+#         if config.status.missing_vars:
+#             vars = config.status.missing_vars
+#             console.log(f"{len(vars)} variáveis de ambiente necessárias.")
+#
+#             time.sleep(1)
+#             Creds.create_vars(
+#                 vars=vars,
+#             )
+#         if config.status.missing_files:
+#             files = config.status.missing_files
+#             console.log(f"{len(files)} arquivos necessários.")
+#             for file in files:
+#                 console.log(Path(file).name)
+#             time.sleep(1)
+#         config = Config()
+#     return config
+
 
 if __name__ == "__main__":
     try:
