@@ -21,7 +21,6 @@ from dataclasses import dataclass
 class Status:
     working: bool
     missing_vars: list
-    missing_directories: list
     missing_files: list
 
 
@@ -77,7 +76,7 @@ class Config:
     def setup(self):
         self.json_path: Path = DATA_DIR / "config.json"
         self.data: dict = self._load()
-        Creds().load_vars()
+        Creds()
         self.status = self.check_status()
         self.update_status()
         self.update_time_since()
@@ -92,15 +91,13 @@ class Config:
 
     def check_status(self):
         missing_vars = Creds.get_missing_vars()
-        missing_directories = FileManager.get_missing_directories()
         missing_files = FileManager.get_missing_files()
 
-        working = not any(missing_vars + missing_directories)
+        working = not any(missing_vars + missing_files)
 
         return Status(
             working=working,
             missing_vars=missing_vars,
-            missing_directories=[str(dir) for dir in missing_directories],
             missing_files=[str(file) for file in missing_files],
         )
 
@@ -114,11 +111,6 @@ class Config:
             "status",
             "missing_vars",
             value=self.status.missing_vars,
-        )
-        self._update(
-            "status",
-            "missing_directories",
-            value=self.status.missing_directories,
         )
         self._update(
             "status",

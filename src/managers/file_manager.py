@@ -18,8 +18,10 @@ DIRECTORIES = [DATA_DIR, DOWNLOADS_DIR, TASKS_DIR, FIORILLI_DIR, AHGORA_DIR]
 class FileManager:
     @staticmethod
     def setup():
+        if missing_dirs := FileManager.get_missing_directories():
+            FileManager.create_directories(missing_dirs)
         FileManager.move_downloads_to_data_dir()
-        FileManager.clean_manual_leaves()
+        FileManager.cleanup()
 
     @staticmethod
     def move_downloads_to_data_dir():
@@ -50,7 +52,9 @@ class FileManager:
         if not destination.parent.exists():
             destination.parent.mkdir(parents=True, exist_ok=True)
         source.replace(destination)
-        console.log(f"[bold green]Arquivo movido:[/bold green]{source.name} -> {destination}")
+        console.log(
+            f"[bold green]Arquivo movido:[/bold green]{source.name} -> {destination}"
+        )
 
     @staticmethod
     def copy_file(source: Path, destination: Path):
@@ -112,7 +116,12 @@ class FileManager:
         return missing_files
 
     @staticmethod
-    def clean_manual_leaves():
+    def cleanup():
         manual_leaves_path = TASKS_DIR / "manual_leaves.csv"
-        if manual_leaves_path.exists():
-            manual_leaves_path.unlink()
+        missing_files = TASKS_DIR / "missing_files.csv"
+        missing_vars = TASKS_DIR / "missing_vars.csv"
+
+        files = [manual_leaves_path, missing_files, missing_vars]
+        for file in files:
+            if file.exists():
+                file.unlink()

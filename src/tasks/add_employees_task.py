@@ -15,7 +15,7 @@ class AddEmployeesTask(TaskRunner):
         super().__init__(task)
 
     def run(self) -> None:
-        df = self.task.df
+        df = self.task.data
         for i, series in df.iterrows():
             print(f"\n[bold gold1]{'-' * 15} NOVO FUNCIONÁRIO! {'-' * 15}[/bold gold1]")
             print(series)

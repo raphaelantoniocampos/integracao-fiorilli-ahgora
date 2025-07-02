@@ -34,7 +34,7 @@ class UpdateEmployeesTask(TaskRunner):
         super().__init__(task)
 
     def run(self):
-        df = self.task.df
+        df = self.task.data
 
         for i, series in df.iterrows():
             employee_name = series["name_fiorilli"]

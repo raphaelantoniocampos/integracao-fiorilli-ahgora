@@ -14,7 +14,7 @@ class RemoveEmployeesTask(TaskRunner):
         super().__init__(task)
 
     def run(self):
-        df = self.task.df
+        df = self.task.data
         for i, series in df.iterrows():
             print(
                 f"\n[bold gold1]{'-' * 15} FUNCIONÁRIO DESLIGADO! {

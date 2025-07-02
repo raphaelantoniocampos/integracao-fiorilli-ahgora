@@ -8,6 +8,9 @@ from src.utils.constants import REQUIRED_VARS
 
 
 class Creds:
+    def __init__(self):
+        self.load_vars()
+
     def load_vars(self):
         for var in REQUIRED_VARS:
             setattr(self, var.lower(), os.getenv(var))

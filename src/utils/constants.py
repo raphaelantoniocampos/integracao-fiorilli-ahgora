@@ -35,7 +35,6 @@ JSON_INIT_CONFIG = {
     "status": {
         "working": "",
         "missing_vars": [],
-        "missing_directories": [],
         "missing_files": [],
     },
     "headless_mode": True,

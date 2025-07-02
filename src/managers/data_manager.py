@@ -6,7 +6,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from InquirerPy import inquirer
-from pandas.errors import EmptyDataError
 
 from src.managers.file_manager import FileManager
 from src.utils.config import Config
@@ -42,15 +41,15 @@ class DataManager:
             with console.status(
                 "[bold green]Analisando dados...[/bold green]", spinner="dots"
             ):
-                ahgora_employees, fiorilli_employees = self.get_employees_data()
+                fiorilli_employees, ahgora_employees = self.get_employees_data()
                 last_leaves, all_leaves = self.get_leaves_data()
 
                 leave_codes = self.read_csv(
                     DATA_DIR / "leave_codes.csv", columns=["cod", "desc"]
                 )
                 all_leaves = self.get_view_leaves(
-                    all_leaves,
-                    fiorilli_employees,
+                    leaves_df=all_leaves,
+                    fiorilli_employees=fiorilli_employees,
                     leave_codes=leave_codes,
                 )
 
@@ -81,14 +80,16 @@ class DataManager:
             console.log(f"[bold red]Erro ao sincronizar dados: {e}[/bold red]\n")
             time.sleep(1)
 
-        except FileNotFoundError as e:
-            console.log(
-                f"[bold red]Erro ao analisar dados: {
-                    e
-                }[/bold red]\nFaça o download primeiro."
-            )
-            console.log("Pressione [green]qualquer tecla[/] para continuar...")
-            input()
+        except FileNotFoundError:
+            config = Config()
+            files = config.status.missing_files
+            for file in files:
+                console.log(Path(file).name)
+            time.sleep(1)
+            inquirer.confirm(
+                message=f"{len(files)} arquivos necessários.\nContinuar",
+                default=True,
+            ).execute()
 
     def visualizer(self):
         ahgora_files = [file for file in AHGORA_DIR.iterdir()]
@@ -119,7 +120,12 @@ class DataManager:
                 spinner()
                 return
 
-            df = self.read_csv(files[option[3:].strip()])
+            try:
+                df = self.read_csv(files[option[3:].strip()])
+            except pd.errors.EmptyDataError:
+                console.log("Vazio.")
+                continue
+
             if df.empty:
                 console.log("Vazio.")
                 continue
@@ -361,6 +367,13 @@ class DataManager:
         last_leaves: pd.DataFrame,
         all_leaves: pd.DataFrame,
     ) -> None:
+        """
+        returns
+            new_employees_df,
+            dismissed_employees_df,
+            changed_employees_df,
+            new_leaves_df,
+        """
         console.log("Gerando tabelas de tarefas")
         time.sleep(0.5)
         fiorilli_dismissed_df = fiorilli_employees[
@@ -418,6 +431,7 @@ class DataManager:
         new_employees_df = fiorilli_active_employees[
             ~fiorilli_active_employees["id"].isin(ahgora_ids)
         ]
+        FileManager.save_df(df=new_employees_df, path="temp.csv")
 
         new_employees_df = new_employees_df[
             new_employees_df["binding"] != "AUXILIO RECLUSAO"
@@ -549,10 +563,10 @@ class DataManager:
                 axis=1,
             )
 
-            not_done_task_df = self.read_csv(TASKS_DIR / "add_leaves.csv")
+            not_done_task.data = self.read_csv(TASKS_DIR / "add_leaves.csv")
 
-            if leaves_df.empty and not not_done_task_df.empty:
-                leaves_df = not_done_task_df
+            if leaves_df.empty and not not_done_task.data.empty:
+                leaves_df = not_done_task.data
 
             console.log(
                 text=f"{len(leaves_df)} novos afastamentos",
@@ -634,6 +648,11 @@ class DataManager:
         )
 
     def get_employees_data(self) -> (pd.DataFrame, pd.DataFrame):
+        """
+        returns
+        fiorilli_employees,
+        ahgora_employees
+        """
         console.log("Recuperando dados de funcionários")
         time.sleep(0.5)
         raw_fiorilli_employees_path = FIORILLI_DIR / "raw_employees.txt"
@@ -663,20 +682,24 @@ class DataManager:
         raw_leaves_path = FIORILLI_DIR / "raw_leaves.txt"
         raw_vacations_path = FIORILLI_DIR / "raw_vacations.txt"
 
-        try:
-            last_leaves = self.read_csv(last_leaves_path)
-            all_leaves = pd.concat(
-                [
-                    self.read_csv(raw_vacations_path),
-                    self.read_csv(raw_leaves_path),
-                ]
-            )
-        except EmptyDataError:
-            all_leaves = pd.DataFrame(columns=LEAVES_COLUMNS)
-        except FileNotFoundError:
-            last_leaves = pd.DataFrame(columns=LEAVES_COLUMNS)
+        match last_leaves_path.exists():
+            case True:
+                last_leaves = self.read_csv(last_leaves_path)
+            case False:
+                last_leaves = pd.DataFrame()
 
+        all_leaves = pd.concat(
+            [
+                self.read_csv(raw_vacations_path),
+                self.read_csv(raw_leaves_path),
+            ]
+        )
         return last_leaves, all_leaves
+
+        # except EmptyDataError:
+        #     return last_leaves, pd.DataFrame(columns=LEAVES_COLUMNS)
+        # except FileNotFoundError:
+        #     return pd.DataFrame(columns=LEAVES_COLUMNS), all_leaves
 
     def treat_exceptions_and_typos(self, text: str) -> str:
         if text == "VIGILACIA EM SAUDE":

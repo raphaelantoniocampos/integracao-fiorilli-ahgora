@@ -4,11 +4,11 @@ from pandas import DataFrame
 
 from src.managers.data_manager import DataManager
 from src.models.task import Task
-from src.tasks.add_leaves_task import AddLeavesTask
 from src.tasks.add_employees_task import AddEmployeesTask
+from src.tasks.add_leaves_task import AddLeavesTask
 from src.tasks.remove_employees_task import RemoveEmployeesTask
 from src.tasks.update_employees_task import UpdateEmployeesTask
-from src.utils.constants import TASKS_DIR, DATA_DIR
+from src.utils.constants import TASKS_DIR
 from src.utils.ui import menu
 
 
@@ -91,10 +91,19 @@ class TaskManager:
                 return "" if data.empty else "Adicionar Afastamentos Manual"
 
             case "missing_files":
-                return "" if data.empty else "Baixar arquivos"
+                file_paths = [Path(file[0]) for _, file in data.iterrows()]
+                files = []
+                for file in file_paths:
+                    file_splits = str(file).split("\\")
+                    files.append(f"{file_splits[-2]}\\{file_splits[-1]}")
+                return "" if data.empty else f"Baixar arquivos\n{files}"
 
             case "missing_vars":
-                return "" if data.empty else "Configurar variáveis de ambiente"
+                return (
+                    ""
+                    if data.empty
+                    else f"Configurar variáveis de ambiente\n{[var[0] for _, var in data.iterrows()]}"
+                )
 
             case "analyze":
                 return "" if data.empty else "Analisar dados"

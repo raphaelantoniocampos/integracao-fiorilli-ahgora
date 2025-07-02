@@ -15,7 +15,7 @@ from src.utils.ui import console, spinner
 class TaskRunner(ABC):
     def __init__(self, task: Task):
         self.task = task
-        if self.task.df.empty:
+        if self.task.data.empty:
             return
         return self.menu()
 
@@ -36,7 +36,7 @@ class TaskRunner(ABC):
             if not itens:
                 return
             ids = [item[0] for item in itens]
-            self.task.df = DataManager.filter_df(self.task.df, ids)
+            self.task.data = DataManager.filter_df(self.task.data, ids)
 
         if inquirer.confirm(message="Iniciar?", default=True).execute():
             url = self.task.url
@@ -72,7 +72,7 @@ class TaskRunner(ABC):
     ):
         return inquirer.fuzzy(
             message="Select actions:",
-            choices=self.task.df.values.tolist(),
+            choices=self.task.data.values.tolist(),
             keybindings={
                 "answer": [
                     {"key": "enter"},
