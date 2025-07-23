@@ -61,6 +61,10 @@ class FileManager:
         shutil.copy2(source, destination)
 
     @staticmethod
+    def rename_file(file_path: Path, new_name: str):
+        file_path.replace(Path(file_path.parent / new_name))
+
+    @staticmethod
     def save_df(
         df: DataFrame,
         path: Path,

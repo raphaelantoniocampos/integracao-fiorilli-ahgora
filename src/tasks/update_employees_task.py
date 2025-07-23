@@ -1,12 +1,13 @@
 import time
 
 import keyboard
+import pandas as pd
 import pyautogui
 from InquirerPy import inquirer
 from pyperclip import copy
 from rich import print
 
-from src.models.key import Key, wait_key_press, KEY_STOP, KEY_NEXT
+from src.models.key import KEY_NEXT, KEY_STOP, Key, wait_key_press
 from src.models.task import Task
 from src.tasks.task_runner import TaskRunner
 from src.utils.ui import spinner
@@ -37,8 +38,7 @@ class UpdateEmployeesTask(TaskRunner):
         df = self.task.data
 
         for i, series in df.iterrows():
-            employee_name = series["name_fiorilli"]
-            employee_id = series["id"]
+            employee_name = series["name_ahgora"]
 
             detected_changes = []
             for col_name, config in self.COLUMN_CONFIG.items():
@@ -63,7 +63,47 @@ class UpdateEmployeesTask(TaskRunner):
                     '-' * 15
                 }[/bold gold1]"
             )
-            print(f"{employee_name} - {employee_id}")
+            # FIX: temp
+            # TODO: move this to data manager
+            # print(f"{employee_name} - {employee_id}")
+
+            resultados = {}
+
+            # 1. Campos padrões
+            for key, value in series.items():
+                if not any(
+                    suffix in key for suffix in ["_fiorilli", "_ahgora", "_norm"]
+                ):
+                    resultados[key] = value
+
+            # 2. Comparação de campos *_fiorilli_norm vs *_ahgora_norm
+            for col in series.index:
+                if col.endswith("_fiorilli_norm"):
+                    base = col.replace("_fiorilli_norm", "")
+                    col_fiorilli = col
+                    col_ahgora = f"{base}_ahgora_norm"
+
+                    if col_ahgora in series:
+                        val_fiorilli = series[col_fiorilli]
+                        val_ahgora = series[col_ahgora]
+
+                        if (
+                            pd.isna(val_fiorilli)
+                            or pd.isna(val_ahgora)
+                            or val_fiorilli != val_ahgora
+                        ):
+                            resultados[f"{base}_fiorilli"] = val_fiorilli
+                            resultados[f"{base}_ahgora"] = val_ahgora
+                        else:
+                            resultados[base] = val_fiorilli
+
+            # Criar nova Series com os resultados
+            series = pd.Series(resultados)
+
+            # Exibir
+
+            print(series)
+            print("\n")
 
             change_labels = [
                 change["config"].styled_label for change in detected_changes

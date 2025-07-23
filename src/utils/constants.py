@@ -117,7 +117,7 @@ FIORILLI_EMPLOYEES_COLUMNS = [
 ]
 
 COLUMNS_TO_VERIFY_CHANGE = [
-    # "name",
+    "name",
     "admission_date",
     # "dismissal_date",
     "position",

@@ -1,3 +1,4 @@
+import re
 import time
 import unicodedata
 from datetime import datetime
@@ -11,14 +12,14 @@ from src.managers.file_manager import FileManager
 from src.utils.config import Config
 from src.utils.constants import (
     AHGORA_DIR,
+    AHGORA_EMPLOYEES_COLUMNS,
     COLUMNS_TO_VERIFY_CHANGE,
     DATA_DIR,
     FIORILLI_DIR,
+    FIORILLI_EMPLOYEES_COLUMNS,
     INQUIRER_KEYBINDINGS,
     LEAVES_COLUMNS,
     PT_MONTHS,
-    AHGORA_EMPLOYEES_COLUMNS,
-    FIORILLI_EMPLOYEES_COLUMNS,
     TASKS_DIR,
     UPLOAD_LEAVES_COLUMNS,
 )
@@ -80,11 +81,12 @@ class DataManager:
             console.log(f"[bold red]Erro ao sincronizar dados: {e}[/bold red]\n")
             time.sleep(1)
 
-        except FileNotFoundError:
+        except FileNotFoundError as e:
             config = Config()
             files = config.status.missing_files
             for file in files:
                 console.log(Path(file).name)
+            console.log(f"[bold red]Erro ao sincronizar dados: {e}[/bold red]\n")
             time.sleep(1)
             inquirer.confirm(
                 message=f"{len(files)} arquivos necessários.\nContinuar",
@@ -431,7 +433,6 @@ class DataManager:
         new_employees_df = fiorilli_active_employees[
             ~fiorilli_active_employees["id"].isin(ahgora_ids)
         ]
-        FileManager.save_df(df=new_employees_df, path="temp.csv")
 
         new_employees_df = new_employees_df[
             new_employees_df["binding"] != "AUXILIO RECLUSAO"
@@ -543,44 +544,41 @@ class DataManager:
     ) -> pd.DataFrame:
         console.log("Buscando afastamentos")
         time.sleep(0.5)
+        for df in [last_leaves, all_leaves]:
+            for col in ["start_date", "end_date"]:
+                if col in df.columns:
+                    df[col] = pd.to_datetime(
+                        df[col],
+                        format="%d/%m/%Y",
+                    )
+
+        merged = pd.merge(
+            last_leaves,
+            all_leaves,
+            how="outer",
+            indicator=True,
+        )
+        leaves_df = merged[merged["_merge"] == "right_only"].drop(
+            "_merge",
+            axis=1,
+        )
+
         try:
-            for df in [last_leaves, all_leaves]:
-                for col in ["start_date", "end_date"]:
-                    if col in df.columns:
-                        df[col] = pd.to_datetime(
-                            df[col],
-                            format="%d/%m/%Y",
-                        )
-
-            merged = pd.merge(
-                last_leaves,
-                all_leaves,
-                how="outer",
-                indicator=True,
-            )
-            leaves_df = merged[merged["_merge"] == "right_only"].drop(
-                "_merge",
-                axis=1,
-            )
-
             not_done_task = self.read_csv(TASKS_DIR / "add_leaves.csv")
+        except FileNotFoundError:
+            not_done_task = pd.DataFrame()
 
-            if leaves_df.empty and not not_done_task.empty:
-                leaves_df = not_done_task
+        if leaves_df.empty and not not_done_task.empty:
+            leaves_df = not_done_task
 
-            console.log(
-                text=f"{len(leaves_df)} novos afastamentos",
-            )
-            time.sleep(0.5)
-            return leaves_df
-
-        except TypeError:
-            return pd.DataFrame(columns=LEAVES_COLUMNS)
+        console.log(f"{len(leaves_df)} novos afastamentos")
+        time.sleep(0.5)
+        return leaves_df
 
     def normalize_text(self, text):
         if pd.isna(text):
             return np.nan
-        text = str(text)
+        text = str(" ".join(re.split("\s+", text, flags=re.UNICODE)))
         normalized = (
             unicodedata.normalize("NFKD", text)
             .encode("ASCII", "ignore")
@@ -706,8 +704,6 @@ class DataManager:
             return "VIGILANCIA EM SAUDE"
         if text == "UBS SAO JOSE/CIDADE JARDIM":
             return "UBS CIDADE JARDIM"
-        if text == "PREFEITURA MUNICIPAL DE NOVA SERRANA":
-            return "SECRETARIA DE EDUCACAO"
         if text == "FINANCAS":
             return "SECRETARIA MUN. FINANCAS"
         return text

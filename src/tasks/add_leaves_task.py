@@ -42,7 +42,10 @@ class AddLeavesTask(TaskRunner):
 
         data_manager = DataManager()
 
-        leaves_df = data_manager.read_csv(view_leaves_path, columns=LEAVES_COLUMNS)
+        leaves_df = data_manager.read_csv(
+            view_leaves_path,
+            columns=LEAVES_COLUMNS,
+        )
         while True:
             self.df_to_upload(leaves_df, upload_leaves_path)
             self.ask_to_insert_file(upload_leaves_path)
