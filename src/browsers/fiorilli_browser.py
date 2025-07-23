@@ -8,6 +8,7 @@ from selenium.webdriver.common.by import By
 from src.browsers.core_browser import CoreBrowser
 from src.utils.creds import Creds
 from src.utils.ui import console
+from src.utils.config import Config
 
 
 class FiorilliBrowser(CoreBrowser):
@@ -187,14 +188,17 @@ class FiorilliBrowser(CoreBrowser):
         self.click_element(f"//div[contains(text(), '{name}')]")
 
     def _fill_input_field(self) -> None:
+        config = Config()
         today = datetime.today()
         today_str = today.strftime("%d/%m/%Y")
-        last_month = (today - relativedelta(months=2)).strftime("%d/%m/%Y")
+        start_date = (today - relativedelta(months=config.leaves_months_ago)).strftime(
+            "%d/%m/%Y"
+        )
         year_end = date(today.year, 12, 31).strftime("%d/%m/%Y")
         self.select_and_send_keys(
             f"//input[@value='{today_str}']",
             [
-                last_month,
+                start_date,
                 year_end,
             ],
         )

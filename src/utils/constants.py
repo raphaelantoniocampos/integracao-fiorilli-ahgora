@@ -44,6 +44,7 @@ JSON_INIT_CONFIG = {
         "fiorilli_employees": {"datetime": "", "time_since": ""},
         "leaves": {"datetime": "", "time_since": ""},
     },
+    "leaves_months_ago": 2,
 }
 
 PT_MONTHS = {

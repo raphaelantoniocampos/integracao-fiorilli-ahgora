@@ -1,12 +1,12 @@
 import time
 
 from InquirerPy import inquirer
+from InquirerPy.validator import EmptyInputValidator
 from rich.console import Console
 from rich.panel import Panel
 
 from src.models.task import Task
 from src.utils.constants import INQUIRER_KEYBINDINGS
-
 
 DEFAULT_MESSAGE = "Selecione uma opção"
 DEFAULT_INSTRUCTIONS = "Selecione o número ou navegue com as setas do teclado."
@@ -106,3 +106,12 @@ def get_tasks_panel(tasks: list[Task]) -> Panel:
         border_style="gold1",
         padding=(1, 2),
     )
+
+
+def get_number(message: str, min: int, max: int):
+    return inquirer.number(
+        message=message,
+        min_allowed=min,
+        max_allowed=max,
+        validate=EmptyInputValidator(),
+    ).execute()

@@ -489,7 +489,10 @@ class DataManager:
         console.log("Buscando funcionários atualizados")
         time.sleep(0.5)
         merged_employees = fiorilli_active_employees.merge(
-            ahgora_employees, on="id", suffixes=("_fiorilli", "_ahgora"), how="inner"
+            ahgora_employees,
+            on="id",
+            suffixes=("_fiorilli", "_ahgora"),
+            how="inner",
         )
 
         for col in COLUMNS_TO_VERIFY_CHANGE:
@@ -578,7 +581,7 @@ class DataManager:
     def normalize_text(self, text):
         if pd.isna(text):
             return np.nan
-        text = str(" ".join(re.split("\s+", text, flags=re.UNICODE)))
+        text = str(" ".join(re.split(r"\s+", text, flags=re.UNICODE)))
         normalized = (
             unicodedata.normalize("NFKD", text)
             .encode("ASCII", "ignore")

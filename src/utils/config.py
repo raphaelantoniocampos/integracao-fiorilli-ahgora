@@ -12,7 +12,7 @@ from src.utils.constants import (
     JSON_INIT_CONFIG,
 )
 from src.utils.creds import Creds
-from src.utils.ui import console, menu
+from src.utils.ui import console, menu, get_number
 
 from dataclasses import dataclass
 
@@ -38,6 +38,7 @@ class Config:
                 destination=TASKS_DIR / "manual_leaves.csv",
             ),
             "Alterar Headless Mode": self.toggle_headless_mode,
+            "Alterar Número de Meses atrás - Download de Afastamentos": self.change_leaves_months_ago,
         }
 
         self.update_time_since()
@@ -54,6 +55,8 @@ class Config:
             f"""
 [bold orange]Opções[/bold orange]
 [cyan]•[/] [bold]Modo de Download Headless[/bold]: {self.headless_mode}
+[cyan]•[/] [bold]Quantos meses atrás - Download de Afastamentos[/bold]: {self.leaves_months_ago}
+
 
 [bold orange]Dados[/bold orange]
 [cyan]•[/] [bold]Análise[/]: {self.last_analisys["datetime"]} ([bold]{
@@ -87,6 +90,7 @@ class Config:
         ]
         self.last_download_ahgora = self.data.get("last_download")["ahgora_employees"]
         self.last_download_leaves = self.data.get("last_download")["leaves"]
+        self.leaves_months_ago = self.data.get("leaves_months_ago")
         self.generate_config_tasks()
 
     def check_status(self):
@@ -208,6 +212,11 @@ class Config:
         change_to = not headless_mode
         self._update("headless_mode", value=change_to)
         return f"Headless mode alterado para {change_to}"
+
+    def change_leaves_months_ago(self):
+        leaves_months_ago = get_number("Meses: (padrão: 2)", 1, 12)
+        self._update("leaves_months_ago", value=leaves_months_ago)
+        return f"Número de meses alterado para {leaves_months_ago}"
 
     def _update_analysis_time_since(self, last_analisys: dict, now: timedelta) -> None:
         if last_analisys["datetime"]:

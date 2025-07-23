@@ -42,4 +42,4 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         spinner("Saindo")
     except Exception as err:
-        input(f"Safe exit: {err}")
+        input(f"Safe exit: {repr(err)}")
