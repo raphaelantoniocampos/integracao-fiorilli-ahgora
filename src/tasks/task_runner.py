@@ -13,8 +13,9 @@ from src.utils.ui import console, spinner
 
 
 class TaskRunner(ABC):
-    def __init__(self, task: Task):
+    def __init__(self, task: Task, basic=False):
         self.task = task
+        self.basic = basic
         if self.task.data.empty:
             return
         return self.menu()
@@ -27,6 +28,9 @@ class TaskRunner(ABC):
                 style="bold cyan",
             )
         )
+
+        if self.basic:
+            return self.run()
 
         choose_itens = inquirer.confirm(
             message="Ver e escolher itens da lista?", default=False

@@ -5,6 +5,7 @@ from InquirerPy import inquirer
 from rich import print
 
 from src.utils.constants import REQUIRED_VARS
+from pathlib import Path
 
 
 class Creds:
@@ -14,11 +15,11 @@ class Creds:
     def load_vars(self):
         for var in REQUIRED_VARS:
             setattr(self, var.lower(), os.getenv(var))
-        load_dotenv()
+        load_dotenv(override=True)
 
     @staticmethod
     def get_missing_vars():
-        load_dotenv()
+        load_dotenv(override=True)
 
         missing_vars = [var for var in REQUIRED_VARS if os.getenv(var) is None]
 
@@ -31,7 +32,7 @@ class Creds:
     def create_vars(vars):
         env_vars = {}
 
-        if os.path.exists(".env"):
+        if Path(".env").exists():
             with open(".env", "r") as f:
                 for line in f:
                     if "=" in line:

@@ -8,6 +8,7 @@ from src.tasks.add_employees_task import AddEmployeesTask
 from src.tasks.add_leaves_task import AddLeavesTask
 from src.tasks.remove_employees_task import RemoveEmployeesTask
 from src.tasks.update_employees_task import UpdateEmployeesTask
+from src.tasks.missing_vars_task import MissingVarsTask
 from src.utils.constants import TASKS_DIR
 from src.utils.ui import menu
 
@@ -34,6 +35,8 @@ class TaskManager:
                 AddLeavesTask(task)
             case "manual_leaves":
                 AddLeavesTask(task)
+            case "missing_vars":
+                MissingVarsTask(task)
 
     @staticmethod
     def get_tasks() -> list[Task]:
@@ -102,7 +105,7 @@ class TaskManager:
                 return (
                     ""
                     if data.empty
-                    else f"Configurar variáveis de ambiente\n{[var[0] for _, var in data.iterrows()]}"
+                    else f"Configurar variáveis de ambiente\n{[ser.iloc[0] for _, ser in data.iterrows()]}"
                 )
 
             case "analyze":

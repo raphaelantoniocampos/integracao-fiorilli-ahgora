@@ -39,6 +39,7 @@ class Config:
             ),
             "Alterar Headless Mode": self.toggle_headless_mode,
             "Alterar Número de Meses atrás - Download de Afastamentos": self.change_leaves_months_ago,
+            "Resetar credenciais": self.reset_creds,
         }
 
         self.update_time_since()
@@ -55,7 +56,9 @@ class Config:
             f"""
 [bold orange]Opções[/bold orange]
 [cyan]•[/] [bold]Modo de Download Headless[/bold]: {self.headless_mode}
-[cyan]•[/] [bold]Quantos meses atrás - Download de Afastamentos[/bold]: {self.leaves_months_ago}
+[cyan]•[/] [bold]Quantos meses atrás - Download de Afastamentos[/bold]: {
+                self.leaves_months_ago
+            }
 
 
 [bold orange]Dados[/bold orange]
@@ -198,12 +201,27 @@ class Config:
         try:
             now = datetime.now()
             last_analisys = self.data.get("last_analisys")
-            self._update_analysis_time_since(last_analisys, now)
+            self._update_analysis_time_since(
+                last_analisys,
+                now,
+            )
 
             last_download = self.data.get("last_download")
-            self._update_downloads_time_since(last_download, "ahgora_employees", now)
-            self._update_downloads_time_since(last_download, "fiorilli_employees", now)
-            self._update_downloads_time_since(last_download, "leaves", now)
+            self._update_downloads_time_since(
+                last_download,
+                "ahgora_employees",
+                now,
+            )
+            self._update_downloads_time_since(
+                last_download,
+                "fiorilli_employees",
+                now,
+            )
+            self._update_downloads_time_since(
+                last_download,
+                "leaves",
+                now,
+            )
         except FileNotFoundError:
             return
 
@@ -217,6 +235,15 @@ class Config:
         leaves_months_ago = get_number("Meses: (padrão: 2)", 1, 12)
         self._update("leaves_months_ago", value=leaves_months_ago)
         return f"Número de meses alterado para {leaves_months_ago}"
+
+    def reset_creds(self):
+        env_file = Path(".env")
+        if env_file.exists():
+            env_file.unlink()
+        input("Reinicie o programa...")
+        import sys
+
+        sys.exit(0)
 
     def _update_analysis_time_since(self, last_analisys: dict, now: timedelta) -> None:
         if last_analisys["datetime"]:
