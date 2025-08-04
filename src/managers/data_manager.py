@@ -135,9 +135,9 @@ class DataManager:
             columns = df.columns.to_list()
 
             choices = []
-            for i, series in df.iterrows():
+            for i, row in df.iterrows():
                 choices.append(
-                    series.to_list(),
+                    row.to_list(),
                 )
 
             inquirer.fuzzy(
@@ -517,10 +517,10 @@ class DataManager:
                 fiorilli_norm_col in merged_employees
                 and ahgora_norm_col in merged_employees
             ):
-                series_fiorilli = merged_employees[fiorilli_norm_col]
-                series_ahgora = merged_employees[ahgora_norm_col]
+                row_fiorilli = merged_employees[fiorilli_norm_col]
+                row_ahgora = merged_employees[ahgora_norm_col]
 
-                condition = series_fiorilli.fillna(placeholder) != series_ahgora.fillna(
+                condition = row_fiorilli.fillna(placeholder) != row_ahgora.fillna(
                     placeholder
                 )
                 change_conditions.append(condition)

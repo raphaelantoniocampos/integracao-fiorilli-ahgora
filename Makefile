@@ -12,7 +12,7 @@ PYTHON_CMD   := uv run python
 PYINSTALLER_FLAGS = --noconfirm --onedir --console \
 	--icon "$(PROJECT_ROOT)/$(ICON_FILE)" \
 	--name "$(APP_NAME)" \
-	--add-data "$(PROJECT_ROOT)/src;src/" \
+	--add-data "$(PROJECT_ROOT)/src:src/" \
 
 PYINSTALLER_CMD = uv run pyinstaller $(PYINSTALLER_FLAGS) "$(PROJECT_ROOT)/$(MAIN_SCRIPT)"
 
@@ -28,6 +28,7 @@ build:
 	$(PYINSTALLER_CMD)
 	@echo "--------------------------------------------------"
 	@xcopy /Y /I "$(PROJECT_ROOT)\data\leave_codes.csv" "$(PROJECT_ROOT)\dist\$(APP_NAME)\data\"
+	@xcopy /Y /I "$(PROJECT_ROOT)\pyproject.toml" "$(PROJECT_ROOT)\dist\$(APP_NAME)\"
 	@echo "Build concluido!"
 	@echo "Executavel em: $(PROJECT_ROOT)/dist/$(APP_NAME)/"
 	@echo "--------------------------------------------------"
@@ -44,6 +45,7 @@ update:
 	@xcopy /S /Y /I /E "$(PROJECT_ROOT)\data" "$(PROJECT_ROOT)\dist\$(APP_NAME)\data"
 	@xcopy /S /Y /I /E "$(PROJECT_ROOT)\downloads" "$(PROJECT_ROOT)\dist\$(APP_NAME)\downloads"
 	@xcopy /S /Y /I /E "$(PROJECT_ROOT)\tasks" "$(PROJECT_ROOT)\dist\$(APP_NAME)\tasks"
+	@xcopy /Y /I "$(PROJECT_ROOT)\pyproject.toml" "$(PROJECT_ROOT)\dist\$(APP_NAME)\"
 	@echo "Build concluido!"
 	@echo "Executavel em: $(PROJECT_ROOT)/dist/$(APP_NAME)/"
 	@echo "--------------------------------------------------"
@@ -61,7 +63,7 @@ shortcut:
 		shortcut.WorkingDirectory = os.path.dirname(target_path); \
 		shortcut.IconLocation = os.path.join('$(PROJECT_ROOT)', '$(ICON_FILE)'); \
 		shortcut.save()"
-	@echo "Atalho criado em: $(PUBLIC_DESKTOP)/$(APP_NAME).lnk"
+	@echo "Atalho criado em: $(PROJECT_ROOT)/$(APP_NAME).lnk"
 	@echo "--------------------------------------------------"
 
 clean:
@@ -86,7 +88,7 @@ help:
 	@echo "  make all		- Constroi o projeto (default)."
 	@echo "  make build		- Constroi o executavel."
 	@echo "  make update		- Atualiza o executavel."
-	@echo "  make shortcut	- Cria um atalho na area de trabalho publica."
+	@echo "  make shortcut	- Cria um atalho na pasta do projeto."
 	@echo "  make clean		- Remove os diretorios build/, dist/ e arquivos *.spec."
 	@echo "  make help		- Mostra esta mensagem de ajuda."
 	@echo "--------------------------------------------------"

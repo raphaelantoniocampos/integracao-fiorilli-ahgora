@@ -16,16 +16,16 @@ class AddEmployeesTask(TaskRunner):
 
     def run(self) -> None:
         df = self.task.data
-        for i, series in df.iterrows():
+        for i, row in df.iterrows():
             print(f"\n[bold gold1]{'-' * 15} NOVO FUNCIONÁRIO! {'-' * 15}[/bold gold1]")
-            print(series)
-            name = series.get("name")
+            print(row)
+            name = row.get("name")
             copy(name)
             print(f"Nome '{name}' copiado para a área de transferência!)")
             match wait_key_press([KEY_CONTINUE, KEY_NEXT, KEY_STOP]):
                 case "continuar":
                     spinner("Continuando")
-                    self._auto_new(series)
+                    self._add(row)
                 case "próximo":
                     spinner("Continuando")
                 case "sair":
@@ -36,7 +36,7 @@ class AddEmployeesTask(TaskRunner):
         print("[bold green]Não há mais novos funcionários![/bold green]")
         self.exit_task()
 
-    def _auto_new(self, row):
+    def _add(self, row):
         print(
             "Clique em [bright_blue]Novo Funcionário[/], clique no [bright_blue]Nome[/]"
         )

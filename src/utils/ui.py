@@ -7,10 +7,16 @@ from rich.panel import Panel
 
 from src.models.task import Task
 from src.utils.constants import INQUIRER_KEYBINDINGS
+from src.utils.version import get_project_version
+
+PROJECT_VERSION = get_project_version()
 
 DEFAULT_MESSAGE = "Selecione uma opção"
 DEFAULT_INSTRUCTIONS = "Selecione o número ou navegue com as setas do teclado."
-DEFAULT_LONG_INSTRUCTIONS = "[Enter] seleciona • [Esc + Esc] cancela [Ctrl+C] sair\nMIT License • © 2025 Raphael Campos"
+DEFAULT_LONG_INSTRUCTIONS = f"""
+[Enter] seleciona • [Esc + Esc] cancela [Ctrl+C] sair
+{PROJECT_VERSION} • MIT License • © 2025 Raphael Campos
+"""
 
 console = Console()
 

@@ -15,21 +15,21 @@ class RemoveEmployeesTask(TaskRunner):
 
     def run(self):
         df = self.task.data
-        for i, series in df.iterrows():
+        for i, row in df.iterrows():
             print(
                 f"\n[bold gold1]{'-' * 15} FUNCIONÁRIO DESLIGADO! {
                     '-' * 15
                 }[/bold gold1]"
             )
-            print(series)
-            name = series["name"]
+            print(row)
+            name = row["name"]
             copy(name)
             print("\nProcure o nome e clique no [bold red]x[/bold red]")
             print(f"(Nome '{name}' copiado para a área de transferência!)\n")
             match wait_key_press([KEY_CONTINUE, KEY_NEXT, KEY_STOP]):
                 case "continuar":
                     spinner("Continuando")
-                    date = series["dismissal_date"]
+                    date = row["dismissal_date"]
                     print(
                         f"(Data de Desligamento '{
                             date

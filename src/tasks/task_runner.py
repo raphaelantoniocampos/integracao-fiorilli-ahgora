@@ -7,7 +7,8 @@ from rich import print
 from rich.panel import Panel
 
 from src.managers.data_manager import DataManager
-from src.models.key import wait_key_press, KEY_CONTINUE
+from src.managers.file_manager import FileManager
+from src.models.key import KEY_CONTINUE, wait_key_press
 from src.models.task import Task
 from src.utils.ui import console, spinner
 

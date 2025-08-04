@@ -37,21 +37,21 @@ class UpdateEmployeesTask(TaskRunner):
     def run(self):
         df = self.task.data
 
-        for i, series in df.iterrows():
-            employee_name = series["name_ahgora"]
+        for i, row in df.iterrows():
+            employee_name = row["name_ahgora"]
 
             detected_changes = []
             for col_name, config in self.COLUMN_CONFIG.items():
                 fiorilli_col = f"{col_name}_fiorilli_norm"
                 ahgora_col = f"{col_name}_ahgora_norm"
-                if fiorilli_col in series and ahgora_col in series:
-                    if series[fiorilli_col] != series[ahgora_col]:
+                if fiorilli_col in row and ahgora_col in row:
+                    if row[fiorilli_col] != row[ahgora_col]:
                         detected_changes.append(
                             {
                                 "config": config,
                                 "name": col_name,
-                                "old_value": series[f"{col_name}_ahgora"],
-                                "new_value": series[f"{col_name}_fiorilli"],
+                                "old_value": row[f"{col_name}_ahgora"],
+                                "new_value": row[f"{col_name}_fiorilli"],
                             }
                         )
 
@@ -69,23 +69,21 @@ class UpdateEmployeesTask(TaskRunner):
 
             resultados = {}
 
-            # 1. Campos padrões
-            for key, value in series.items():
+            for key, value in row.items():
                 if not any(
                     suffix in key for suffix in ["_fiorilli", "_ahgora", "_norm"]
                 ):
                     resultados[key] = value
 
-            # 2. Comparação de campos *_fiorilli_norm vs *_ahgora_norm
-            for col in series.index:
+            for col in row.index:
                 if col.endswith("_fiorilli_norm"):
                     base = col.replace("_fiorilli_norm", "")
                     col_fiorilli = col
                     col_ahgora = f"{base}_ahgora_norm"
 
-                    if col_ahgora in series:
-                        val_fiorilli = series[col_fiorilli]
-                        val_ahgora = series[col_ahgora]
+                    if col_ahgora in row:
+                        val_fiorilli = row[col_fiorilli]
+                        val_ahgora = row[col_ahgora]
 
                         if (
                             pd.isna(val_fiorilli)
@@ -97,12 +95,9 @@ class UpdateEmployeesTask(TaskRunner):
                         else:
                             resultados[base] = val_fiorilli
 
-            # Criar nova Series com os resultados
-            series = pd.Series(resultados)
+            row = pd.Series(resultados)
 
-            # Exibir
-
-            print(series)
+            print(row)
             print("\n")
 
             change_labels = [

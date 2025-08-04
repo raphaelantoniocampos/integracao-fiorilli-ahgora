@@ -102,11 +102,7 @@ class TaskManager:
                 return "" if data.empty else f"Baixar arquivos\n{files}"
 
             case "missing_vars":
-                return (
-                    ""
-                    if data.empty
-                    else f"Configurar variáveis de ambiente\n{[ser.iloc[0] for _, ser in data.iterrows()]}"
-                )
+                return "" if data.empty else "Configurar variáveis de ambiente"
 
             case "analyze":
                 return "" if data.empty else "Analisar dados"
