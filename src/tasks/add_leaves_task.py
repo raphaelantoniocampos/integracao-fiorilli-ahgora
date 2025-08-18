@@ -29,7 +29,7 @@ class AddLeavesTask(TaskRunner):
             super().__init__(task)
 
     def run(self):
-        print(f"\n[bold gold1]{'-' * 15} AFASTAMENTOS! {'-' * 15}[/bold gold1]")
+        print(f"\n[bold gold1]{'-' * 25} AFASTAMENTOS! {'-' * 25}[/bold gold1]")
 
         leaves_bytes = (FIORILLI_DIR / "leaves.csv").read_bytes()
 

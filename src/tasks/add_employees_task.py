@@ -1,13 +1,23 @@
 import time
 
+import keyboard
 import pyautogui
 from pyperclip import copy
 from rich import print
 
-from src.models.key import wait_key_press, KEY_CONTINUE, KEY_NEXT, KEY_BACK, KEY_STOP
+from src.models.key import (
+    KEY_BACK,
+    KEY_CONTINUE,
+    KEY_NEXT,
+    KEY_STOP,
+    Key,
+    wait_key_press,
+)
 from src.models.task import Task
 from src.tasks.task_runner import TaskRunner
 from src.utils.ui import spinner
+
+KEY_WRITE = Key("shift+1", "violet", "escrever")
 
 
 class AddEmployeesTask(TaskRunner):
@@ -17,7 +27,7 @@ class AddEmployeesTask(TaskRunner):
     def run(self) -> None:
         df = self.task.data
         for i, row in df.iterrows():
-            print(f"\n[bold gold1]{'-' * 15} NOVO FUNCIONÁRIO! {'-' * 15}[/bold gold1]")
+            print(f"\n[bold gold1]{'-' * 25} NOVO FUNCIONÁRIO! {'-' * 25}[/bold gold1]")
             print(row)
             name = row.get("name")
             copy(name)
@@ -51,6 +61,8 @@ class AddEmployeesTask(TaskRunner):
         time.sleep(0.2)
 
         pis_pasep = row["pis_pasep"]
+        if pis_pasep == "0":
+            pis_pasep = pis_pasep.zfill(11)
         pyautogui.write(pis_pasep, interval=0.2)
         time.sleep(0.2)
 
@@ -134,5 +146,10 @@ class AddEmployeesTask(TaskRunner):
         time.sleep(0.2)
 
         print(f"Insira o Departamento\n[gold1]{row['department']}[/]")
+        if wait_key_press(KEY_WRITE) == "escrever":
+            keyboard.send("backspace")
+            time.sleep(0.1)
+            pyautogui.write(row["department"], interval=0.02)
+            time.sleep(0.5)
 
         wait_key_press(KEY_NEXT)

@@ -3,7 +3,6 @@ import time
 import keyboard
 import pandas as pd
 import pyautogui
-from InquirerPy import inquirer
 from pyperclip import copy
 from rich import print
 
@@ -59,8 +58,8 @@ class UpdateEmployeesTask(TaskRunner):
                 continue
 
             print(
-                f"\n[bold gold1]{'-' * 15} FUNCIONÁRIO ALTERADO! {
-                    '-' * 15
+                f"\n[bold gold1]{'-' * 25} FUNCIONÁRIO ALTERADO! {
+                    '-' * 25
                 }[/bold gold1]"
             )
             # FIX: temp
@@ -142,11 +141,6 @@ class UpdateEmployeesTask(TaskRunner):
                     self.exit_task()
                     spinner()
                     return
-
-                if not inquirer.confirm(
-                    message="Repetir ação?", default=False
-                ).execute():
-                    break
 
         print("[bold green]Não há mais funcionários para alterar![/bold green]")
         self.exit_task()

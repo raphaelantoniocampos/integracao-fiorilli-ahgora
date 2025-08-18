@@ -17,8 +17,8 @@ class RemoveEmployeesTask(TaskRunner):
         df = self.task.data
         for i, row in df.iterrows():
             print(
-                f"\n[bold gold1]{'-' * 15} FUNCIONÁRIO DESLIGADO! {
-                    '-' * 15
+                f"\n[bold gold1]{'-' * 25} FUNCIONÁRIO DESLIGADO! {
+                    '-' * 25
                 }[/bold gold1]"
             )
             print(row)
