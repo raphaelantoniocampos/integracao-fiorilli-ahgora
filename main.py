@@ -18,8 +18,8 @@ def main():
 
     MENU_OPTIONS = {
         "Downloads": download_manager.open,
-        "Dados": data_manager.open,
         "Tarefas": task_manager.open,
+        "Dados": data_manager.open,
         "Configurações": config.open,
         "Sair": lambda: sys.exit(0),
     }

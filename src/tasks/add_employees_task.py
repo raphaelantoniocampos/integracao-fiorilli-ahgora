@@ -71,7 +71,7 @@ class AddEmployeesTask(TaskRunner):
 
         spinner(
             wait_string="[gold1]Processando PIS-PASEP[/gold1]",
-            wait_time=2,
+            wait_time=0.5,
         )
         formatted_pis_pasep = (
             f"{pis_pasep[:3]}.{pis_pasep[3:8]}.{pis_pasep[8:10]}-{pis_pasep[10]}"
@@ -146,7 +146,7 @@ class AddEmployeesTask(TaskRunner):
         time.sleep(0.2)
 
         print(f"Insira o Departamento\n[gold1]{row['department']}[/]")
-        if wait_key_press(KEY_WRITE) == "escrever":
+        if wait_key_press([KEY_WRITE, KEY_CONTINUE]) == "escrever":
             keyboard.send("backspace")
             time.sleep(0.1)
             pyautogui.write(row["department"], interval=0.02)
