@@ -97,7 +97,7 @@ def get_tasks_panel(tasks: list[Task]) -> Panel:
     task_options = [f"[bold cyan]•[/] {task.option}" for task in tasks if task.option]
 
     if not task_options:
-        task_options.append("[green]• Nenhuma tarefa pendente.[/green]")
+        task_options += ["[green]• Nenhuma tarefa pendente.[/green]"]
 
         return Panel.fit(
             "[green]• Nenhuma tarefa pendente.[/green]",

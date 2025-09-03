@@ -136,9 +136,9 @@ class DataManager:
 
             choices = []
             for i, row in df.iterrows():
-                choices.append(
+                choices += [
                     row.to_list(),
-                )
+                ]
 
             inquirer.fuzzy(
                 message=option,
@@ -523,7 +523,7 @@ class DataManager:
                 condition = row_fiorilli.fillna(placeholder) != row_ahgora.fillna(
                     placeholder
                 )
-                change_conditions.append(condition)
+                change_conditions += [condition]
 
         if change_conditions:
             combined_condition = change_conditions[0]

@@ -45,14 +45,14 @@ class UpdateEmployeesTask(TaskRunner):
                 ahgora_col = f"{col_name}_ahgora_norm"
                 if fiorilli_col in row and ahgora_col in row:
                     if row[fiorilli_col] != row[ahgora_col]:
-                        detected_changes.append(
+                        detected_changes += [
                             {
                                 "config": config,
                                 "name": col_name,
                                 "old_value": row[f"{col_name}_ahgora"],
                                 "new_value": row[f"{col_name}_fiorilli"],
                             }
-                        )
+                        ]
 
             if not detected_changes:
                 continue

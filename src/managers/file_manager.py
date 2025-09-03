@@ -94,7 +94,7 @@ class FileManager:
         missing_dirs = []
         for dir in DIRECTORIES:
             if not dir.exists():
-                missing_dirs.append(dir)
+                missing_dirs += [dir]
         return missing_dirs
 
     @staticmethod
@@ -116,7 +116,7 @@ class FileManager:
         missing_files = []
         for file in files_to_check:
             if not file.exists():
-                missing_files.append(file)
+                missing_files += [file]
         return missing_files
 
     @staticmethod

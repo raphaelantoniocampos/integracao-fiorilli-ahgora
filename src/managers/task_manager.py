@@ -98,7 +98,7 @@ class TaskManager:
                 files = []
                 for file in file_paths:
                     file_splits = str(file).split("\\")
-                    files.append(f"{file_splits[-2]}\\{file_splits[-1]}")
+                    files += [f"{file_splits[-2]}\\{file_splits[-1]}"]
                 return "" if data.empty else f"Baixar arquivos\n{files}"
 
             case "missing_vars":

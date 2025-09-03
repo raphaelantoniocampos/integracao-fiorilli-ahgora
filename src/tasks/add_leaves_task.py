@@ -108,7 +108,7 @@ class AddLeavesTask(TaskRunner):
                 axis=0,
             )
         )
-        print("Arquivo '[bold green]new_leaves.txt[/bold green]' gerado com sucesso!")
+        print("Arquivo '[bold green]upload.txt[/bold green]' gerado com sucesso!")
 
         proceed = False
         while not proceed:
@@ -163,15 +163,15 @@ class AddLeavesTask(TaskRunner):
                 if "Erro ao obter registros" in line:
                     continue
                 elif "Intersecção com afastamento existente" in line:
-                    error_groups["Intersecção com afastamento existente"].append(line)
+                    error_groups["Intersecção com afastamento existente"] += [line]
                 elif "Intersecção com período bloqueado" in line:
-                    error_groups["Intersecção com período bloqueado"].append(line)
+                    error_groups["Intersecção com período bloqueado"] += [line]
                 elif "Matrícula" in line and "inexistente" in line:
-                    error_groups["Matrícula inexistente"].append(line)
+                    error_groups["Matrícula inexistente"] += [line]
                 elif "Informe matrícula" in line:
-                    error_groups["Informe matrícula"].append(line)
+                    error_groups["Informe matrícula"] += [line]
                 else:
-                    error_groups["Outros erros"].append(line)
+                    error_groups["Outros erros"] += [line]
 
         return error_groups
 
@@ -203,7 +203,7 @@ class AddLeavesTask(TaskRunner):
                 f"{row['duration']} dias | "
                 f"{row['start_date']} a {row['end_date']}"
             )
-            choices.append((display_text, i + 1))
+            choices += [(display_text, i + 1)]
 
         selected = inquirer.fuzzy(
             message="Selecione o afastamento para editar:",
@@ -299,7 +299,7 @@ class AddLeavesTask(TaskRunner):
                     if start > 0 and end > start:
                         try:
                             filter_number = int(line[start:end])
-                            filter_numbers.append(filter_number)
+                            filter_numbers += [filter_number]
                         except ValueError:
                             continue
         return filter_numbers
