@@ -55,10 +55,10 @@ class AhgoraBrowser(CoreBrowser):
         time.sleep(self.DELAY)
 
     def _enter_username(self, selector: str, user: str) -> None:
-        self.send_keys(selector, user, selector_type=By.NAME)
+        self.send_keys(selector, user, selector_type=By.NAME, max_tries=10)
 
     def _enter_password(self, selector: str, password: str) -> None:
-        self.send_keys(selector, password, selector_type=By.NAME)
+        self.send_keys(selector, password, selector_type=By.NAME, max_tries=10)
 
     def _select_company(self, company) -> None:
         self.click_element(f"//*[contains(text(), '{company}')]")
@@ -80,4 +80,4 @@ class AhgoraBrowser(CoreBrowser):
         time.sleep(10)
 
     def _click_enter_button(self) -> None:
-        self.click_element("//*[contains(text(), 'Entrar')]")
+        self.click_element("//*[contains(text(), 'Entrar')]", max_tries=10)
