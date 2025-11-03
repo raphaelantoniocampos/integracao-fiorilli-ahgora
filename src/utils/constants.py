@@ -118,9 +118,17 @@ FIORILLI_EMPLOYEES_COLUMNS = [
 ]
 
 COLUMNS_TO_VERIFY_CHANGE = [
+    "id",
     "name",
     "admission_date",
     # "dismissal_date",
     "position",
     "department",
 ]
+
+EXCEPTIONS_AND_TYPOS = {
+    "VIGILACIA EM SAUDE": "VIGILANCIA EM SAUDE",
+    "UBS SAO JOSE/CIDADE JARDIM": "UBS CIDADE JARDIM",
+    "FINANCAS": "SECRETARIA MUN. FINANCAS",
+    "016718": "16718"
+}

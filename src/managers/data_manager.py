@@ -22,6 +22,7 @@ from src.utils.constants import (
     PT_MONTHS,
     TASKS_DIR,
     UPLOAD_LEAVES_COLUMNS,
+    EXCEPTIONS_AND_TYPOS,
 )
 from src.utils.ui import console, menu, spinner
 
@@ -555,6 +556,9 @@ class DataManager:
                         format="%d/%m/%Y",
                     )
 
+        for col in df.columns:
+            df[col] = df[col].replace(EXCEPTIONS_AND_TYPOS)
+
         merged = pd.merge(
             last_leaves,
             all_leaves,
@@ -703,6 +707,7 @@ class DataManager:
         #     return pd.DataFrame(columns=LEAVES_COLUMNS), all_leaves
 
     def treat_exceptions_and_typos(self, text: str) -> str:
+        return EXCEPTIONS_AND_TYPOS.get(text, text)
         if text == "VIGILACIA EM SAUDE":
             return "VIGILANCIA EM SAUDE"
         if text == "UBS SAO JOSE/CIDADE JARDIM":
