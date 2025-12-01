@@ -110,13 +110,6 @@ class AddLeavesTask(TaskRunner):
         )
         print("Arquivo '[bold green]upload.txt[/bold green]' gerado com sucesso!")
 
-        proceed = False
-        while not proceed:
-            proceed = inquirer.confirm(
-                message="Copiar caminho da importação.",
-                default=True,
-            ).execute()
-
         self.ask_to_insert_file(upload_file_path)
         wait_key_press(KEY_CONTINUE)
 
