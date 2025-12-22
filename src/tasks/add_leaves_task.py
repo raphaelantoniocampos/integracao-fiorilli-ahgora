@@ -1,4 +1,5 @@
 import os
+import re
 import tempfile
 from pathlib import Path
 
@@ -10,8 +11,7 @@ from rich.table import Table
 
 from src.managers.data_manager import DataManager
 from src.managers.file_manager import FileManager
-
-from src.models.key import wait_key_press, KEY_CONTINUE, KEY_STOP
+from src.models.key import KEY_CONTINUE, KEY_STOP, wait_key_press
 from src.models.task import Task
 from src.tasks.task_runner import TaskRunner
 from src.utils.constants import (
@@ -73,7 +73,11 @@ class AddLeavesTask(TaskRunner):
             ).execute():
                 repeat = True
                 while repeat:
-                    leaves_df = self.edit_leaves_interactive(leaves_df, filter_path)
+                    leaves_df = self.edit_leaves_interactive(
+                        leaves_df,
+                        filter_path,
+                        error_groups,
+                    )
                     if leaves_df is not None:
                         self.df_to_upload(leaves_df, upload_leaves_path)
                     if not inquirer.confirm(
@@ -186,8 +190,20 @@ class AddLeavesTask(TaskRunner):
                 for error in errors:
                     print(f"  - {error}")
 
-    def edit_leaves_interactive(self, df, filter_path):
+    def edit_leaves_interactive(self, df, filter_path, error_groups):
         """Permite edição interativa dos afastamentos"""
+        regex = r"\[(\d+)\]"
+
+        error_lines = []
+        for error_type, errors in error_groups.items():
+            if not errors:
+                continue
+            for line in errors:
+                match = re.search(regex, line)
+                if match:
+                    error_line = match.group(1)
+                    error_lines += [error_line]
+
         choices = []
         for i, row in df.iterrows():
             display_text = (
