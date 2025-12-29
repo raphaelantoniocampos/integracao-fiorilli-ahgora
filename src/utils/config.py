@@ -33,27 +33,26 @@ class Config:
             return
         self.setup()
         CONFIG_MENU_CHOICES = {
+            "Alterar Headless Mode": self.toggle_headless_mode,
+            "Alterar Número de Meses Retroativos - Afastamentos": self.change_leaves_months_ago,
             "Adicionar Afastamentos Manual": lambda: FileManager.copy_file(
                 source=FIORILLI_DIR / "leaves.csv",
                 destination=TASKS_DIR / "manual_leaves.csv",
             ),
-            "Alterar Headless Mode": self.toggle_headless_mode,
-            "Alterar Número de Meses atrás - Download de Afastamentos": self.change_leaves_months_ago,
             "Resetar credenciais": self.reset_creds,
         }
 
         self.update_time_since()
         console.log(result)
-        self.config_header()
-        action = menu(
+        header = self.config_header
+        return menu(
             name="Configurações",
+            header=header,
             choices=CONFIG_MENU_CHOICES,
         )
-        self.open(action())
 
-    def config_header(self):
-        console.log(
-            f"""
+    def config_header(self, name):
+        return console.print(f"""[bold cyan]{name}[/bold cyan]
 [bold orange]Opções[/bold orange]
 [cyan]•[/] [bold]Modo de Download Headless[/bold]: {self.headless_mode}
 [cyan]•[/] [bold]Quantos meses atrás - Download de Afastamentos[/bold]: {
@@ -76,8 +75,7 @@ class Config:
   • Funcionários Ahgora - {self.last_download_ahgora["datetime"]} ([bold]{
                 self.last_download_ahgora["time_since"]
             }[/] atrás)
-"""
-        )
+""")
 
     def setup(self):
         self.json_path: Path = DATA_DIR / "config.json"
