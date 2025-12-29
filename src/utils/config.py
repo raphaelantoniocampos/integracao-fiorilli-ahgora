@@ -93,7 +93,7 @@ class Config:
         ]
         self.last_download_ahgora = self.data.get("last_download")["ahgora_employees"]
         self.last_download_leaves = self.data.get("last_download")["leaves"]
-        self.leaves_months_ago = self.data.get("leaves_months_ago")
+        self.leaves_months_ago = int(self.data.get("leaves_months_ago"))
         self.generate_config_tasks()
 
     def check_status(self):

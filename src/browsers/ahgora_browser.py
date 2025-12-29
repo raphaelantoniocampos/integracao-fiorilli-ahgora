@@ -30,7 +30,10 @@ class AhgoraBrowser(CoreBrowser):
         with self.console.status(
             "Baixando [gold1]funcionários[/] do AHGORA", spinner="dots"
         ):
-            self._login()
+            try:
+                self._login()
+            except Exception:
+                self._login()
             self.driver.get("https://app.ahgora.com.br/funcionarios")
             self._show_dismissed_employees()
             self._click_plus_button()
@@ -45,11 +48,10 @@ class AhgoraBrowser(CoreBrowser):
         psw = creds.ahgora_psw
         company = creds.ahgora_company
 
-        for i in range(2):
-            self._enter_username("email", user)
-            self._click_enter_button()
-            self._enter_password("password", psw)
-            self._click_enter_button()
+        self._enter_username("email", user)
+        self._click_enter_button()
+        self._enter_password("password", psw)
+        self._click_enter_button()
         self._select_company(company)
         self._close_banner()
         time.sleep(self.DELAY)

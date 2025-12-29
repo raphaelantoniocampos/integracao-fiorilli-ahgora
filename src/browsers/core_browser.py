@@ -266,7 +266,7 @@ class CoreBrowser(ABC):
             try:
                 time.sleep(self.DELAY)
                 return func()
-            except Exception:
+            except Exception as e:
                 time.sleep(self.DELAY)
                 if i >= max_tries - 1:
-                    return
+                    raise e
