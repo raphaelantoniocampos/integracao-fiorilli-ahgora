@@ -267,6 +267,10 @@ class CoreBrowser(ABC):
                 time.sleep(self.DELAY)
                 return func()
             except Exception as e:
-                time.sleep(self.DELAY)
                 if i >= max_tries - 1:
+                    from src.utils.ui import console
+                    console.log(
+                        f"[bold red]Falha após {max_tries} tentativas:[/] {repr(e)}"
+                    )
                     raise e
+                time.sleep(self.DELAY)

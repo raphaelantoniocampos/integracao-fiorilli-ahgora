@@ -6,31 +6,26 @@ Sistema de integração automatizada entre o sistema de gestão Fiorilli e a pla
 
 O projeto Integração Fiorilli-Ahgora (IFA) é uma solução desenvolvida para automatizar e facilitar a sincronização de dados entre o sistema de gestão Fiorilli e a plataforma de controle de ponto Ahgora. O sistema permite baixar dados de funcionários e afastamentos do Fiorilli, dados de funcionários do Ahgora, analisar essas informações e executar tarefas de sincronização entre os dois sistemas.
 
-A aplicação utiliza automação de navegador para interagir com as interfaces web dos sistemas, extraindo e inserindo dados conforme necessário, sem depender de APIs específicas.
+A aplicação utiliza dois tipos de automação:
+1. **Automação de Navegador (Selenium)**: Utilizada para extração (download) de dados dos sistemas Fiorilli e Ahgora de forma totalmente automatizada.
+2. **Automação de Interface Gráfica (PyAutoGUI)**: Utilizada para execução de tarefas de sincronização (inserção de dados), operando em modo semi-automatizado onde o sistema interage com o navegador aberto pelo usuário.
 
 ## Requisitos do Sistema
 
-- Python 3.13 ou superior
-- [uv](https://docs.astral.sh/uv/) para gerenciamento de pacotes
-- Firefox (para automação de navegador)
-- Acesso aos sistemas Fiorilli e Ahgora
+- **Python 3.13** ou superior
+- **[uv](https://docs.astral.sh/uv/)** para gerenciamento de pacotes
+- **Firefox** (necessário para os downloads automatizados via Selenium)
+- **Acesso aos sistemas** Fiorilli e Ahgora
+- **Resolução de Tela**: Preferencialmente resoluções padrão (1920x1080) para melhor funcionamento da automação de interface.
 
 ## Dependências
 
-O projeto utiliza as seguintes bibliotecas Python:
-- chardet (>=5.2.0)
-- inquirerpy (>=0.3.4)
-- keyboard (>=0.13.5)
-- pandas (>=2.2.3)
-- pillow (>=11.1.0)
-- pyautogui (>=0.9.54)
-- pyperclip (>=1.9.0)
-- pyproject-toml (>=0.1.0)
-- pyscreeze (>=1.0.1)
-- python-dotenv (>=1.0.1)
-- rich (>=13.9.4)
-- selenium (>=4.28.1)
-- webdriver-manager (>=4.0.2)
+O projeto utiliza as seguintes bibliotecas principais:
+- **Selenium & Webdriver-Manager**: Para downloads automatizados.
+- **PyAutoGUI, Keyboard & Pyperclip**: Para automação de tarefas e interação com a interface.
+- **Pandas**: Para processamento e análise de dados.
+- **InquirerPy & Rich**: Para interface de linha de comando (CLI) interativa.
+- **Python-dotenv**: Para gerenciamento de credenciais.
 
 ## Instalação
 
@@ -40,16 +35,31 @@ O projeto utiliza as seguintes bibliotecas Python:
    cd integracao-fiorilli-ahgora
    ```
 
-2. Inicie o main.py com uv:
+2. Inicie o sistema com uv:
    ```bash
    uv run main.py
    ```
 
+## Build (Opcional)
+
+Se desejar gerar um executável (.exe) para distribuição em outros computadores, o projeto utiliza o `PyInstaller` gerenciado via `Makefile`.
+
+1. Certifique-se de ter o `make` instalado no Windows (ou utilize o `nmake`/`mingw32-make`).
+2. Execute o comando:
+   ```bash
+   make build
+   ```
+3. O executável será gerado no diretório `dist/Integracao Fiorilli Ahgora/`.
+
+Comandos adicionais do `Makefile`:
+- `make clean`: Remove arquivos temporários de build.
+- `make update`: Reconstrói o executável preservando dados existentes nas pastas `data`, `downloads` e `tasks`.
+- `make help`: Lista todos os comandos disponíveis.
 
 ## Configuração
 
 1. Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
-   ```
+   ```env
    FIORILLI_USER=seu_usuario_fiorilli
    FIORILLI_PSW=sua_senha_fiorilli
    AHGORA_USER=seu_usuario_ahgora
@@ -59,100 +69,63 @@ O projeto utiliza as seguintes bibliotecas Python:
 
 2. Alternativamente, execute o programa e insira as credenciais quando solicitado.
 
-3. Certifique-se de que os diretórios `data`, `tasks` e `downloads` existam na raiz do projeto. Eles serão criados automaticamente na primeira execução.
+3. Os diretórios `data`, `tasks` e `downloads` são criados automaticamente na primeira execução.
 
 ## Estrutura de Diretórios
 
 ```
 integracao-fiorilli-ahgora/
-├── data/                  # Diretório para armazenamento de dados processados
-│   ├── ahgora/            # Dados relacionados ao Ahgora
-│   └── fiorilli/          # Dados relacionados ao Fiorilli
-├── downloads/             # Diretório para arquivos baixados
-├── tasks/                 # Arquivos de tarefas pendentes
-├── src/                   # Código-fonte do projeto
-│   ├── browsers/          # Módulos de automação de navegador
-│   ├── managers/          # Gerenciadores (tarefas, arquivos, dados, downloads)
-│   ├── models/            # Modelos de dados
-│   ├── tasks/             # Implementações de tarefas específicas
-│   └── utils/             # Utilitários (configuração, constantes, credenciais, UI)
-└── README.md              # Este arquivo
+├── data/                  # Dados processados e configurações
+│   ├── ahgora/            # CSVs de funcionários baixados do Ahgora
+│   └── fiorilli/          # CSVs/TXTs de funcionários e afastamentos do Fiorilli
+├── downloads/             # Temporário para arquivos baixados pelo navegador
+├── tasks/                 # Listas de tarefas pendentes (CSVs gerados após análise)
+├── src/                   # Código-fonte
+│   ├── browsers/          # Classes de automação (Core, Ahgora, Fiorilli)
+│   ├── managers/          # Orquestradores (Data, Download, File, Task)
+│   ├── models/            # Modelos de dados e definições de teclas
+│   ├── tasks/             # Lógica de execução das tarefas (Add, Update, Remove)
+│   └── utils/             # Configurações, UI e constantes
+└── README.md
 ```
 
 ## Uso
 
-Execute o programa principal:
+### 1. Baixar Dados
+Selecione **"Downloads"** no menu principal. O sistema utilizará o Selenium para navegar nos sites, realizar login e baixar os relatórios de funcionários e afastamentos necessários.
 
-```bash
-uv run main.py
-```
+### 2. Analisar Dados
+Selecione **"Dados" -> "Analisar Dados"**. O sistema processará os arquivos baixados, normalizará os textos (removendo acentos, padronizando nomes) e identificará:
+- Novos funcionários no Fiorilli ausentes no Ahgora.
+- Funcionários desligados.
+- Alterações em cargos ou departamentos.
+- Novos afastamentos/férias.
 
-### Menu Principal
+As diferenças serão salvas como novos arquivos CSV no diretório `tasks/`.
 
-O sistema apresenta um menu interativo com as seguintes opções:
-
-1. **Baixar Dados**: Permite baixar dados dos sistemas Fiorilli e Ahgora.
-2. **Analisar Dados**: Processa os dados baixados e identifica diferenças entre os sistemas.
-3. **Tarefas**: Lista e permite executar tarefas de sincronização.
-4. **Configurações**: Permite ajustar configurações do sistema.
-5. **Sair**: Encerra o programa.
-
-### Fluxo de Trabalho Típico
-
-1. **Baixar Dados**:
-   - Selecione "Baixar Dados" no menu principal
-   - Escolha quais dados deseja baixar (Afastamentos, Funcionários Ahgora, Funcionários Fiorilli)
-   - Confirme a seleção
-
-2. **Analisar Dados**:
-   - Após o download, selecione "Analisar Dados" no menu principal
-   - O sistema processará os dados e identificará diferenças entre os sistemas
-
-3. **Executar Tarefas**:
-   - Selecione "Tarefas" no menu principal
-   - Escolha uma das tarefas disponíveis:
-     - Adicionar funcionários
-     - Remover funcionários
-     - Atualizar funcionários
-     - Adicionar afastamentos
-   - O sistema automatizará a execução da tarefa no Ahgora
+### 3. Executar Tarefas
+Selecione **"Tarefas"** e escolha a ação desejada. Para tarefas de inserção (como "Adicionar Funcionários"):
+1. O sistema abrirá o navegador na página correta.
+2. O sistema solicitará que você prepare a tela.
+3. Use as teclas de atalho (configuradas em `src/models/key.py`) para confirmar a inserção de cada registro via PyAutoGUI.
 
 ## Configurações
 
 Acesse o menu de configurações para:
-
-- Alternar o modo headless (execução sem interface gráfica do navegador)
-- Configurar variáveis de ambiente (credenciais)
-- Visualizar informações sobre a última análise e downloads
-
-## Modo Headless
-
-Por padrão, o sistema opera em modo headless, o que significa que a automação do navegador ocorre em segundo plano, sem exibir a interface gráfica. Isso é útil para execução em servidores ou para evitar interrupções no trabalho.
-
-Para desativar o modo headless (útil para depuração):
-1. Selecione "Configurações" no menu principal
-2. Escolha "Alterar Headless Mode"
+- **Headless Mode**: Ativa/desativa a visualização do navegador durante os downloads automatizados.
+- **Meses Retroativos**: Define quão longe no passado o sistema deve buscar por afastamentos.
+- **Resetar Credenciais**: Apaga o arquivo `.env` para reinserção de dados.
 
 ## Solução de Problemas
 
-### Falhas na Automação do Navegador
+### Falhas nos Downloads
+- O modo **Headless** pode falhar se houver popups inesperados. Tente desativá-lo.
+- Certifique-se de que o Firefox não tenha extensões que bloqueiem o download automático.
 
-Se a automação do navegador falhar:
-- Verifique se o Firefox está instalado e atualizado
-- Desative o modo headless para visualizar o processo
-- Verifique se as credenciais estão corretas
-- Verifique se houve alterações nas interfaces dos sistemas Fiorilli ou Ahgora
-
-### Erros de Análise de Dados
-
-Se a análise de dados falhar:
-- Verifique se os arquivos foram baixados corretamente
-- Verifique se os formatos dos arquivos exportados não foram alterados
-- Execute novamente o download dos dados
-
-## Desenvolvimento
-
-Para contribuir com o desenvolvimento sinta-se livre para mandar um Pull Request ou abrir uma Issue.
+### Falhas nas Tarefas (PyAutoGUI)
+- Não mova o mouse ou troque de janela enquanto o sistema estiver digitando dados.
+- Verifique se o layout do teclado está correto (pode afetar caracteres especiais).
+- O sistema depende da contagem de "tabs". Se a interface do Ahgora mudar, a sequência de preenchimento pode falhar.
 
 ## Licença
 

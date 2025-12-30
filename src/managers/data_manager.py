@@ -200,99 +200,73 @@ class DataManager:
         header: str | None = "infer",
         columns: list[str] = [],
     ) -> pd.DataFrame:
-        match path.name:
-            case "raw_employees.txt":
-                return self.prepare_dataframe(
-                    df=pd.read_csv(
+        if not path.exists():
+            console.log(f"[yellow]Arquivo não encontrado:[/] {path.name}")
+            return pd.DataFrame(columns=columns)
+
+        try:
+            match path.name:
+                case "raw_employees.txt":
+                    df = pd.read_csv(
                         path,
                         sep="|",
                         encoding="latin1",
                         index_col=False,
                         header=None,
-                    ),
-                    columns=FIORILLI_EMPLOYEES_COLUMNS,
-                )
+                    )
+                    return self.prepare_dataframe(df, FIORILLI_EMPLOYEES_COLUMNS)
 
-            case "raw_employees.csv":
-                return self.prepare_dataframe(
-                    df=pd.read_csv(
-                        path,
-                        index_col=False,
-                        header=None,
-                    ),
-                    columns=AHGORA_EMPLOYEES_COLUMNS,
-                )
+                case "raw_employees.csv":
+                    df = pd.read_csv(path, index_col=False, header=None)
+                    return self.prepare_dataframe(df, AHGORA_EMPLOYEES_COLUMNS)
 
-            case "ahgora_employees.csv":
-                return self.prepare_dataframe(
-                    df=pd.read_csv(
-                        path,
-                        index_col=False,
-                    ),
-                    columns=AHGORA_EMPLOYEES_COLUMNS,
-                )
+                case "ahgora_employees.csv":
+                    df = pd.read_csv(path, index_col=False)
+                    return self.prepare_dataframe(df, AHGORA_EMPLOYEES_COLUMNS)
 
-            case "fiorilli_employees.csv":
-                return self.prepare_dataframe(
-                    df=pd.read_csv(
-                        path,
-                        index_col=False,
-                    ),
-                    columns=FIORILLI_EMPLOYEES_COLUMNS,
-                )
+                case "fiorilli_employees.csv":
+                    df = pd.read_csv(path, index_col=False)
+                    return self.prepare_dataframe(df, FIORILLI_EMPLOYEES_COLUMNS)
 
-            case "leaves.csv":
-                return self.prepare_dataframe(
-                    df=pd.read_csv(
-                        path,
-                        index_col=False,
-                        header=None,
-                    ),
-                    columns=LEAVES_COLUMNS,
-                )
-            case "raw_vacations.txt":
-                return self.prepare_dataframe(
-                    df=pd.read_csv(
-                        path,
-                        index_col=False,
-                        header=None,
-                    ),
-                    columns=UPLOAD_LEAVES_COLUMNS,
-                )
+                case "leaves.csv":
+                    df = pd.read_csv(path, index_col=False, header=None)
+                    return self.prepare_dataframe(df, LEAVES_COLUMNS)
 
-            case "raw_leaves.txt":
-                return self.prepare_dataframe(
-                    df=pd.read_csv(
-                        path,
-                        index_col=False,
-                        header=None,
-                    ),
-                    columns=UPLOAD_LEAVES_COLUMNS,
-                )
-            case _:
-                return self.prepare_dataframe(
-                    df=pd.read_csv(
+                case "raw_vacations.txt" | "raw_leaves.txt":
+                    df = pd.read_csv(path, index_col=False, header=None)
+                    return self.prepare_dataframe(df, UPLOAD_LEAVES_COLUMNS)
+
+                case _:
+                    df = pd.read_csv(
                         path,
                         sep=sep,
                         encoding=encoding,
                         index_col=False,
                         header=header,
-                    ),
-                    columns=columns,
-                )
+                    )
+                    return self.prepare_dataframe(df, columns)
+        except Exception as e:
+            console.log(f"[red]Erro ao ler {path.name}:[/] {e}")
+            return pd.DataFrame(columns=columns)
 
     def prepare_dataframe(
         self,
         df: pd.DataFrame,
         columns: list[str] = [],
     ) -> pd.DataFrame:
+        if df.empty:
+            return pd.DataFrame(columns=columns)
+
         if columns:
-            df.columns = columns
-        else:
-            columns = df.columns
+            if len(df.columns) == len(columns):
+                df.columns = columns
+            else:
+                console.log(
+                    f"[yellow]Aviso:[/] Número de colunas ({len(df.columns)}) difere do esperado ({len(columns)})"
+                )
 
         for col in df.columns:
-            if "date" in col:
+            if "date" in str(col).lower():
                 df[col] = df[col].apply(self.convert_date)
                 df[col] = pd.to_datetime(
                     df[col],
@@ -309,11 +283,12 @@ class DataManager:
             df["cod"] = df["cod"].fillna("").astype(str).str.zfill(3)
 
         if "name" in df.columns:
-            df["name"] = df["name"].str.strip().str.upper()
+            df["name"] = df["name"].fillna("").astype(str).str.strip().str.upper()
 
         if "pis_pasep" in df.columns:
-            if not pd.api.types.is_string_dtype(df["pis_pasep"]):
-                df["pis_pasep"] = df["pis_pasep"].fillna(0).astype(int).astype(str)
+            df["pis_pasep"] = (
+                df["pis_pasep"].fillna("0").astype(str).str.replace(r"\D", "", regex=True)
+            )
 
         if "id" in df.columns:
             df["id"] = df["id"].astype(str).str.zfill(6)
@@ -663,19 +638,12 @@ class DataManager:
         raw_fiorilli_employees_path = FIORILLI_DIR / "raw_employees.txt"
         raw_ahgora_employees_path = AHGORA_DIR / "raw_employees.csv"
 
-        raw_fiorilli_employees = self.read_csv(raw_fiorilli_employees_path)
-        raw_ahgora_employees = self.read_csv(raw_ahgora_employees_path)
+        fiorilli_employees = self.read_csv(raw_fiorilli_employees_path)
+        ahgora_employees = self.read_csv(raw_ahgora_employees_path)
 
         self.update_employees_dfs(
-            fiorilli_employees=raw_fiorilli_employees,
-            ahgora_employees=raw_ahgora_employees,
-        )
-
-        fiorilli_employees = self.read_csv(
-            FIORILLI_DIR / "fiorilli_employees.csv",
-        )
-        ahgora_employees = self.read_csv(
-            AHGORA_DIR / "ahgora_employees.csv",
+            fiorilli_employees=fiorilli_employees,
+            ahgora_employees=ahgora_employees,
         )
 
         return fiorilli_employees, ahgora_employees
@@ -708,10 +676,3 @@ class DataManager:
 
     def treat_exceptions_and_typos(self, text: str) -> str:
         return EXCEPTIONS_AND_TYPOS.get(text, text)
-        if text == "VIGILACIA EM SAUDE":
-            return "VIGILANCIA EM SAUDE"
-        if text == "UBS SAO JOSE/CIDADE JARDIM":
-            return "UBS CIDADE JARDIM"
-        if text == "FINANCAS":
-            return "SECRETARIA MUN. FINANCAS"
-        return text

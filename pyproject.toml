@@ -1,6 +1,6 @@
 [project]
 name = "integracao-fiorilli-ahgora"
-version = "0.2.4"
+version = "0.3.0"
 description = "Integração Fiorilli Ahgora - IFA"
 readme = "README.md"
 requires-python = ">=3.13"
