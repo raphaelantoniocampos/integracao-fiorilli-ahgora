@@ -4,12 +4,14 @@ from src.managers.data_manager import DataManager
 from src.managers.download_manager import DownloadManager
 from src.managers.file_manager import FileManager
 from src.managers.task_manager import TaskManager
+from src.managers.update_manager import UpdateManager
 from src.utils.config import Config
 from src.utils.ui import main_menu, spinner
 
 
 def main():
     FileManager.setup()
+    UpdateManager.check_for_updates()
     config = Config()
 
     task_manager = TaskManager()

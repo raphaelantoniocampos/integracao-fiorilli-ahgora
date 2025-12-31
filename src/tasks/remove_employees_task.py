@@ -22,10 +22,10 @@ class RemoveEmployeesTask(TaskRunner):
                 }[/bold gold1]"
             )
             print(row)
-            name = row["name"]
-            copy(name)
+            id = row["id"]
+            copy(id)
             print("\nProcure o nome e clique no [bold red]x[/bold red]")
-            print(f"(Nome '{name}' copiado para a área de transferência!)\n")
+            print(f"(Matrícula '{id}' copiado para a área de transferência!)\n")
             match wait_key_press([KEY_CONTINUE, KEY_NEXT, KEY_STOP]):
                 case "continuar":
                     spinner("Continuando")
