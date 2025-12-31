@@ -68,15 +68,16 @@ def menu(
 def main_header():
     console.print(
         Panel.fit(r"""[bold cyan]
-   ___ _            _ _ _ _     _   _                           
-  / __(_) ___  _ __(_) | (_)   /_\ | |__   __ _  ___  _ __ __ _ 
- / _\ | |/ _ \| '__| | | | |  //_\\| '_ \ / _` |/ _ \| '__/ _` |
-/ /   | | (_) | |  | | | | | /  _  \ | | | (_| | (_) | | | (_| |
-\/    |_|\___/|_|  |_|_|_|_| \_/ \_/_| |_|\__, |\___/|_|  \__,_|
-                                          |___/                 
-[/bold cyan]        [gold1]Automação de Sistemas de Ponto Eletrônico e RH[/gold1]
+    ______ _       _____                 
+    |  ___(_)     |  __ \                
+    | |_   _  ___ | |  \/ ___  _ __ __ _ 
+    |  _| | |/ _ \| | __ / _ \| '__/ _` |
+    | |   | | (_) | |_\ \ (_) | | | (_| |
+    \_|   |_|\___/ \____/\___/|_|  \__,_|
+                                         
+[/bold cyan][gold1]Automação de Sistemas de Ponto Eletrônico e RH[/gold1]
 """,
-            subtitle="[green]github.com/raphaelantoniocampos/integracao_fiorilli_ahgora[/green]",
+            subtitle="[green]github.com/raphaelantoniocampos/fiogora[/green]",
         )
     )
     console.print()

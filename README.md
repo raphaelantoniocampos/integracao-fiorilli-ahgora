@@ -1,4 +1,4 @@
-# Integração Fiorilli-Ahgora (IFA)
+# FioGora (Integração Fiorilli-Ahgora)
 
 Sistema de integração automatizada entre o sistema de gestão Fiorilli e a plataforma de controle de ponto Ahgora.
 
@@ -31,8 +31,8 @@ O projeto utiliza as seguintes bibliotecas principais:
 
 1. Clone o repositório:
    ```bash
-   git clone https://github.com/seu-usuario/integracao-fiorilli-ahgora.git
-   cd integracao-fiorilli-ahgora
+   git clone https://github.com/seu-usuario/fiogora.git
+   cd fiogora
    ```
 
 2. Inicie o sistema com uv:
@@ -49,7 +49,7 @@ Se desejar gerar um executável (.exe) para distribuição em outros computadore
    ```bash
    make build
    ```
-3. O executável será gerado no diretório `dist/integracao-fiorilli-ahgora/`.
+3. O executável será gerado no diretório `dist/fiogora/`.
 
 Comandos adicionais do `Makefile`:
 - `make clean`: Remove arquivos temporários de build.
@@ -74,7 +74,7 @@ Comandos adicionais do `Makefile`:
 ## Estrutura de Diretórios
 
 ```
-integracao-fiorilli-ahgora/
+fiogora/
 ├── data/                  # Dados processados e configurações
 │   ├── ahgora/            # CSVs de funcionários baixados do Ahgora
 │   └── fiorilli/          # CSVs/TXTs de funcionários e afastamentos do Fiorilli

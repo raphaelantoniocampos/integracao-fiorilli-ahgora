@@ -16,7 +16,7 @@ from src.utils.version import get_project_version
 
 class UpdateManager:
     GITHUB_USER = "raphaelantoniocampos"
-    GITHUB_REPO = "integracao-fiorilli-ahgora"
+    GITHUB_REPO = "fiogora"
     GITHUB_BRANCH = "main"
     RAW_URL = f"https://raw.githubusercontent.com/{GITHUB_USER}/{GITHUB_REPO}/{GITHUB_BRANCH}/pyproject.toml"
     RELEASES_URL = f"https://github.com/{GITHUB_USER}/{GITHUB_REPO}/releases"

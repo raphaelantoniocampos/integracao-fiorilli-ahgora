@@ -2,7 +2,7 @@
 
 # --- Configurações do Projeto ---
 PROJECT_ROOT := $(CURDIR)
-APP_NAME     := integracao-fiorilli-ahgora
+APP_NAME     := FioGora
 MAIN_SCRIPT  := main.py
 ICON_FILE    := ifa3.ico
 
