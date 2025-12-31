@@ -32,11 +32,11 @@ jobs:
 
     - name: Zip the Build
       run: |
-        powershell Compress-Archive -Path "dist/Integracao Fiorilli Ahgora" -DestinationPath "Integracao-Fiorilli-Ahgora.zip"
+        powershell Compress-Archive -Path "dist/integracao-fiorilli-ahgora" -DestinationPath "integracao-fiorilli-ahgora.zip"
 
     - name: Create Release
       uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/')
       with:
-        files: Integracao-Fiorilli-Ahgora.zip
+        files: integracao-fiorilli-ahgora.zip
         generate_release_notes: true

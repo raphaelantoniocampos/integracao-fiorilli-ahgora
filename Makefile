@@ -9,7 +9,6 @@ ICON_FILE    := ifa3.ico
 # --- Comandos ---
 PYTHON_CMD   := uv run python
 
-# Helpers de cópia multiplataforma via Python (evita problemas de aspas/escaping do shell)
 COPY_FILE = $(PYTHON_CMD) -c "import shutil, sys, os; src=sys.argv[1]; dst_dir=sys.argv[2]; os.makedirs(dst_dir, exist_ok=True); shutil.copy2(src, dst_dir)"
 COPY_DIR  = $(PYTHON_CMD) -c "import shutil, sys, os; src=sys.argv[1]; dst=sys.argv[2]; shutil.copytree(src, dst, dirs_exist_ok=True) if os.path.exists(src) else None"
 

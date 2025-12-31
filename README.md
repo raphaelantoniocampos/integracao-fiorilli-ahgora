@@ -49,7 +49,7 @@ Se desejar gerar um executável (.exe) para distribuição em outros computadore
    ```bash
    make build
    ```
-3. O executável será gerado no diretório `dist/Integracao Fiorilli Ahgora/`.
+3. O executável será gerado no diretório `dist/integracao-fiorilli-ahgora/`.
 
 Comandos adicionais do `Makefile`:
 - `make clean`: Remove arquivos temporários de build.
