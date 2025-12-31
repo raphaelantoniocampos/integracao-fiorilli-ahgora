@@ -9,6 +9,10 @@ ICON_FILE    := ifa3.ico
 # --- Comandos ---
 PYTHON_CMD   := uv run python
 
+# Helpers de cópia multiplataforma via Python (evita problemas de aspas/escaping do shell)
+COPY_FILE = $(PYTHON_CMD) -c "import shutil, sys, os; src=sys.argv[1]; dst_dir=sys.argv[2]; os.makedirs(dst_dir, exist_ok=True); shutil.copy2(src, dst_dir)"
+COPY_DIR  = $(PYTHON_CMD) -c "import shutil, sys, os; src=sys.argv[1]; dst=sys.argv[2]; shutil.copytree(src, dst, dirs_exist_ok=True) if os.path.exists(src) else None"
+
 PYINSTALLER_FLAGS = --noconfirm --onedir --console \
 	--icon "$(PROJECT_ROOT)/$(ICON_FILE)" \
 	--name "$(APP_NAME)" \
@@ -27,8 +31,8 @@ build:
 	@echo "--------------------------------------------------"
 	$(PYINSTALLER_CMD)
 	@echo "--------------------------------------------------"
-	@xcopy /Y /I "$(PROJECT_ROOT)\data\leave_codes.csv" "$(PROJECT_ROOT)\dist\$(APP_NAME)\data\\"
-	@xcopy /Y /I "$(PROJECT_ROOT)\pyproject.toml" "$(PROJECT_ROOT)\dist\$(APP_NAME)\\"
+	@$(COPY_FILE) "$(PROJECT_ROOT)/data/leave_codes.csv" "$(PROJECT_ROOT)/dist/$(APP_NAME)/data"
+	@$(COPY_FILE) "$(PROJECT_ROOT)/pyproject.toml" "$(PROJECT_ROOT)/dist/$(APP_NAME)"
 	@echo "Build concluido!"
 	@echo "Executavel em: $(PROJECT_ROOT)/dist/$(APP_NAME)/"
 	@echo "--------------------------------------------------"
@@ -37,15 +41,17 @@ update:
 	@echo "--------------------------------------------------"
 	@echo "Iniciando o build do executavel..."
 	@echo "--------------------------------------------------"
-	@xcopy /S /Y /I /E "$(PROJECT_ROOT)\dist\$(APP_NAME)\data" "$(PROJECT_ROOT)\data"
-	@xcopy /S /Y /I /E "$(PROJECT_ROOT)\dist\$(APP_NAME)\downloads" "$(PROJECT_ROOT)\downloads"
-	@xcopy /S /Y /I /E "$(PROJECT_ROOT)\dist\$(APP_NAME)\tasks" "$(PROJECT_ROOT)\tasks"
+	@echo "Backup dos dados atuais..."
+	@$(COPY_DIR) "$(PROJECT_ROOT)/dist/$(APP_NAME)/data" "$(PROJECT_ROOT)/data"
+	@$(COPY_DIR) "$(PROJECT_ROOT)/dist/$(APP_NAME)/downloads" "$(PROJECT_ROOT)/downloads"
+	@$(COPY_DIR) "$(PROJECT_ROOT)/dist/$(APP_NAME)/tasks" "$(PROJECT_ROOT)/tasks"
 	$(PYINSTALLER_CMD)
 	@echo "--------------------------------------------------"
-	@xcopy /S /Y /I /E "$(PROJECT_ROOT)\data" "$(PROJECT_ROOT)\dist\$(APP_NAME)\data"
-	@xcopy /S /Y /I /E "$(PROJECT_ROOT)\downloads" "$(PROJECT_ROOT)\dist\$(APP_NAME)\downloads"
-	@xcopy /S /Y /I /E "$(PROJECT_ROOT)\tasks" "$(PROJECT_ROOT)\dist\$(APP_NAME)\tasks"
-	@xcopy /Y /I "$(PROJECT_ROOT)\pyproject.toml" "$(PROJECT_ROOT)\dist\$(APP_NAME)\\"
+	@echo "Restaurando dados..."
+	@$(COPY_DIR) "$(PROJECT_ROOT)/data" "$(PROJECT_ROOT)/dist/$(APP_NAME)/data"
+	@$(COPY_DIR) "$(PROJECT_ROOT)/downloads" "$(PROJECT_ROOT)/dist/$(APP_NAME)/downloads"
+	@$(COPY_DIR) "$(PROJECT_ROOT)/tasks" "$(PROJECT_ROOT)/dist/$(APP_NAME)/tasks"
+	@$(COPY_FILE) "$(PROJECT_ROOT)/pyproject.toml" "$(PROJECT_ROOT)/dist/$(APP_NAME)"
 	@echo "Build concluido!"
 	@echo "Executavel em: $(PROJECT_ROOT)/dist/$(APP_NAME)/"
 	@echo "--------------------------------------------------"
