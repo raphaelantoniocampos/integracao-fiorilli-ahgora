@@ -114,15 +114,17 @@ Selecione **"Tarefas"** e escolha a ação desejada. Para tarefas de inserção 
 Acesse o menu de configurações para:
 - **Headless Mode**: Ativa/desativa a visualização do navegador durante os downloads automatizados.
 - **Meses Retroativos**: Define quão longe no passado o sistema deve buscar por afastamentos.
-- **Resetar Credenciais**: Apaga o arquivo `.env` para reinserção de dados.
+- **Resetar Credenciais**: Editar o arquivo `.env` para atualização de dados.
 
 ## Solução de Problemas
 
 ### Falhas nos Downloads
+
 - O modo **Headless** pode falhar se houver popups inesperados. Tente desativá-lo.
 - Certifique-se de que o Firefox não tenha extensões que bloqueiem o download automático.
 
 ### Falhas nas Tarefas (PyAutoGUI)
+
 - Não mova o mouse ou troque de janela enquanto o sistema estiver digitando dados.
 - Verifique se o layout do teclado está correto (pode afetar caracteres especiais).
 - O sistema depende da contagem de "tabs". Se a interface do Ahgora mudar, a sequência de preenchimento pode falhar.

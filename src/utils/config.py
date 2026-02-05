@@ -1,3 +1,5 @@
+import subprocess
+import subprocess
 import json
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -39,6 +41,7 @@ class Config:
                 source=FIORILLI_DIR / "leaves.csv",
                 destination=TASKS_DIR / "manual_leaves.csv",
             ),
+            "Abrir arquivo de configurações": self.open_config_file,
             "Resetar credenciais": self.reset_creds,
         }
 
@@ -56,25 +59,25 @@ class Config:
 [bold orange]Opções[/bold orange]
 [cyan]•[/] [bold]Modo de Download Headless[/bold]: {self.headless_mode}
 [cyan]•[/] [bold]Quantos meses atrás - Download de Afastamentos[/bold]: {
-                self.leaves_months_ago
-            }
+            self.leaves_months_ago
+        }
 
 
 [bold orange]Dados[/bold orange]
 [cyan]•[/] [bold]Análise[/]: {self.last_analisys["datetime"]} ([bold]{
-                self.last_analisys["time_since"]
-            }[/] atrás)
+            self.last_analisys["time_since"]
+        }[/] atrás)
 
 [cyan]•[/] [bold]Downloads[/]:
   • Afastamentos - {self.last_download_leaves["datetime"]} ([bold]{
-                self.last_download_leaves["time_since"]
-            }[/] atrás)
+            self.last_download_leaves["time_since"]
+        }[/] atrás)
   • Funcionários Fiorilli - {self.last_download_fiorilli["datetime"]} ([bold]{
-                self.last_download_fiorilli["time_since"]
-            }[/] atrás)
+            self.last_download_fiorilli["time_since"]
+        }[/] atrás)
   • Funcionários Ahgora - {self.last_download_ahgora["datetime"]} ([bold]{
-                self.last_download_ahgora["time_since"]
-            }[/] atrás)
+            self.last_download_ahgora["time_since"]
+        }[/] atrás)
 """)
 
     def setup(self):
@@ -234,14 +237,15 @@ class Config:
         self._update("leaves_months_ago", value=leaves_months_ago)
         return f"Número de meses alterado para {leaves_months_ago}"
 
+    def open_config_file(self):
+        return subprocess.run(["explorer.exe", self.json_path])
+
     def reset_creds(self):
         env_file = Path(".env")
-        if env_file.exists():
-            env_file.unlink()
-        input("Reinicie o programa...")
-        import sys
-
-        sys.exit(0)
+        if not env_file.exists():
+            input("Abra o diretório fonte e execute com 'uv run main.py'")
+            return
+        return subprocess.run(["explorer.exe", env_file])
 
     def _update_analysis_time_since(self, last_analisys: dict, now: timedelta) -> None:
         if last_analisys["datetime"]:
