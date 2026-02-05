@@ -2,6 +2,10 @@
 
 Sistema de integração automatizada entre o sistema de gestão Fiorilli e a plataforma de controle de ponto Ahgora.
 
+![executable](./assets/tui.png) 
+
+---
+
 ## Descrição
 
 O projeto Integração Fiorilli-Ahgora (IFA) é uma solução desenvolvida para automatizar e facilitar a sincronização de dados entre o sistema de gestão Fiorilli e a plataforma de controle de ponto Ahgora. O sistema permite baixar dados de funcionários e afastamentos do Fiorilli, dados de funcionários do Ahgora, analisar essas informações e executar tarefas de sincronização entre os dois sistemas.
