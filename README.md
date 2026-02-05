@@ -8,7 +8,7 @@ Sistema de integração automatizada entre o sistema de gestão Fiorilli e a pla
 
 ## Descrição
 
-O projeto Integração Fiorilli-Ahgora (IFA) é uma solução desenvolvida para automatizar e facilitar a sincronização de dados entre o sistema de gestão Fiorilli e a plataforma de controle de ponto Ahgora. O sistema permite baixar dados de funcionários e afastamentos do Fiorilli, dados de funcionários do Ahgora, analisar essas informações e executar tarefas de sincronização entre os dois sistemas.
+Fiogora é uma solução TUI desenvolvida para automatizar e facilitar a sincronização de dados entre o sistema de gestão Fiorilli e a plataforma de controle de ponto Ahgora. O sistema permite baixar dados de funcionários e afastamentos do Fiorilli, dados de funcionários do Ahgora, analisar essas informações e executar tarefas de sincronização entre os dois sistemas.
 
 A aplicação utiliza dois tipos de automação:
 1. **Automação de Navegador (Selenium)**: Utilizada para extração (download) de dados dos sistemas Fiorilli e Ahgora de forma totalmente automatizada.
@@ -20,7 +20,6 @@ A aplicação utiliza dois tipos de automação:
 - **[uv](https://docs.astral.sh/uv/)** para gerenciamento de pacotes
 - **Firefox** (necessário para os downloads automatizados via Selenium)
 - **Acesso aos sistemas** Fiorilli e Ahgora
-- **Resolução de Tela**: Preferencialmente resoluções padrão (1920x1080) para melhor funcionamento da automação de interface.
 
 ## Dependências
 
@@ -44,22 +43,6 @@ O projeto utiliza as seguintes bibliotecas principais:
    uv run main.py
    ```
 
-## Build (Opcional)
-
-Se desejar gerar um executável (.exe) para distribuição em outros computadores, o projeto utiliza o `PyInstaller` gerenciado via `Makefile`.
-
-1. Certifique-se de ter o `make` instalado no Windows (ou utilize o `nmake`/`mingw32-make`).
-2. Execute o comando:
-   ```bash
-   make build
-   ```
-3. O executável será gerado no diretório `dist/fiogora/`.
-
-Comandos adicionais do `Makefile`:
-- `make clean`: Remove arquivos temporários de build.
-- `make update`: Reconstrói o executável preservando dados existentes nas pastas `data`, `downloads` e `tasks`.
-- `make help`: Lista todos os comandos disponíveis.
-
 ## Configuração
 
 1. Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
@@ -68,13 +51,29 @@ Comandos adicionais do `Makefile`:
    FIORILLI_PSW=sua_senha_fiorilli
    AHGORA_USER=seu_usuario_ahgora
    AHGORA_PSW=sua_senha_ahgora
-   AHGORA_COMPANY=nome_da_sua_empresa_ahgora
+   AHGORA_COMPANY=codigo_da_empresa_ahgora
    ```
 
 2. Alternativamente, execute o programa e insira as credenciais quando solicitado.
 
 3. Os diretórios `data`, `tasks` e `downloads` são criados automaticamente na primeira execução.
 
+## Build (Opcional)
+
+Se desejar gerar um executável (.exe) para distribuição em outros computadores, o projeto utiliza o `PyInstaller` gerenciado via `Makefile`.
+
+1. Certifique-se de ter o `make` instalado no Windows (ou utilize o `nmake`/`mingw32-make`).
+2. Execute o comando:
+   ```bash
+   make
+   ```
+3. O executável será gerado no diretório `dist/fiogora/`.
+
+Comandos adicionais do `Makefile`:
+- `make clean`: Remove arquivos temporários de build.
+- `make update`: Reconstrói o executável preservando dados existentes nas pastas `data`, `downloads` e `tasks`.
+- `make help`: Lista todos os comandos disponíveis.
+  
 ## Estrutura de Diretórios
 
 ```
