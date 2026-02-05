@@ -104,7 +104,6 @@ class DataManager:
         }
         files["Voltar"] = None
         while True:
-            # TODO: update menu
             option = inquirer.select(
                 message="Selecione um arquivo",
                 choices=[

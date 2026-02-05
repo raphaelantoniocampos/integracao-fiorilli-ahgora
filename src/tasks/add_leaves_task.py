@@ -46,8 +46,10 @@ class AddLeavesTask(TaskRunner):
             view_leaves_path,
             columns=LEAVES_COLUMNS,
         )
-        while True:
-            self.df_to_upload(leaves_df, upload_leaves_path)
+        import_again = True
+        while import_again:
+            import_again  = False
+            self.generate_df_to_upload(leaves_df, upload_leaves_path)
             self.ask_to_insert_file(upload_leaves_path)
 
             if wait_key_press([KEY_CONTINUE, KEY_STOP]) == "sair":
@@ -78,19 +80,19 @@ class AddLeavesTask(TaskRunner):
                         filter_path,
                         error_groups,
                     )
-                    if leaves_df is not None:
-                        self.df_to_upload(leaves_df, upload_leaves_path)
                     if not inquirer.confirm(
                         message="Continuar editando?",
-                        default=True,
+                        default=False,
                     ).execute():
                         repeat = False
 
-            if not inquirer.confirm(
-                message="Repetir importação?",
-                default=False,
-            ).execute():
-                break
+                self.generate_df_to_upload(leaves_df, upload_leaves_path)
+
+                if inquirer.confirm(
+                    message="Para confirmar alterações repita a importação",
+                    default=True,
+                ).execute():
+                    import_again = True
 
         filter_numbers = self.read_filter_numbers(filter_path)
 
@@ -121,7 +123,7 @@ class AddLeavesTask(TaskRunner):
         self.exit_task()
         return
 
-    def df_to_upload(self, leaves_df: pd.DataFrame, file_path: Path):
+    def generate_df_to_upload(self, leaves_df: pd.DataFrame, file_path: Path):
         FileManager.save_df(
             df=leaves_df,
             path=file_path,

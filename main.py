@@ -8,6 +8,10 @@ from src.managers.update_manager import UpdateManager
 from src.utils.config import Config
 from src.utils.ui import main_menu, spinner
 
+#TODO: Config
+#TODO: update config file to toml
+#TODO: Add apps urls to config file
+#TODO: Add exceptions to config file
 
 def main():
     FileManager.setup()

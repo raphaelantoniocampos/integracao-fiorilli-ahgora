@@ -90,7 +90,7 @@ help:
 	@echo "--------------------------------------------------"
 	@echo "Alvos disponiveis do Makefile:"
 	@echo "--------------------------------------------------"
-	@echo "  make all		- Constroi o projeto (default)."
+	@echo "  make    		- Constroi o projeto (default)."
 	@echo "  make build		- Constroi o executavel."
 	@echo "  make update		- Atualiza o executavel."
 	@echo "  make shortcut	- Cria um atalho na pasta do projeto."
