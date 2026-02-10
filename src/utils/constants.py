@@ -8,29 +8,9 @@ FIORILLI_DIR = DATA_DIR / "fiorilli"
 AHGORA_DIR = DATA_DIR / "ahgora"
 TASKS_DIR = BASE_DIR / "tasks"
 
-# COMMON INQUIRER KEYBINDINGS
-INQUIRER_KEYBINDINGS = {
-    "answer": [
-        {"key": "enter"},
-    ],
-    "interrupt": [
-        {"key": "c-c"},
-        {"key": "c-e"},
-    ],
-    "skip": [
-        {"key": "c-z"},
-        {"key": "escape"},
-    ],
-    "down": [
-        {"key": "down"},
-    ],
-    "up": [
-        {"key": "up"},
-    ],
-}
-
-
 JSON_INIT_CONFIG = {
+    "ahgora_url": "https://auth.ahgora.com.br/#/login",
+    "fiorilli_url": "https://pompeu-pm-sip.sigmix.net/sip/",
     "init_date": "",
     "status": {
         "working": "",
@@ -45,91 +25,89 @@ JSON_INIT_CONFIG = {
         "leaves": {"datetime": "", "time_since": ""},
     },
     "leaves_months_ago": 2,
-}
-
-PT_MONTHS = {
-    "Jan": "Jan",
-    "Fev": "Feb",
-    "Mar": "Mar",
-    "Abr": "Apr",
-    "Mai": "May",
-    "Jun": "Jun",
-    "Jul": "Jul",
-    "Ago": "Aug",
-    "Set": "Sep",
-    "Out": "Oct",
-    "Nov": "Nov",
-    "Dez": "Dec",
-}
-
-REQUIRED_VARS = {
-    "FIORILLI_USER": None,
-    "FIORILLI_PSW": None,
-    "AHGORA_USER": None,
-    "AHGORA_PSW": None,
-    "AHGORA_COMPANY": None,
-}
-
-UPLOAD_LEAVES_COLUMNS = [
-    "id",
-    "cod",
-    "start_date",
-    "start_time",
-    "end_date",
-    "end_time",
-]
-
-LEAVES_COLUMNS = [
-    "id",
-    "name",
-    "cod",
-    "cod_name",
-    "start_date",
-    "end_date",
-    "duration",
-    "start_time",
-    "end_time",
-]
-
-AHGORA_EMPLOYEES_COLUMNS = [
-    "id",
-    "name",
-    "position",
-    "scale",
-    "department",
-    "location",
-    "admission_date",
-    "dismissal_date",
-]
-
-FIORILLI_EMPLOYEES_COLUMNS = [
-    "id",
-    "name",
-    "cpf",
-    "sex",
-    "birth_date",
-    "pis_pasep",
-    "position",
-    "department",
-    "cost_center",
-    "binding",
-    "admission_date",
-    "dismissal_date",
-]
-
-COLUMNS_TO_VERIFY_CHANGE = [
-    "id",
-    "name",
-    "admission_date",
-    # "dismissal_date",
-    "position",
-    "department",
-]
-
-EXCEPTIONS_AND_TYPOS = {
-    "VIGILACIA EM SAUDE": "VIGILANCIA EM SAUDE",
-    "UBS SAO JOSE/CIDADE JARDIM": "UBS CIDADE JARDIM",
-    "FINANCAS": "SECRETARIA MUN. FINANCAS",
-    "016718": "16718",
-    "FORUM-CEDIDA": "FORUM",
+    "inquirer_keybindings": {
+        "answer": [{"key": "enter"}],
+        "interrupt": [{"key": "c-c"}, {"key": "c-e"}],
+        "skip": [{"key": "c-z"}, {"key": "escape"}],
+        "down": [{"key": "down"}],
+        "up": [{"key": "up"}],
+    },
+    "pt_months": {
+        "Jan": "Jan",
+        "Fev": "Feb",
+        "Mar": "Mar",
+        "Abr": "Apr",
+        "Mai": "May",
+        "Jun": "Jun",
+        "Jul": "Jul",
+        "Ago": "Aug",
+        "Set": "Sep",
+        "Out": "Oct",
+        "Nov": "Nov",
+        "Dez": "Dec",
+    },
+    "required_vars": {
+        "FIORILLI_USER": None,
+        "FIORILLI_PSW": None,
+        "AHGORA_USER": None,
+        "AHGORA_PSW": None,
+        "AHGORA_COMPANY": None,
+    },
+    "upload_leaves_columns": [
+        "id",
+        "cod",
+        "start_date",
+        "start_time",
+        "end_date",
+        "end_time",
+    ],
+    "leaves_columns": [
+        "id",
+        "name",
+        "cod",
+        "cod_name",
+        "start_date",
+        "end_date",
+        "duration",
+        "start_time",
+        "end_time",
+    ],
+    "ahgora_employees_columns": [
+        "id",
+        "name",
+        "position",
+        "scale",
+        "department",
+        "location",
+        "admission_date",
+        "dismissal_date",
+    ],
+    "fiorilli_employees_columns": [
+        "id",
+        "name",
+        "cpf",
+        "sex",
+        "birth_date",
+        "pis_pasep",
+        "position",
+        "department",
+        "cost_center",
+        "binding",
+        "admission_date",
+        "dismissal_date",
+    ],
+    "columns_to_verify_change": [
+        "id",
+        "name",
+        "admission_date",
+        "position",
+        "department",
+    ],
+    "exceptions_and_typos": {
+        "VIGILACIA EM SAUDE": "VIGILANCIA EM SAUDE",
+        "UBS SAO JOSE/CIDADE JARDIM": "UBS CIDADE JARDIM",
+        "FINANCAS": "SECRETARIA MUN. FINANCAS",
+        "016718": "16718",
+        "FORUM-CEDIDA": "FORUM",
+    },
 }

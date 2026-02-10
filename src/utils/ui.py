@@ -2,12 +2,13 @@ import time
 
 from InquirerPy import inquirer
 from InquirerPy.validator import EmptyInputValidator
-from rich.console import Console
 from rich.panel import Panel
 
 from src.models.task import Task
-from src.utils.constants import INQUIRER_KEYBINDINGS
+
+
 from src.utils.version import get_project_version
+from src.utils.console import console
 
 PROJECT_VERSION = get_project_version()
 
@@ -17,8 +18,6 @@ DEFAULT_LONG_INSTRUCTIONS = f"""
 [Enter] seleciona • [Esc + Esc] cancela [Ctrl+C] sair
 {PROJECT_VERSION} • MIT License • © 2025 Raphael Campos
 """
-
-console = Console()
 
 
 def spinner(
@@ -52,6 +51,10 @@ def menu(
     if go_back_text:
         choices[go_back_text] = spinner
 
+    from src.utils.config import Config
+
+    INQUIRER_KEYBINDINGS = Config().data.get("inquirer_keybindings")
+
     choice_name = inquirer.rawlist(
         message=message,
         choices=choices.keys(),
@@ -67,7 +70,8 @@ def menu(
 
 def main_header():
     console.print(
-        Panel.fit(r"""[bold cyan]
+        Panel.fit(
+            r"""[bold cyan]
     ______ _       _____                 
     |  ___(_)     |  __ \                
     | |_   _  ___ | |  \/ ___  _ __ __ _ 

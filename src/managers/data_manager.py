@@ -12,19 +12,22 @@ from src.managers.file_manager import FileManager
 from src.utils.config import Config
 from src.utils.constants import (
     AHGORA_DIR,
-    AHGORA_EMPLOYEES_COLUMNS,
-    COLUMNS_TO_VERIFY_CHANGE,
     DATA_DIR,
     FIORILLI_DIR,
-    FIORILLI_EMPLOYEES_COLUMNS,
-    INQUIRER_KEYBINDINGS,
-    LEAVES_COLUMNS,
-    PT_MONTHS,
     TASKS_DIR,
-    UPLOAD_LEAVES_COLUMNS,
-    EXCEPTIONS_AND_TYPOS,
 )
 from src.utils.ui import console, menu, spinner
+
+config = Config()
+
+AHGORA_EMPLOYEES_COLUMNS = config.data.get("ahgora_employees_columns")
+COLUMNS_TO_VERIFY_CHANGE = config.data.get("columns_to_verify_change")
+FIORILLI_EMPLOYEES_COLUMNS = config.data.get("fiorilli_employees_columns")
+INQUIRER_KEYBINDINGS = config.data.get("inquirer_keybindings")
+LEAVES_COLUMNS = config.data.get("leaves_columns")
+PT_MONTHS = config.data.get("pt_months")
+UPLOAD_LEAVES_COLUMNS = config.data.get("upload_leaves_columns")
+EXCEPTIONS_AND_TYPOS = config.data.get("exceptions_and_typos")
 
 
 class DataManager:

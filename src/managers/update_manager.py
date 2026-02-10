@@ -1,4 +1,3 @@
-
 import subprocess
 import sys
 import tomllib
@@ -37,7 +36,7 @@ class UpdateManager:
     def is_source_installation() -> bool:
         """Checks if the project is running from source and has git access."""
         is_frozen = getattr(sys, "frozen", False)
-        has_git = (Path(".git").exists() or Path("../.git").exists())
+        has_git = Path(".git").exists() or Path("../.git").exists()
         return not is_frozen and has_git
 
     @staticmethod
@@ -48,7 +47,7 @@ class UpdateManager:
         # and Makefile is in the project root (2 levels up)
         if not is_frozen:
             return False
-        
+
         exe_dir = Path(sys.executable).parent
         project_root = exe_dir.parents[1]  # dist/AppName -> dist -> root
         makefile = project_root / "Makefile"
@@ -58,7 +57,7 @@ class UpdateManager:
     def check_for_updates():
         """Checks for updates and prompts the user if available."""
         print("[dim]Verificando atualizações...[/dim]")
-        
+
         current_version_str = get_project_version()
         remote_version_str = UpdateManager.get_remote_version()
 
@@ -70,8 +69,8 @@ class UpdateManager:
             current = version.parse(current_version_str)
             remote = version.parse(remote_version_str)
         except Exception:
-             print("[yellow]Erro ao comparar versões.[/yellow]")
-             return
+            print("[yellow]Erro ao comparar versões.[/yellow]")
+            return
 
         if remote > current:
             UpdateManager.ask_for_update(str(current), str(remote))
@@ -103,7 +102,9 @@ class UpdateManager:
         print("[cyan]Executando git pull...[/cyan]")
         try:
             subprocess.run(["git", "pull"], check=True)
-            print("[bold green]Atualizado com sucesso! Reinicie a aplicação.[/bold green]")
+            print(
+                "[bold green]Atualizado com sucesso! Reinicie a aplicação.[/bold green]"
+            )
             sys.exit(0)
         except subprocess.CalledProcessError:
             print("[bold red]Falha ao atualizar via git. Tente manualmente.[/bold red]")
@@ -115,9 +116,11 @@ class UpdateManager:
             # Determine project root from executable location
             exe_dir = Path(sys.executable).parent
             project_root = exe_dir.parents[1]
-            
+
             subprocess.run(["make", "update"], cwd=project_root, check=True)
-            print("[bold green]Executável reconstruído! Reinicie a aplicação.[/bold green]")
+            print(
+                "[bold green]Executável reconstruído! Reinicie a aplicação.[/bold green]"
+            )
             sys.exit(0)
         except subprocess.CalledProcessError:
             print("[bold red]Falha ao executar make update.[/bold red]")
@@ -127,4 +130,4 @@ class UpdateManager:
         print("[yellow]Não foi possível atualizar automaticamente.[/yellow]")
         print(f"Por favor, baixe a nova versão em: {UpdateManager.RELEASES_URL}")
         if Confirm.ask("Abrir link no navegador?", default=True):
-             webbrowser.open(UpdateManager.RELEASES_URL)
+            webbrowser.open(UpdateManager.RELEASES_URL)

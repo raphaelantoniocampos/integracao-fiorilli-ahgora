@@ -16,10 +16,13 @@ from src.models.task import Task
 from src.tasks.task_runner import TaskRunner
 from src.utils.constants import (
     FIORILLI_DIR,
-    LEAVES_COLUMNS,
-    UPLOAD_LEAVES_COLUMNS,
 )
+from src.utils.config import Config
 from src.utils.ui import console, spinner
+
+config = Config()
+LEAVES_COLUMNS = config.data.get("leaves_columns")
+UPLOAD_LEAVES_COLUMNS = config.data.get("upload_leaves_columns")
 
 
 class AddLeavesTask(TaskRunner):
@@ -48,7 +51,7 @@ class AddLeavesTask(TaskRunner):
         )
         import_again = True
         while import_again:
-            import_again  = False
+            import_again = False
             self.generate_df_to_upload(leaves_df, upload_leaves_path)
             self.ask_to_insert_file(upload_leaves_path)
 

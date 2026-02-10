@@ -2,7 +2,7 @@ import shutil
 from pathlib import Path
 
 from pandas import DataFrame
-from src.utils.ui import console
+from src.utils.console import console
 
 from src.utils.constants import (
     DATA_DIR,

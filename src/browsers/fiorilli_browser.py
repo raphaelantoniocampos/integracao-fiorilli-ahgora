@@ -12,8 +12,6 @@ from src.utils.config import Config
 
 
 class FiorilliBrowser(CoreBrowser):
-    URL = "https://pompeu-pm-sip.sigmix.net/sip/"
-
     @staticmethod
     def download_employees_data() -> None:
         fiorilli_browser = FiorilliBrowser()
@@ -32,10 +30,13 @@ class FiorilliBrowser(CoreBrowser):
 
     def __init__(self):
         self.console = Console()
+        self.config = Config()
         with self.console.status(
             "[gold1]Iniciando FIORILLI webdriver[/]", spinner="dots"
         ):
-            super().__init__(url=self.URL)
+            super().__init__(
+                url=self.config.data.get("fiorilli_url"), config=self.config
+            )
 
     def _start_employees_download(self) -> None:
         ()
@@ -81,7 +82,7 @@ class FiorilliBrowser(CoreBrowser):
         )
 
     def _login(self) -> None:
-        creds = Creds()
+        creds = Creds(required_vars=self.config.data.get("required_vars"))
         user = creds.fiorilli_user
         psw = creds.fiorilli_psw
 
