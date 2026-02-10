@@ -31,8 +31,9 @@ class CoreBrowser(ABC):
         StaleElementReferenceException,
     )
 
-    def __init__(self, url: str):
+    def __init__(self, url: str, config: Config):
         load_dotenv()
+        self.config = config
         self.driver = self._get_web_driver()
         self.driver.get(url)
 
@@ -48,7 +49,7 @@ class CoreBrowser(ABC):
     def _get_web_driver(self) -> webdriver.Firefox:
         """Configures and returns an instance of the Firefox WebDriver"""
         options = webdriver.FirefoxOptions()
-        if Config().headless_mode:
+        if self.config.headless_mode:
             options.add_argument("-headless")
         options.set_preference("browser.download.folderList", 2)
         options.set_preference("browser.download.dir", str(DOWNLOADS_DIR))
@@ -269,6 +270,7 @@ class CoreBrowser(ABC):
             except Exception as e:
                 if i >= max_tries - 1:
                     from src.utils.ui import console
+
                     console.log(
                         f"[bold red]Falha após {max_tries} tentativas:[/] {repr(e)}"
                     )

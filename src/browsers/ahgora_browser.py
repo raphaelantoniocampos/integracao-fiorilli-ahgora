@@ -5,12 +5,11 @@ from selenium.webdriver.common.by import By
 
 from src.browsers.core_browser import CoreBrowser
 from src.utils.creds import Creds
+from src.utils.config import Config
 from src.utils.ui import console
 
 
 class AhgoraBrowser(CoreBrowser):
-    URL = "https://auth.ahgora.com.br/#/login"
-
     @staticmethod
     def download_employees_data() -> None:
         ahgora_browser = AhgoraBrowser()
@@ -21,10 +20,11 @@ class AhgoraBrowser(CoreBrowser):
 
     def __init__(self):
         self.console = Console()
+        self.config = Config()
         with self.console.status(
             "[gold1]Iniciando AHGORA webdriver[/]", spinner="dots"
         ):
-            super().__init__(url=self.URL)
+            super().__init__(url=self.config.data.get("ahgora_url"), config=self.config)
 
     def _start_employees_download(self) -> None:
         with self.console.status(
@@ -43,7 +43,7 @@ class AhgoraBrowser(CoreBrowser):
             console.log("Download de funcionários do AHGORA concluído")
 
     def _login(self) -> None:
-        creds = Creds()
+        creds = Creds(required_vars=self.config.data.get("required_vars"))
         user = creds.ahgora_user
         psw = creds.ahgora_psw
         company = creds.ahgora_company

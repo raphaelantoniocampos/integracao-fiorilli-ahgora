@@ -2,20 +2,16 @@ import sys
 
 from src.managers.data_manager import DataManager
 from src.managers.download_manager import DownloadManager
-from src.managers.file_manager import FileManager
 from src.managers.task_manager import TaskManager
-from src.managers.update_manager import UpdateManager
 from src.utils.config import Config
 from src.utils.ui import main_menu, spinner
 
-#TODO: Config
-#TODO: update config file to toml
-#TODO: Add apps urls to config file
-#TODO: Add exceptions to config file
+# TODO: Config
+# TODO: update config file to toml
+# TODO: Add apps urls to config file
+
 
 def main():
-    FileManager.setup()
-    UpdateManager.check_for_updates()
     config = Config()
 
     task_manager = TaskManager()
@@ -47,5 +43,5 @@ if __name__ == "__main__":
         main()
     except KeyboardInterrupt:
         spinner("Saindo")
-    except Exception as err:
-        input(f"Safe exit: {repr(err)}")
+    # except Exception as err:
+    # input(f"Safe exit: {repr(err)}")

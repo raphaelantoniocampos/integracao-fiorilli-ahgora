@@ -1,5 +1,4 @@
 import subprocess
-import subprocess
 import json
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -7,6 +6,7 @@ import pandas as pd
 
 
 from src.managers.file_manager import FileManager
+from src.managers.update_manager import UpdateManager
 from src.utils.constants import (
     DATA_DIR,
     FIORILLI_DIR,
@@ -14,7 +14,8 @@ from src.utils.constants import (
     JSON_INIT_CONFIG,
 )
 from src.utils.creds import Creds
-from src.utils.ui import console, menu, get_number
+from src.utils.console import console
+from src.utils.ui import menu, get_number
 
 from dataclasses import dataclass
 
@@ -81,9 +82,10 @@ class Config:
 """)
 
     def setup(self):
+        FileManager.setup()
         self.json_path: Path = DATA_DIR / "config.json"
         self.data: dict = self._load()
-        Creds()
+        Creds(required_vars=self.data.get("required_vars"))
         self.status = self.check_status()
         self.update_status()
         self.update_time_since()
@@ -96,9 +98,12 @@ class Config:
         self.last_download_leaves = self.data.get("last_download")["leaves"]
         self.leaves_months_ago = int(self.data.get("leaves_months_ago"))
         self.generate_config_tasks()
+        UpdateManager.check_for_updates()
 
     def check_status(self):
-        missing_vars = Creds.get_missing_vars()
+        missing_vars = Creds.get_missing_vars(
+            required_vars=self.data.get("required_vars")
+        )
         missing_files = FileManager.get_missing_files()
 
         working = not any(missing_vars + missing_files)

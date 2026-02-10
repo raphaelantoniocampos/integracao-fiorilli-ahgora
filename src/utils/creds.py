@@ -4,24 +4,24 @@ from dotenv import load_dotenv
 from InquirerPy import inquirer
 from rich import print
 
-from src.utils.constants import REQUIRED_VARS
+
 from pathlib import Path
 
 
 class Creds:
-    def __init__(self):
-        self.load_vars()
+    def __init__(self, required_vars):
+        self.load_vars(required_vars)
 
-    def load_vars(self):
-        for var in REQUIRED_VARS:
+    def load_vars(self, required_vars):
+        for var in required_vars:
             setattr(self, var.lower(), os.getenv(var))
         load_dotenv(override=True)
 
     @staticmethod
-    def get_missing_vars():
+    def get_missing_vars(required_vars):
         load_dotenv(override=True)
 
-        missing_vars = [var for var in REQUIRED_VARS if os.getenv(var) is None]
+        missing_vars = [var for var in required_vars if os.getenv(var) is None]
 
         if not missing_vars:
             missing_vars = []

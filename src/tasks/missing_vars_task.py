@@ -1,6 +1,7 @@
 from src.utils.creds import Creds
 from src.models.task import Task
 from src.tasks.task_runner import TaskRunner
+from src.utils.config import Config
 
 
 class MissingVarsTask(TaskRunner):
@@ -11,7 +12,7 @@ class MissingVarsTask(TaskRunner):
         )
 
     def run(self):
-        creds = Creds()
+        creds = Creds(required_vars=Config().data.get("required_vars"))
         missing_vars = creds.get_missing_vars()
         creds.create_vars(missing_vars)
         self.exit_task()
