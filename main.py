@@ -6,10 +6,10 @@ from src.managers.task_manager import TaskManager
 from src.utils.config import Config
 from src.utils.ui import main_menu, spinner
 
-# TODO: Config
-# TODO: update config file to toml
-# TODO: Add apps urls to config file
-
+# TODO:
+# Update readme
+# treat .env in dist app
+# Update live view
 
 def main():
     config = Config()
