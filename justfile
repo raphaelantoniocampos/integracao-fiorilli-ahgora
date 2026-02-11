@@ -28,7 +28,7 @@ build:
         --icon "{{ project_root }}/{{ icon_file }}" \
         --name "{{ app_name }}" \
         --add-data "{{ project_root }}/src;src/" \
-        --add-data "{{ project_root }}/data/leave_codes.csv;data/" \
+        --add-data "{{ project_root }}/data/leave_codes.csv;data/leave_codes.csv" \
         "{{ project_root }}/{{ main_script }}"
     
     @echo "Copiando arquivos adicionais..."

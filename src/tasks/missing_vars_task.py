@@ -12,7 +12,8 @@ class MissingVarsTask(TaskRunner):
         )
 
     def run(self):
-        creds = Creds(required_vars=Config().data.get("required_vars"))
-        missing_vars = creds.get_missing_vars()
+        required_vars = Config().data.get("required_vars")
+        creds = Creds(required_vars=required_vars)
+        missing_vars = creds.get_missing_vars(required_vars=required_vars)
         creds.create_vars(missing_vars)
         self.exit_task()
