@@ -1,3 +1,4 @@
+from rich.errors import NotRenderableError
 import os
 import re
 import tempfile
@@ -288,15 +289,18 @@ class AddLeavesTask(TaskRunner):
         table.add_column("Duração")
 
         for _, row in df.iterrows():
-            table.add_row(
-                str(row["id"]),
-                row.get("name", "N/A"),
-                str(row["cod"]),
-                row.get("cod_name", "N/A"),
-                str(row["start_date"]),
-                str(row["end_date"]),
-                str(row.get("duration", "N/A")),
-            )
+            try:
+                table.add_row(
+                    str(row["id"]),
+                    row.get("name", "N/A"),
+                    str(row["cod"]),
+                    row.get("cod_name", "N/A"),
+                    str(row["start_date"]),
+                    str(row["end_date"]),
+                    str(row.get("duration", "N/A")),
+                )
+            except NotRenderableError:
+                continue
 
         print(f"\n[bold]{len(df)} NOVOS AFASTAMENTOS![/bold]\n")
 
