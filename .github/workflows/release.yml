@@ -25,18 +25,18 @@ jobs:
     - name: Install dependencies
       run: uv sync --all-extras --dev
 
-    - name: Build with Make
+    - name: Build with Just
       run: |
-        make build
+        just build
       shell: cmd
 
     - name: Zip the Build
       run: |
-        powershell Compress-Archive -Path "dist/FioGora" -DestinationPath "FioGora.zip"
+        powershell Compress-Archive -Path "dist/fiogora" -DestinationPath "fiogora.zip"
 
     - name: Create Release
       uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/')
       with:
-        files: FioGora.zip
+        files: fiogora.zip
         generate_release_notes: true
