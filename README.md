@@ -60,19 +60,19 @@ O projeto utiliza as seguintes bibliotecas principais:
 
 ## Build (Opcional)
 
-Se desejar gerar um executável (.exe) para distribuição em outros computadores, o projeto utiliza o `PyInstaller` gerenciado via `Makefile`.
+Se desejar gerar um executável (.exe) para distribuição em outros computadores, o projeto utiliza o `PyInstaller` gerenciado via `justfile`.
 
-1. Certifique-se de ter o `make` instalado no Windows (ou utilize o `nmake`/`mingw32-make`).
+1. Certifique-se de ter o `just` instalado no Windows.
 2. Execute o comando:
    ```bash
-   make
+   just
    ```
 3. O executável será gerado no diretório `dist/fiogora/`.
 
-Comandos adicionais do `Makefile`:
-- `make clean`: Remove arquivos temporários de build.
-- `make update`: Reconstrói o executável preservando dados existentes nas pastas `data`, `downloads` e `tasks`.
-- `make help`: Lista todos os comandos disponíveis.
+Comandos adicionais do `justfile`:
+- `just clean`: Remove arquivos temporários de build.
+- `just update`: Reconstrói o executável preservando dados existentes nas pastas `data`, `downloads` e `tasks`.
+- `just help`: Lista todos os comandos disponíveis.
   
 ## Estrutura de Diretórios
 
