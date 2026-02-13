@@ -1,0 +1,29 @@
+{% for job in jobs %}
+<tr class="hover:bg-gray-50 transition">
+    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ job.id }}</td>
+    <td class="px-6 py-4 whitespace-nowrap">
+        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+            {% if job.status == 'success' %} bg-green-100 text-green-800
+            {% elif job.status == 'failed' %} bg-red-100 text-red-800
+            {% elif job.status == 'running' %} bg-blue-100 text-blue-800
+            {% else %} bg-gray-100 text-gray-800 {% endif %}">
+            {{ job.status }}
+        </span>
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+        {{ job.started_at.strftime('%H:%M:%S') if job.started_at else '-' }}
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+        {{ job.finished_at.strftime('%H:%M:%S') if job.finished_at else '-' }}
+    </td>
+    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 truncate max-w-xs">
+        {{ job.error_message or '-' }}
+    </td>
+</tr>
+{% else %}
+<tr>
+    <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">
+        Nenhuma execução encontrada.
+    </td>
+</tr>
+{% endfor %}
