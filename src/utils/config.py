@@ -98,7 +98,7 @@ class Config:
         self.last_download_leaves = self.data.get("last_download")["leaves"]
         self.leaves_months_ago = int(self.data.get("leaves_months_ago"))
         self.generate_config_tasks()
-        UpdateManager.check_for_updates()
+        # UpdateManager.check_for_updates()
 
     def check_status(self):
         missing_vars = Creds.get_missing_vars(
