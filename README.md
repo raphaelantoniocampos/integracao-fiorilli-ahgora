@@ -1,136 +1,95 @@
 # FioGora (Integração Fiorilli-Ahgora)
 
-Sistema de integração automatizada entre o sistema de gestão Fiorilli e a plataforma de controle de ponto Ahgora.
-
-![executable](./assets/tui.png) 
+Sistema de integração automatizada entre o sistema de gestão Fiorilli e a plataforma de controle de ponto Ahgora, agora modernizado com uma API FastAPI e suporte a Docker.
 
 ---
 
 ## Descrição
 
-Fiogora é uma solução TUI desenvolvida para automatizar e facilitar a sincronização de dados entre o sistema de gestão Fiorilli e a plataforma de controle de ponto Ahgora. O sistema permite baixar dados de funcionários e afastamentos do Fiorilli, dados de funcionários do Ahgora, analisar essas informações e executar tarefas de sincronização entre os dois sistemas.
-
-A aplicação utiliza dois tipos de automação:
-1. **Automação de Navegador (Selenium)**: Utilizada para extração (download) de dados dos sistemas Fiorilli e Ahgora de forma totalmente automatizada.
-2. **Automação de Interface Gráfica (PyAutoGUI)**: Utilizada para execução de tarefas de sincronização (inserção de dados), operando em modo semi-automatizado onde o sistema interage com o navegador aberto pelo usuário.
+Fiogora é uma solução para automatizar a sincronização de dados entre o sistema de gestão Fiorilli e a plataforma Ahgora. Esta versão modernizeada utiliza uma arquitetura baseada em API (FastAPI) para gerenciar tarefas de sincronização em segundo plano, com persistência em banco de dados PostgreSQL.
 
 ## Requisitos do Sistema
 
-- **Python 3.13** ou superior
-- **[uv](https://docs.astral.sh/uv/)** para gerenciamento de pacotes
-- **Firefox** (necessário para os downloads automatizados via Selenium)
-- **Acesso aos sistemas** Fiorilli e Ahgora
+- **Docker & Docker Compose** (Recomendado)
+- **OU**
+- **Python 3.13** (vinda do `uv`)
+- **PostgreSQL**
+- **Firefox** (para automação Selenium local)
 
-## Dependências
+## Como Executar
 
-O projeto utiliza as seguintes bibliotecas principais:
-- **Selenium & Webdriver-Manager**: Para downloads automatizados.
-- **PyAutoGUI, Keyboard & Pyperclip**: Para automação de tarefas e interação com a interface.
-- **Pandas**: Para processamento e análise de dados.
-- **InquirerPy & Rich**: Para interface de linha de comando (CLI) interativa.
-- **Python-dotenv**: Para gerenciamento de credenciais.
+### 1. Via Docker (Recomendado)
 
-## Instalação
+O Docker Compose sobe tanto a API quanto o banco de dados PostgreSQL automaticamente.
 
-1. Clone o repositório:
-   ```bash
-   git clone https://github.com/seu-usuario/fiogora.git
-   cd fiogora
-   ```
-
-2. Inicie o sistema com uv:
-   ```bash
-   uv run main.py
-   ```
-
-## Configuração
-
-1. Crie um arquivo `.env` na raiz do projeto com as seguintes variáveis:
-   ```env
-   FIORILLI_USER=seu_usuario_fiorilli
-   FIORILLI_PSW=sua_senha_fiorilli
-   AHGORA_USER=seu_usuario_ahgora
-   AHGORA_PSW=sua_senha_ahgora
-   AHGORA_COMPANY=codigo_da_empresa_ahgora
-   ```
-
-2. Alternativamente, execute o programa e insira as credenciais quando solicitado.
-
-3. Os diretórios `data`, `tasks` e `downloads` são criados automaticamente na primeira execução.
-
-## Build (Opcional)
-
-Se desejar gerar um executável (.exe) para distribuição em outros computadores, o projeto utiliza o `PyInstaller` gerenciado via `justfile`.
-
-1. Certifique-se de ter o `just` instalado no Windows.
+1. Configure seu arquivo `.env` (veja seção abaixo).
 2. Execute o comando:
    ```bash
-   just
+   docker-compose up --build
    ```
-3. O executável será gerado no diretório `dist/fiogora/`.
+3. A API estará disponível em `http://localhost:8000`.
+4. Documentação interativa (Swagger): `http://localhost:8000/docs`.
 
-Comandos adicionais do `justfile`:
-- `just clean`: Remove arquivos temporários de build.
-- `just update`: Reconstrói o executável preservando dados existentes nas pastas `data`, `downloads` e `tasks`.
-- `just help`: Lista todos os comandos disponíveis.
-  
-## Estrutura de Diretórios
+### 2. Execução Local (Desenvolvimento)
+
+1. **Instale as dependências**:
+   ```bash
+   uv sync
+   ```
+2. **Configure o Banco de Dados**:
+   Certifique-se de ter um PostgreSQL rodando e ajuste o `DATABASE_URL` no `.env`.
+3. **Execute as migrações**:
+   ```bash
+   uv run alembic upgrade head
+   ```
+4. **Inicie o servidor**:
+   ```bash
+   uv run uvicorn app.main:app --reload
+   ```
+
+## Configuração (.env)
+
+Crie um arquivo `.env` na raiz do projeto:
+
+```env
+# Credenciais Fiorilli
+FIORILLI_USER=seu_usuario
+FIORILLI_PASSWORD=sua_senha
+
+# Credenciais Ahgora
+AHGORA_USER=seu_usuario
+AHGORA_PASSWORD=sua_senha
+AHGORA_COMPANY=codigo_empresa
+
+# Configurações do Banco (Local)
+DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/fiogora
+
+# Automação
+HEADLESS_MODE=True
+```
+
+## Estrutura de Diretórios (Novo)
 
 ```
 fiogora/
-├── data/                  # Dados processados e configurações
-│   ├── ahgora/            # CSVs de funcionários baixados do Ahgora
-│   └── fiorilli/          # CSVs/TXTs de funcionários e afastamentos do Fiorilli
-├── downloads/             # Temporário para arquivos baixados pelo navegador
-├── tasks/                 # Listas de tarefas pendentes (CSVs gerados após análise)
-├── src/                   # Código-fonte
-│   ├── browsers/          # Classes de automação (Core, Ahgora, Fiorilli)
-│   ├── managers/          # Orquestradores (Data, Download, File, Task)
-│   ├── models/            # Modelos de dados e definições de teclas
-│   ├── tasks/             # Lógica de execução das tarefas (Add, Update, Remove)
-│   └── utils/             # Configurações, UI e constantes
-└── README.md
+├── app/
+│   ├── api/            # Endpoints FastAPI
+│   ├── core/           # Configurações e DB
+│   ├── domain/         # Entidades e Enums
+│   ├── infrastructure/ # Automação (Selenium) e Repositórios
+│   ├── services/       # Lógica de negócio
+│   └── main.py         # Ponto de entrada da API
+├── tests/              # Testes unitários e de integração
+├── Dockerfile          # Configuração Docker
+└── docker-compose.yml  # Orquestração de serviços
 ```
 
-## Uso
+## API Endpoints Principais
 
-### 1. Baixar Dados
-Selecione **"Downloads"** no menu principal. O sistema utilizará o Selenium para navegar nos sites, realizar login e baixar os relatórios de funcionários e afastamentos necessários.
-
-### 2. Analisar Dados
-Selecione **"Dados" -> "Analisar Dados"**. O sistema processará os arquivos baixados, normalizará os textos (removendo acentos, padronizando nomes) e identificará:
-- Novos funcionários no Fiorilli ausentes no Ahgora.
-- Funcionários desligados.
-- Alterações em cargos ou departamentos.
-- Novos afastamentos/férias.
-
-As diferenças serão salvas como novos arquivos CSV no diretório `tasks/`.
-
-### 3. Executar Tarefas
-Selecione **"Tarefas"** e escolha a ação desejada. Para tarefas de inserção (como "Adicionar Funcionários"):
-1. O sistema abrirá o navegador na página correta.
-2. O sistema solicitará que você prepare a tela.
-3. Use as teclas de atalho (configuradas em `src/models/key.py`) para confirmar a inserção de cada registro via PyAutoGUI.
-
-## Configurações
-
-Acesse o menu de configurações para:
-- **Headless Mode**: Ativa/desativa a visualização do navegador durante os downloads automatizados.
-- **Meses Retroativos**: Define quão longe no passado o sistema deve buscar por afastamentos.
-- **Resetar Credenciais**: Editar o arquivo `.env` para atualização de dados.
-
-## Solução de Problemas
-
-### Falhas nos Downloads
-
-- O modo **Headless** pode falhar se houver popups inesperados. Tente desativá-lo.
-- Certifique-se de que o Firefox não tenha extensões que bloqueiem o download automático.
-
-### Falhas nas Tarefas (PyAutoGUI)
-
-- Não mova o mouse ou troque de janela enquanto o sistema estiver digitando dados.
-- Verifique se o layout do teclado está correto (pode afetar caracteres especiais).
-- O sistema depende da contagem de "tabs". Se a interface do Ahgora mudar, a sequência de preenchimento pode falhar.
+- `POST /api/sync/run`: Inicia uma nova sincronização em segundo plano.
+- `GET /api/sync/jobs`: Lista todos os trabalhos de sincronização.
+- `GET /api/sync/jobs/{id}`: Detalhes de um trabalho específico.
+- `GET /api/sync/jobs/{id}/logs`: Logs detalhados de execução do trabalho.
 
 ## Licença
 

@@ -1,10 +1,11 @@
 from typing import List, Optional
 from uuid import UUID
 from datetime import datetime
-from sqlalchemy import select, update
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.domain.entities import SyncJob, SyncStatus
+from app.domain.entities import SyncJob, SyncLog, SyncStatus
 from app.infrastructure.db.models import SyncJobModel, SyncLogModel
+
 
 class SqlAlchemyRepo:
     def __init__(self, session: AsyncSession):
@@ -22,7 +23,7 @@ class SqlAlchemyRepo:
                 started_at=job.started_at,
                 finished_at=job.finished_at,
                 error_message=job.error_message,
-                metadata_info=job.metadata
+                metadata_info=job.metadata,
             )
             self.session.add(db_job)
         else:
@@ -31,14 +32,14 @@ class SqlAlchemyRepo:
             db_job.finished_at = job.finished_at
             db_job.error_message = job.error_message
             db_job.metadata_info = job.metadata
-        
+
         await self.session.commit()
 
     async def get_job(self, job_id: UUID) -> Optional[SyncJob]:
         db_job = await self.session.get(SyncJobModel, job_id)
         if not db_job:
             return None
-        
+
         return SyncJob(
             id=db_job.id,
             status=db_job.status,
@@ -47,7 +48,7 @@ class SqlAlchemyRepo:
             started_at=db_job.started_at,
             finished_at=db_job.finished_at,
             error_message=db_job.error_message,
-            metadata=db_job.metadata_info
+            metadata=db_job.metadata_info,
         )
 
     async def list_jobs(self) -> List[SyncJob]:
@@ -55,7 +56,7 @@ class SqlAlchemyRepo:
             select(SyncJobModel).order_by(SyncJobModel.created_at.desc())
         )
         db_jobs = result.scalars().all()
-        
+
         return [
             SyncJob(
                 id=db.id,
@@ -65,11 +66,14 @@ class SqlAlchemyRepo:
                 started_at=db.started_at,
                 finished_at=db.finished_at,
                 error_message=db.error_message,
-                metadata=db.metadata_info
-            ) for db in db_jobs
+                metadata=db.metadata_info,
+            )
+            for db in db_jobs
         ]
 
-    async def update_job_status(self, job_id: UUID, status: SyncStatus, message: Optional[str] = None):
+    async def update_job_status(
+        self, job_id: UUID, status: SyncStatus, message: Optional[str] = None
+    ):
         db_job = await self.session.get(SyncJobModel, job_id)
         if db_job:
             db_job.status = status
@@ -77,8 +81,33 @@ class SqlAlchemyRepo:
                 db_job.started_at = datetime.now()
             elif status in [SyncStatus.SUCCESS, SyncStatus.FAILED]:
                 db_job.finished_at = datetime.now()
-            
+
             if message:
                 db_job.error_message = message
-            
+
             await self.session.commit()
+
+    async def add_log(self, job_id: UUID, level: str, message: str) -> None:
+        db_log = SyncLogModel(
+            job_id=job_id, level=level, message=message, timestamp=datetime.now()
+        )
+        self.session.add(db_log)
+        await self.session.commit()
+
+    async def get_job_logs(self, job_id: UUID) -> List[SyncLog]:
+        result = await self.session.execute(
+            select(SyncLogModel)
+            .filter_by(job_id=job_id)
+            .order_by(SyncLogModel.timestamp.asc())
+        )
+        db_logs = result.scalars().all()
+        return [
+            SyncLog(
+                id=db.id,
+                job_id=db.job_id,
+                level=db.level,
+                message=db.message,
+                timestamp=db.timestamp,
+            )
+            for db in db_logs
+        ]

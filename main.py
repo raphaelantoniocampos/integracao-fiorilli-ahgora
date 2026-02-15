@@ -11,6 +11,7 @@ from src.utils.ui import main_menu, spinner
 # treat .env in dist app
 # Update live view
 
+
 def main():
     config = Config()
 

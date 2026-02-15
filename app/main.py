@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 
 app = FastAPI(title=settings.APP_NAME, version=settings.VERSION)
 
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     logger.error(f"Global exception caught: {exc}")
@@ -21,6 +22,7 @@ async def global_exception_handler(request: Request, exc: Exception):
         content={"message": "Internal Server Error", "detail": str(exc)},
     )
 
+
 # Mount static files
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 
@@ -28,10 +30,13 @@ app.mount("/static", StaticFiles(directory="app/static"), name="static")
 app.include_router(web_router)
 app.include_router(api_router, prefix="/api/sync", tags=["sync"])
 
+
 @app.get("/health")
 def health_check():
     return {"status": "ok", "version": settings.VERSION}
 
+
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)

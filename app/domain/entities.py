@@ -5,6 +5,7 @@ from uuid import UUID, uuid4
 
 from .enums import SyncStatus
 
+
 @dataclass
 class SyncJob:
     id: UUID = field(default_factory=uuid4)
@@ -16,9 +17,19 @@ class SyncJob:
     error_message: Optional[str] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
 
+
 @dataclass
 class SyncResult:
     success: bool
     status: SyncStatus
     message: str = ""
     details: Dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass
+class SyncLog:
+    id: Optional[int]
+    job_id: UUID
+    level: str
+    message: str
+    timestamp: datetime = field(default_factory=datetime.now)

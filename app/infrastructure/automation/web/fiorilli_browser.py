@@ -8,6 +8,7 @@ from app.infrastructure.automation.web.base_browser import BaseBrowser
 
 logger = logging.getLogger(__name__)
 
+
 class FiorilliBrowser(BaseBrowser):
     def __init__(self):
         super().__init__(url=settings.FIORILLI_URL)
@@ -52,9 +53,11 @@ class FiorilliBrowser(BaseBrowser):
     def _login(self) -> None:
         user = settings.FIORILLI_USER
         psw = settings.FIORILLI_PASSWORD
-        
+
         if not user or not psw:
-             raise ValueError("Fiorilli credentials not set in environment variables (FIORILLI_USER, FIORILLI_PSW)")
+            raise ValueError(
+                "Fiorilli credentials not set in environment variables (FIORILLI_USER, FIORILLI_PSW)"
+            )
 
         self._enter_username("O30_id-inputEl", user)
         self._enter_password("O34_id-inputEl", psw)
@@ -161,9 +164,9 @@ class FiorilliBrowser(BaseBrowser):
     def _fill_input_field(self) -> None:
         today = datetime.today()
         today_str = today.strftime("%d/%m/%Y")
-        start_date = (today - relativedelta(months=settings.LEAVES_MONTHS_AGO)).strftime(
-            "%d/%m/%Y"
-        )
+        start_date = (
+            today - relativedelta(months=settings.LEAVES_MONTHS_AGO)
+        ).strftime("%d/%m/%Y")
         year_end = date(today.year, 12, 31).strftime("%d/%m/%Y")
         self.select_and_send_keys(
             f"//input[@value='{today_str}']",

@@ -6,7 +6,6 @@ import pandas as pd
 
 
 from src.managers.file_manager import FileManager
-from src.managers.update_manager import UpdateManager
 from src.utils.constants import (
     DATA_DIR,
     FIORILLI_DIR,

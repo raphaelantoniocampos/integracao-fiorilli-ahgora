@@ -21,6 +21,7 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
+
 class BaseBrowser(ABC):
     MAX_TRIES = 50
     DELAY = 0.5
@@ -41,10 +42,10 @@ class BaseBrowser(ABC):
         options = webdriver.FirefoxOptions()
         if settings.HEADLESS_MODE:
             options.add_argument("-headless")
-        
+
         # Ensure download directory exists
         settings.DOWNLOADS_DIR.mkdir(parents=True, exist_ok=True)
-        
+
         options.set_preference("browser.download.folderList", 2)
         options.set_preference("browser.download.dir", str(settings.DOWNLOADS_DIR))
 
@@ -200,10 +201,10 @@ class BaseBrowser(ABC):
         element = WebDriverWait(
             self.driver, delay, ignored_exceptions=ignored_exceptions
         ).until(EC.presence_of_element_located((selector_type, selector)))
-        
-        ActionChains(self.driver).click(element).key_down(Keys.CONTROL).send_keys("a").key_up(Keys.CONTROL).send_keys(
-            keys
-        ).perform()
+
+        ActionChains(self.driver).click(element).key_down(Keys.CONTROL).send_keys(
+            "a"
+        ).key_up(Keys.CONTROL).send_keys(keys).perform()
 
     def wait_desappear(
         self,
