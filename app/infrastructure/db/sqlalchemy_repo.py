@@ -3,8 +3,8 @@ from uuid import UUID
 from datetime import datetime
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.domain.entities import SyncJob, SyncLog, SyncStatus
-from app.infrastructure.db.models import SyncJobModel, SyncLogModel
+from app.domain.entities import SyncJob, SyncLog, SyncStatus, AutomationTask, AutomationTaskType, AutomationTaskStatus
+from app.infrastructure.db.models import SyncJobModel, SyncLogModel, AutomationTaskModel
 
 
 class SqlAlchemyRepo:
@@ -152,4 +152,77 @@ class SqlAlchemyRepo:
                 timestamp=db.timestamp,
             )
             for db in db_logs
+        ]
+
+    async def save_automation_task(self, task: AutomationTask) -> None:
+        db_task = await self.session.get(AutomationTaskModel, task.id)
+        if not db_task:
+            db_task = AutomationTaskModel(
+                id=task.id,
+                job_id=task.job_id,
+                type=task.type,
+                status=task.status,
+                payload_info=task.payload,
+                created_at=task.created_at,
+                started_at=task.started_at,
+                finished_at=task.finished_at,
+                error_message=task.error_message,
+                retry_count=task.retry_count,
+            )
+            self.session.add(db_task)
+        else:
+            db_task.status = task.status
+            db_task.payload_info = task.payload
+            db_task.started_at = task.started_at
+            db_task.finished_at = task.finished_at
+            db_task.error_message = task.error_message
+            db_task.retry_count = task.retry_count
+
+        await self.session.commit()
+
+    async def get_automation_tasks_by_job(self, job_id: UUID) -> List[AutomationTask]:
+        result = await self.session.execute(
+            select(AutomationTaskModel)
+            .filter_by(job_id=job_id)
+            .order_by(AutomationTaskModel.created_at.asc())
+        )
+        db_tasks = result.scalars().all()
+        return [
+            AutomationTask(
+                id=db.id,
+                job_id=db.job_id,
+                type=db.type,
+                status=db.status,
+                payload=db.payload_info,
+                created_at=db.created_at,
+                started_at=db.started_at,
+                finished_at=db.finished_at,
+                error_message=db.error_message,
+                retry_count=db.retry_count,
+            )
+            for db in db_tasks
+        ]
+    async def get_all_automation_tasks(
+        self, status: Optional[AutomationTaskStatus] = None
+    ) -> List[AutomationTask]:
+        query = select(AutomationTaskModel).order_by(AutomationTaskModel.created_at.desc())
+        if status:
+            query = query.filter_by(status=status)
+
+        result = await self.session.execute(query)
+        db_tasks = result.scalars().all()
+        return [
+            AutomationTask(
+                id=db.id,
+                job_id=db.job_id,
+                type=db.type,
+                status=db.status,
+                payload=db.payload_info,
+                created_at=db.created_at,
+                started_at=db.started_at,
+                finished_at=db.finished_at,
+                error_message=db.error_message,
+                retry_count=db.retry_count,
+            )
+            for db in db_tasks
         ]

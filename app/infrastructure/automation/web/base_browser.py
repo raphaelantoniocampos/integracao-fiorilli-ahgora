@@ -17,7 +17,7 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 
-from app.core.config import settings
+from app.core.settings import settings
 
 logger = logging.getLogger(__name__)
 

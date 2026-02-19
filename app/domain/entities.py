@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Optional, Dict, Any
 from uuid import UUID, uuid4
 
-from .enums import SyncStatus
+from .enums import SyncStatus, AutomationTaskType, AutomationTaskStatus
 
 
 @dataclass
@@ -35,3 +35,17 @@ class SyncLog:
     level: str
     message: str
     timestamp: datetime = field(default_factory=datetime.now)
+
+
+@dataclass
+class AutomationTask:
+    job_id: UUID
+    type: AutomationTaskType
+    id: UUID = field(default_factory=uuid4)
+    status: AutomationTaskStatus = field(default=AutomationTaskStatus.PENDING)
+    payload: Dict[str, Any] = field(default_factory=dict)
+    created_at: datetime = field(default_factory=datetime.now)
+    started_at: Optional[datetime] = None
+    finished_at: Optional[datetime] = None
+    error_message: Optional[str] = None
+    retry_count: int = 0

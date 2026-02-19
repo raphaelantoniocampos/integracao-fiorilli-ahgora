@@ -1,5 +1,5 @@
 from app.domain.entities import SyncJob, SyncStatus
-from app.core.config import settings
+from app.core.settings import settings
 from app.infrastructure.automation.web.fiorilli_browser import FiorilliBrowser
 
 

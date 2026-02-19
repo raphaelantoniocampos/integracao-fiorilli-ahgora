@@ -5,7 +5,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 
 from app.core.database import Base
-from app.domain.enums import SyncStatus
+from app.domain.enums import SyncStatus, AutomationTaskType, AutomationTaskStatus
 
 
 class SyncJobModel(Base):
@@ -27,6 +27,9 @@ class SyncJobModel(Base):
     logs: Mapped[list["SyncLogModel"]] = relationship(
         back_populates="job", cascade="all, delete-orphan"
     )
+    automation_tasks: Mapped[list["AutomationTaskModel"]] = relationship(
+        back_populates="job", cascade="all, delete-orphan"
+    )
 
 
 class SyncLogModel(Base):
@@ -39,3 +42,24 @@ class SyncLogModel(Base):
     timestamp: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
 
     job: Mapped["SyncJobModel"] = relationship(back_populates="logs")
+
+
+class AutomationTaskModel(Base):
+    __tablename__ = "automation_tasks"
+
+    id: Mapped[UUID] = mapped_column(
+        PG_UUID(as_uuid=True), primary_key=True, default=uuid4
+    )
+    job_id: Mapped[UUID] = mapped_column(ForeignKey("sync_jobs.id"))
+    type: Mapped[AutomationTaskType] = mapped_column(String)
+    status: Mapped[AutomationTaskStatus] = mapped_column(
+        String, default=AutomationTaskStatus.PENDING
+    )
+    payload_info: Mapped[dict] = mapped_column("payload", JSON, default=dict)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
+    started_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    finished_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    error_message: Mapped[str] = mapped_column(Text, nullable=True)
+    retry_count: Mapped[int] = mapped_column(default=0)
+
+    job: Mapped["SyncJobModel"] = relationship(back_populates="automation_tasks")

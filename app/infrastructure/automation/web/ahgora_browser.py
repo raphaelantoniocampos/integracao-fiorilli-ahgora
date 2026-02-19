@@ -1,7 +1,7 @@
 import logging
 import time
 from selenium.webdriver.common.by import By
-from app.core.config import settings
+from app.core.settings import settings
 from app.infrastructure.automation.web.base_browser import BaseBrowser
 
 logger = logging.getLogger(__name__)

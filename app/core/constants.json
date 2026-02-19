@@ -1,0 +1,73 @@
+{
+    "upload_leaves_columns": [
+        "id",
+        "cod",
+        "start_date",
+        "start_time",
+        "end_date",
+        "end_time"
+    ],
+    "leaves_columns": [
+        "id",
+        "name",
+        "cod",
+        "cod_name",
+        "start_date",
+        "end_date",
+        "duration",
+        "start_time",
+        "end_time"
+    ],
+    "ahgora_employees_columns": [
+        "id",
+        "name",
+        "position",
+        "scale",
+        "department",
+        "location",
+        "admission_date",
+        "dismissal_date"
+    ],
+    "fiorilli_employees_columns": [
+        "id",
+        "name",
+        "cpf",
+        "sex",
+        "birth_date",
+        "pis_pasep",
+        "position",
+        "department",
+        "cost_center",
+        "binding",
+        "admission_date",
+        "dismissal_date"
+    ],
+    "columns_to_verify_change": [
+        "id",
+        "name",
+        "admission_date",
+        "position",
+        "department"
+    ],
+    "pt_months": {
+        "Jan": "Jan",
+        "Fev": "Feb",
+        "Mar": "Mar",
+        "Abr": "Apr",
+        "Mai": "May",
+        "Jun": "Jun",
+        "Jul": "Jul",
+        "Ago": "Aug",
+        "Set": "Sep",
+        "Out": "Oct",
+        "Nov": "Nov",
+        "Dez": "Dec"
+    },
+    "exceptions_and_typos": {
+        "VIGILACIA EM SAUDE": "VIGILANCIA EM SAUDE",
+        "UBS SAO JOSE/CIDADE JARDIM": "UBS CIDADE JARDIM",
+        "FINANCAS": "SECRETARIA MUN. FINANCAS",
+        "016718": "16718",
+        "FORUM-CEDIDA": "FORUM"
+    }
+}

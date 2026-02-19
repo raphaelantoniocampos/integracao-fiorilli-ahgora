@@ -7,7 +7,7 @@ import logging
 
 from app.api.endpoints import router as api_router
 from app.infrastructure.web.routes import router as web_router
-from app.core.config import settings
+from app.core.settings import settings
 from app.core.scheduler import scheduler
 
 logger = logging.getLogger(__name__)
@@ -21,9 +21,14 @@ async def lifespan(app: FastAPI):
     await scheduler.stop()
 
 app = FastAPI(
-    title=settings.APP_NAME, 
+    title=settings.APP_NAME,
     version=settings.VERSION,
-    lifespan=lifespan
+    description="RPA Integration service for Fiorilli and Ahgora employee data synchronization.",
+    lifespan=lifespan,
+    openapi_tags=[
+        {"name": "sync", "description": "Core synchronization operations and job management."},
+        {"name": "Automation Tasks", "description": "Endpoints to manage and review tasks identified during sync analysis."},
+    ],
 )
 
 
