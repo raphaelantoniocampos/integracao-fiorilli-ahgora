@@ -84,7 +84,9 @@ async def test_run_sync_background_retry_scheduled():
         service,
         "_execute_sync_logic",
         new_callable=AsyncMock,
-        return_value=SyncResult(success=False, status=SyncStatus.FAILED, message="Transient Error"),
+        return_value=SyncResult(
+            success=False, status=SyncStatus.FAILED, message="Transient Error"
+        ),
     ):
         await service.run_sync_background(job_id)
 
@@ -93,7 +95,7 @@ async def test_run_sync_background_retry_scheduled():
     # Check that failed status was NOT finalized (only internal result status was FAILED)
     # The actual DB update for FAILED is only called if success=True/False in run_sync_background
     # wait, if result.success is False, it calls _handle_job_retry
-    
+
     status_calls = [call.args[1] for call in repo.update_job_status.call_args_list]
     assert SyncStatus.FAILED not in status_calls
     assert SyncStatus.RUNNING in status_calls

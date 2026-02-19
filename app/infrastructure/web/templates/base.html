@@ -1,24 +1,163 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Fiogora Dashboard{% endblock %}</title>
+    <title>{% block title %}Fiogora | Dashboard{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --bg-main: #f8fafc;
+            --glass: rgba(255, 255, 255, 0.8);
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-main);
+            color: #1e293b;
+        }
+
+        .glass-nav {
+            background: var(--glass);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+            transition: all 0.2s ease;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+            transform: translateY(-1px);
+        }
+
+        /* Modal overlay */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 100;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+            pointer-events: none;
+        }
+
+        .modal-backdrop.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-panel {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.95);
+            z-index: 101;
+            width: 90%;
+            max-width: 900px;
+            max-height: 85vh;
+            opacity: 0;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+        }
+
+        .modal-panel.active {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(1);
+            pointer-events: auto;
+        }
+    </style>
 </head>
-<body class="bg-gray-100 min-h-screen">
-    <nav class="bg-blue-600 text-white p-4 shadow-md">
+
+<body class="min-h-screen">
+    <nav class="glass-nav sticky top-0 z-50 p-4 shadow-sm">
         <div class="container mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-bold">Fiogora</h1>
-            <ul class="flex space-x-4">
-                <li><a href="/" class="hover:underline">Dashboard</a></li>
-                <li><a href="/docs" class="hover:underline" target="_blank">API Docs</a></li>
+            <div class="flex items-center space-x-2">
+                <div class="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">F
+                </div>
+                <h1 class="text-xl font-bold tracking-tight text-slate-800">Fiogora <span
+                        class="text-indigo-600 font-medium">OS</span></h1>
+            </div>
+            <ul class="flex items-center space-x-8">
+                <li><a href="/"
+                        class="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">Dashboard</a>
+                </li>
+                <li><a href="/docs" class="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors"
+                        target="_blank">Documentação</a></li>
+                <li>
+                    <button hx-post="/api/sync/run" hx-swap="none"
+                        class="btn-primary px-4 py-2 rounded-lg text-sm font-semibold shadow-sm">
+                        Nova Sincronização
+                    </button>
+                </li>
             </ul>
         </div>
     </nav>
-    <main class="container mx-auto p-6">
+    <main class="container mx-auto p-8">
         {% block content %}{% endblock %}
     </main>
+    <footer class="container mx-auto p-8 text-center text-slate-400 text-sm">
+        &copy; 2026 Fiogora RPA. Todos os direitos reservados.
+    </footer>
+
+    <!-- Modal container -->
+    <div id="modal-backdrop" class="modal-backdrop" onclick="closeModal()"></div>
+    <div id="modal-panel" class="modal-panel">
+        <div id="modal-content"></div>
+    </div>
+
+    <script>
+        function openModal() {
+            document.getElementById('modal-backdrop').classList.add('active');
+            document.getElementById('modal-panel').classList.add('active');
+        }
+        function closeModal() {
+            document.getElementById('modal-backdrop').classList.remove('active');
+            document.getElementById('modal-panel').classList.remove('active');
+            // Clear content after animation to stop HTMX polling
+            setTimeout(() => { document.getElementById('modal-content').innerHTML = ''; }, 250);
+        }
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+        // Open modal when HTMX swaps content into it
+        document.body.addEventListener('htmx:afterSwap', (e) => {
+            if (e.detail.target.id === 'modal-content') openModal();
+        });
+    </script>
 </body>
+
 </html>

@@ -3,7 +3,13 @@ from uuid import UUID
 from datetime import datetime
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.domain.entities import SyncJob, SyncLog, SyncStatus, AutomationTask, AutomationTaskType, AutomationTaskStatus
+from app.domain.entities import (
+    SyncJob,
+    SyncLog,
+    SyncStatus,
+    AutomationTask,
+    AutomationTaskStatus,
+)
 from app.infrastructure.db.models import SyncJobModel, SyncLogModel, AutomationTaskModel
 
 
@@ -57,6 +63,11 @@ class SqlAlchemyRepo:
             next_retry_at=db_job.next_retry_at,
         )
 
+    async def get_job_status(self, job_id: UUID) -> Optional[SyncStatus]:
+        job = await self.get_job(job_id)
+
+        return job.status
+
     async def list_jobs(self) -> List[SyncJob]:
         result = await self.session.execute(
             select(SyncJobModel).order_by(SyncJobModel.created_at.desc())
@@ -89,7 +100,11 @@ class SqlAlchemyRepo:
                 db_job.started_at = datetime.now()
                 # Clear next_retry_at when starting
                 db_job.next_retry_at = None
-            elif status in [SyncStatus.SUCCESS, SyncStatus.FAILED, SyncStatus.CANCELLED]:
+            elif status in [
+                SyncStatus.SUCCESS,
+                SyncStatus.FAILED,
+                SyncStatus.CANCELLED,
+            ]:
                 db_job.finished_at = datetime.now()
 
             if message:
@@ -180,6 +195,25 @@ class SqlAlchemyRepo:
 
         await self.session.commit()
 
+    async def save_automation_tasks_batch(self, tasks: List[AutomationTask]) -> None:
+        db_tasks = [
+            AutomationTaskModel(
+                id=task.id,
+                job_id=task.job_id,
+                type=task.type,
+                status=task.status,
+                payload_info=task.payload,
+                created_at=task.created_at,
+                started_at=task.started_at,
+                finished_at=task.finished_at,
+                error_message=task.error_message,
+                retry_count=task.retry_count,
+            )
+            for task in tasks
+        ]
+        self.session.add_all(db_tasks)
+        await self.session.commit()
+
     async def get_automation_tasks_by_job(self, job_id: UUID) -> List[AutomationTask]:
         result = await self.session.execute(
             select(AutomationTaskModel)
@@ -202,10 +236,13 @@ class SqlAlchemyRepo:
             )
             for db in db_tasks
         ]
+
     async def get_all_automation_tasks(
         self, status: Optional[AutomationTaskStatus] = None
     ) -> List[AutomationTask]:
-        query = select(AutomationTaskModel).order_by(AutomationTaskModel.created_at.desc())
+        query = select(AutomationTaskModel).order_by(
+            AutomationTaskModel.created_at.desc()
+        )
         if status:
             query = query.filter_by(status=status)
 

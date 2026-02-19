@@ -12,6 +12,7 @@ from app.core.scheduler import scheduler
 
 logger = logging.getLogger(__name__)
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: Start the retry scheduler
@@ -20,14 +21,21 @@ async def lifespan(app: FastAPI):
     # Shutdown: Stop the retry scheduler
     await scheduler.stop()
 
+
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.VERSION,
     description="RPA Integration service for Fiorilli and Ahgora employee data synchronization.",
     lifespan=lifespan,
     openapi_tags=[
-        {"name": "sync", "description": "Core synchronization operations and job management."},
-        {"name": "Automation Tasks", "description": "Endpoints to manage and review tasks identified during sync analysis."},
+        {
+            "name": "sync",
+            "description": "Core synchronization operations and job management.",
+        },
+        {
+            "name": "Automation Tasks",
+            "description": "Endpoints to manage and review tasks identified during sync analysis.",
+        },
     ],
 )
 

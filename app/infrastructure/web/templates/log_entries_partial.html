@@ -1,0 +1,21 @@
+<div id="log-entries" hx-get="/partials/log-entries?job_id={{ job_id }}" hx-trigger="every 5s" hx-swap="outerHTML"
+    class="bg-slate-900 p-4 font-mono text-[13px] leading-relaxed overflow-y-auto" style="max-height: 80vh;">
+    {% for log in logs %}
+    <div class="flex py-0.5 hover:bg-slate-800/50 px-2 -mx-2 rounded">
+        <span class="text-slate-600 mr-4 flex-shrink-0 select-none tabular-nums">{{ log.timestamp.strftime('%H:%M:%S')
+            }}</span>
+        {% if log.level == 'ERROR' %}
+        <span class="text-red-400 font-bold mr-3 flex-shrink-0 w-14">[ERR]</span>
+        <span class="text-red-300">{{ log.message }}</span>
+        {% elif log.level == 'WARNING' %}
+        <span class="text-amber-400 mr-3 flex-shrink-0 w-14">[WRN]</span>
+        <span class="text-amber-200/80">{{ log.message }}</span>
+        {% else %}
+        <span class="text-indigo-400/60 mr-3 flex-shrink-0 w-14">[INF]</span>
+        <span class="text-slate-300">{{ log.message }}</span>
+        {% endif %}
+    </div>
+    {% else %}
+    <div class="text-slate-500 italic text-center py-8">Nenhum log disponível para esta execução.</div>
+    {% endfor %}
+</div>

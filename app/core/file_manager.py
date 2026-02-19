@@ -3,6 +3,7 @@ from pathlib import Path
 import pandas as pd
 from app.core.settings import settings
 
+
 class FileManager:
     FIORILLI_DIR = settings.DATA_DIR / "fiorilli"
     AHGORA_DIR = settings.DATA_DIR / "ahgora"
@@ -16,11 +17,11 @@ class FileManager:
             settings.DOWNLOADS_DIR,
             cls.TASKS_DIR,
             cls.FIORILLI_DIR,
-            cls.AHGORA_DIR
+            cls.AHGORA_DIR,
         ]
         for directory in directories:
             directory.mkdir(parents=True, exist_ok=True)
-            
+
     @classmethod
     def move_downloads_to_data_dir(cls):
         """Move files from downloads folder to their respective data directories."""
@@ -30,7 +31,7 @@ class FileManager:
         for file in settings.DOWNLOADS_DIR.iterdir():
             if not file.is_file():
                 continue
-                
+
             file_name_lower = file.name.lower()
             if "trabalhador" in file_name_lower:
                 cls.move_file(file, cls.FIORILLI_DIR / "raw_employees.txt")

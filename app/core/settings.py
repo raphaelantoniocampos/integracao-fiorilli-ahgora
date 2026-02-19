@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
 class Settings:
     # Base
     APP_NAME: str = "Fiogora"
@@ -37,12 +38,18 @@ class Settings:
 
     def __init__(self):
         self._constants = self._load_constants()
-        
+
         self.UPLOAD_LEAVES_COLUMNS = self._constants.get("upload_leaves_columns", [])
         self.LEAVES_COLUMNS = self._constants.get("leaves_columns", [])
-        self.AHGORA_EMPLOYEES_COLUMNS = self._constants.get("ahgora_employees_columns", [])
-        self.FIORILLI_EMPLOYEES_COLUMNS = self._constants.get("fiorilli_employees_columns", [])
-        self.COLUMNS_TO_VERIFY_CHANGE = self._constants.get("columns_to_verify_change", [])
+        self.AHGORA_EMPLOYEES_COLUMNS = self._constants.get(
+            "ahgora_employees_columns", []
+        )
+        self.FIORILLI_EMPLOYEES_COLUMNS = self._constants.get(
+            "fiorilli_employees_columns", []
+        )
+        self.COLUMNS_TO_VERIFY_CHANGE = self._constants.get(
+            "columns_to_verify_change", []
+        )
         self.PT_MONTHS = self._constants.get("pt_months", {})
         self.EXCEPTIONS_AND_TYPOS = self._constants.get("exceptions_and_typos", {})
 
@@ -54,5 +61,6 @@ class Settings:
                 return json.load(f)
         except Exception:
             return {}
+
 
 settings = Settings()

@@ -10,7 +10,14 @@ import pandas as pd
 import numpy as np
 
 from app.core.settings import settings
-from app.domain.entities import SyncJob, SyncResult, SyncLog, AutomationTask, AutomationTaskType, AutomationTaskStatus
+from app.domain.entities import (
+    SyncJob,
+    SyncResult,
+    SyncLog,
+    AutomationTask,
+    AutomationTaskType,
+    AutomationTaskStatus,
+)
 from app.domain.enums import SyncStatus
 from app.infrastructure.automation.web.fiorilli_browser import FiorilliBrowser
 from app.infrastructure.automation.web.ahgora_browser import AhgoraBrowser
@@ -62,6 +69,9 @@ class SyncService:
     async def get_job(self, job_id: UUID) -> SyncJob:
         return await self.repo.get_job(job_id)
 
+    async def get_job_status(self, job_id: UUID) -> SyncStatus:
+        return await self.repo.get_job_status(job_id)
+
     async def list_jobs(self) -> list[SyncJob]:
         return await self.repo.list_jobs()
 
@@ -91,12 +101,16 @@ class SyncService:
         task_registry.register(job_id, current_task)
 
         try:
-            # Execute sync logic (now properly async and handles its own threading)
-            result = await self._execute_sync_logic(job_id)
+            # Execute sync logic with a 15-minute timeout (prevents permanent hangs)
+            result = await asyncio.wait_for(
+                self._execute_sync_logic(job_id), timeout=15 * 60
+            )
 
             if result.success:
                 async with self._db_lock:
-                    await self.repo.update_job_status(job_id, SyncStatus.SUCCESS, result.message)
+                    await self.repo.update_job_status(
+                        job_id, SyncStatus.SUCCESS, result.message
+                    )
                 await self._log(
                     job_id,
                     "INFO",
@@ -105,6 +119,14 @@ class SyncService:
             else:
                 # If it failed, check if we should retry (job level)
                 await self._handle_job_retry(job, error_msg=result.message)
+
+        except TimeoutError:
+            error_msg = "Job timed out after 15 minutes of execution"
+            logger.error(f"Job {job_id} timed out")
+            try:
+                await self._handle_job_retry(job, error_msg=error_msg)
+            except Exception as e:
+                logger.error(f"Failed to handle retry for timed out job {job_id}: {e}")
 
         except asyncio.CancelledError:
             logger.info(f"Job {job_id} was cancelled")
@@ -120,6 +142,13 @@ class SyncService:
 
         except Exception as e:
             logger.exception(f"Unhandled error in job {job_id}")
+            try:
+                # Rollback any pending failed transaction to allow retry update
+                if hasattr(self.repo, "session"):
+                    await self.repo.session.rollback()
+            except Exception as rollback_e:
+                logger.error(f"Failed to rollback session: {rollback_e}")
+
             # Ensure status is UPDATED even if something very bad happens
             try:
                 # Handle retry even for unhandled errors
@@ -129,9 +158,7 @@ class SyncService:
         finally:
             task_registry.unregister(job_id)
 
-    async def _handle_job_retry(
-        self, job: SyncJob, error_msg: Optional[str] = None
-    ):
+    async def _handle_job_retry(self, job: SyncJob, error_msg: Optional[str] = None):
         """Calculates next retry and updates job if retries are available."""
         if job.retry_count >= self.MAX_JOB_RETRIES:
             final_msg = error_msg or "Max retries reached"
@@ -150,7 +177,8 @@ class SyncService:
         delay = backoffs[job.retry_count]  # current retry_count is 0..2
         next_retry = datetime.now() + delay
 
-        await self.repo.increment_job_retry(job.id, next_retry)
+        async with self._db_lock:
+            await self.repo.increment_job_retry(job.id, next_retry)
         await self._log(
             job.id,
             "WARNING",
@@ -161,7 +189,7 @@ class SyncService:
         """Cancels a running job and updates its status to CANCELLED."""
         logger.info(f"Attempting to kill job {job_id}...")
         task = task_registry.get_task(job_id)
-        
+
         # Check if job exists in DB and is in a state that can be cancelled
         job = await self.repo.get_job(job_id)
         if not job:
@@ -169,7 +197,7 @@ class SyncService:
             return False
 
         is_zombie = task is None and job.status == SyncStatus.RUNNING
-        
+
         if not task and not is_zombie:
             active_tasks = task_registry.get_all_tasks()
             logger.warning(
@@ -179,17 +207,26 @@ class SyncService:
             return False
 
         if is_zombie:
-            logger.info(f"Cleaning up zombie job {job_id} (marked RUNNING in DB but missing from registry)")
-        else:
+            logger.info(
+                f"Cleaning up zombie job {job_id} (marked RUNNING in DB but missing from registry)"
+            )
+        elif task:
             logger.info(f"Killing active task for job {job_id}")
             task.cancel()
+        else:
+            logger.warning(
+                f"Kill failed: Job {job_id} task not found and not a zombie."
+            )
+            return False
 
         # Update the status to CANCELLED
         async with self._db_lock:
             await self.repo.update_job_status(
                 job_id, SyncStatus.CANCELLED, "Termination requested by user"
             )
-            await self._log(job_id, "WARNING", "Job was killed/cancelled by user request")
+            await self._log(
+                job_id, "WARNING", "Job was killed/cancelled by user request"
+            )
 
         return True
 
@@ -197,8 +234,10 @@ class SyncService:
         """Cancels all active sync jobs in memory and cleans up running jobs in DB."""
         # 1. Kill tasks in registry
         tasks = task_registry.get_all_tasks()
-        logger.info(f"Attempting to kill all {len(tasks)} registered tasks: {list(tasks.keys())}")
-        
+        logger.info(
+            f"Attempting to kill all {len(tasks)} registered tasks: {list(tasks.keys())}"
+        )
+
         count = 0
         registry_job_ids = set()
         for job_id_str in tasks.keys():
@@ -214,7 +253,7 @@ class SyncService:
                 logger.info(f"Cleaning up untracked RUNNING job {job.id} from database")
                 if await self.kill_job(job.id):
                     count += 1
-        
+
         return count
 
     async def _log(self, job_id: UUID, level: str, message: str):
@@ -319,13 +358,17 @@ class SyncService:
             await self._log(job_id, "INFO", "Starting data analysis and task creation")
 
             # 1. Process downloads (move files to expected locations)
-            await self._log(job_id, "INFO", "Moving downloaded files to data directory...")
+            await self._log(
+                job_id, "INFO", "Moving downloaded files to data directory..."
+            )
             await asyncio.to_thread(FileManager.move_downloads_to_data_dir)
 
             # 2. Get data
             await self._log(job_id, "INFO", "Loading employee data from files...")
-            fiorilli_employees, ahgora_employees = await self._get_employees_data(job_id)
-            
+            fiorilli_employees, ahgora_employees = await self._get_employees_data(
+                job_id
+            )
+
             await self._log(job_id, "INFO", "Loading leave data from files...")
             last_leaves, all_leaves = await self._get_leaves_data(job_id)
 
@@ -342,7 +385,9 @@ class SyncService:
                 )
 
             # 3. Generate Task Dataframes
-            await self._log(job_id, "INFO", "Generating task dataframes (comparing datasets)...")
+            await self._log(
+                job_id, "INFO", "Generating task dataframes (comparing datasets)..."
+            )
             (
                 new_employees_df,
                 dismissed_employees_df,
@@ -357,7 +402,9 @@ class SyncService:
             )
 
             # 4. Create and persist AutomationTasks
-            await self._log(job_id, "INFO", "Persisting automation tasks to database...")
+            await self._log(
+                job_id, "INFO", "Persisting automation tasks to database..."
+            )
             await self._create_automation_tasks(
                 job_id,
                 new_employees_df,
@@ -366,30 +413,44 @@ class SyncService:
                 new_leaves_df,
             )
 
-            await self._log(job_id, "INFO", "Data analysis and task creation completed successfully")
+            await self._log(
+                job_id, "INFO", "Data analysis and task creation completed successfully"
+            )
         except Exception as e:
             error_msg = f"Critical error during analysis phase: {str(e)}"
             logger.error(error_msg, exc_info=True)
             await self._log(job_id, "ERROR", error_msg)
             raise
 
-    async def _get_employees_data(self, job_id: UUID) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    async def _get_employees_data(
+        self, job_id: UUID
+    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
         try:
             raw_fiorilli_path = FIORILLI_DIR / "raw_employees.txt"
             raw_ahgora_path = AHGORA_DIR / "raw_employees.csv"
 
             if not raw_fiorilli_path.exists():
-                await self._log(job_id, "WARNING", f"Fiorilli file not found: {raw_fiorilli_path}")
+                await self._log(
+                    job_id, "WARNING", f"Fiorilli file not found: {raw_fiorilli_path}"
+                )
             if not raw_ahgora_path.exists():
-                await self._log(job_id, "WARNING", f"Ahgora file not found: {raw_ahgora_path}")
+                await self._log(
+                    job_id, "WARNING", f"Ahgora file not found: {raw_ahgora_path}"
+                )
 
             if not raw_fiorilli_path.exists() or not raw_ahgora_path.exists():
                 return pd.DataFrame(), pd.DataFrame()
 
-            fiorilli_employees = await asyncio.to_thread(self._read_csv, raw_fiorilli_path)
+            fiorilli_employees = await asyncio.to_thread(
+                self._read_csv, raw_fiorilli_path
+            )
             ahgora_employees = await asyncio.to_thread(self._read_csv, raw_ahgora_path)
 
-            await self._log(job_id, "INFO", f"Loaded {len(fiorilli_employees)} Fiorilli employees and {len(ahgora_employees)} Ahgora employees")
+            await self._log(
+                job_id,
+                "INFO",
+                f"Loaded {len(fiorilli_employees)} Fiorilli employees and {len(ahgora_employees)} Ahgora employees",
+            )
             return fiorilli_employees, ahgora_employees
         except Exception as e:
             await self._log(job_id, "ERROR", f"Error getting employee data: {str(e)}")
@@ -404,23 +465,33 @@ class SyncService:
             last_leaves = pd.DataFrame()
             if last_leaves_path.exists():
                 last_leaves = await asyncio.to_thread(self._read_csv, last_leaves_path)
-                await self._log(job_id, "INFO", f"Loaded {len(last_leaves)} historical leaves")
+                await self._log(
+                    job_id, "INFO", f"Loaded {len(last_leaves)} historical leaves"
+                )
 
             all_leaves_list = []
             if raw_vacations_path.exists():
                 df_vac = await asyncio.to_thread(self._read_csv, raw_vacations_path)
                 all_leaves_list.append(df_vac)
                 await self._log(job_id, "INFO", f"Loaded {len(df_vac)} new vacations")
-            
+
             if raw_leaves_path.exists():
                 df_leaves = await asyncio.to_thread(self._read_csv, raw_leaves_path)
                 all_leaves_list.append(df_leaves)
-                await self._log(job_id, "INFO", f"Loaded {len(df_leaves)} new leaves/absences")
+                await self._log(
+                    job_id, "INFO", f"Loaded {len(df_leaves)} new leaves/absences"
+                )
 
-            all_leaves = pd.concat(all_leaves_list) if all_leaves_list else pd.DataFrame()
+            all_leaves = (
+                pd.concat(all_leaves_list) if all_leaves_list else pd.DataFrame()
+            )
             if not all_leaves.empty:
-                await self._log(job_id, "INFO", f"Total combined leaves for process: {len(all_leaves)}")
-            
+                await self._log(
+                    job_id,
+                    "INFO",
+                    f"Total combined leaves for process: {len(all_leaves)}",
+                )
+
             return last_leaves, all_leaves
         except Exception as e:
             await self._log(job_id, "ERROR", f"Error getting leave data: {str(e)}")
@@ -483,8 +554,10 @@ class SyncService:
         try:
             if columns:
                 if len(df.columns) != len(columns):
-                    logger.warning(f"Column mismatch: expected {len(columns)} got {len(df.columns)}")
-                df.columns = columns[:len(df.columns)] # defensive
+                    logger.warning(
+                        f"Column mismatch: expected {len(columns)} got {len(df.columns)}"
+                    )
+                df.columns = columns[: len(df.columns)]  # defensive
 
             for col in df.columns:
                 if "date" in col:
@@ -589,7 +662,9 @@ class SyncService:
             & ~ahgora_employees["id"].isin(ahgora_dismissed_ids)
         ]
         if not dismissed_employees_df.empty:
-            dismissed_employees_df = dismissed_employees_df.drop(columns=["dismissal_date"])
+            dismissed_employees_df = dismissed_employees_df.drop(
+                columns=["dismissal_date"]
+            )
             dismissed_employees_df = dismissed_employees_df.merge(
                 fiorilli_dismissed_df[["id", "dismissal_date"]],
                 on="id",
@@ -603,7 +678,9 @@ class SyncService:
             dismissed_employees_df = dismissed_employees_df[
                 dismissed_employees_df["dismissal_date_dt"] <= today
             ]
-            dismissed_employees_df = dismissed_employees_df.drop(columns=["dismissal_date_dt"])
+            dismissed_employees_df = dismissed_employees_df.drop(
+                columns=["dismissal_date_dt"]
+            )
 
         # Changed employees
         changed_employees_df = await self._get_changed_employees_df(
@@ -675,8 +752,10 @@ class SyncService:
                 continue
             for col in ["start_date", "end_date"]:
                 if col in df.columns:
-                    df[col] = pd.to_datetime(df[col], format="%d/%m/%Y", errors="coerce")
-            
+                    df[col] = pd.to_datetime(
+                        df[col], format="%d/%m/%Y", errors="coerce"
+                    )
+
             # Apply normalize text for normalization
             for col in df.columns:
                 if df[col].dtype == object:
@@ -738,9 +817,30 @@ class SyncService:
     ):
         tasks_to_create = []
 
-        # Helper to create payload
+        # Helper to create payload with numpy type sanitization
+        def _sanitize_value(val):
+            """Convert numpy/pandas types to native Python for JSON serialization."""
+            if pd.isna(val):
+                return None
+            import datetime as dt  # Inline import to reach date class safely
+
+            if isinstance(val, (pd.Timestamp, datetime, dt.date)):
+                return val.isoformat()
+            if isinstance(val, (np.integer,)):
+                return int(val)
+            if isinstance(val, (np.floating,)):
+                return float(val)
+            if isinstance(val, (np.bool_,)):
+                return bool(val)
+            if isinstance(val, (np.ndarray,)):
+                return val.tolist()
+            return val
+
         def df_to_payloads(df: pd.DataFrame) -> List[Dict[str, Any]]:
-            return [row.to_dict() for _, row in df.iterrows()]
+            return [
+                {k: _sanitize_value(v) for k, v in row.to_dict().items()}
+                for _, row in df.iterrows()
+            ]
 
         if not new_employees_df.empty:
             for payload in df_to_payloads(new_employees_df):
@@ -783,9 +883,11 @@ class SyncService:
                     )
                 )
 
-        # Save all tasks
-        for task in tasks_to_create:
-            await self.repo.save_automation_task(task)
+        # Save all tasks in a single batch commit
+        if tasks_to_create:
+            async with self._db_lock:
+                await self.repo.save_automation_tasks_batch(tasks_to_create)
 
-        await self._log(job_id, "INFO", f"Created {len(tasks_to_create)} automation tasks")
-
+        await self._log(
+            job_id, "INFO", f"Created {len(tasks_to_create)} automation tasks"
+        )
