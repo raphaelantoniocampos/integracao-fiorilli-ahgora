@@ -30,7 +30,7 @@ class AhgoraBrowser(BaseBrowser):
 
         if not all([user, psw, company]):
             raise ValueError(
-                "Ahgora credentials not set in environment variables (AHGORA_USER, AHGORA_PSW, AHGORA_COMPANY)"
+                "Ahgora credentials not set in environment variables (AHGORA_USER, AHGORA_PASSWORD, AHGORA_COMPANY)"
             )
 
         self._enter_username("email", user)

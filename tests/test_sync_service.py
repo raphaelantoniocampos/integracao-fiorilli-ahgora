@@ -45,10 +45,11 @@ async def test_run_sync_background_success():
 
 
 @pytest.mark.asyncio
-async def test_run_sync_background_failure():
+async def test_run_sync_background_failure_permanent():
     repo = MagicMock()
     job_id = uuid4()
-    job = SyncJob(id=job_id)
+    # Set retry_count to 3 to force final failure
+    job = SyncJob(id=job_id, retry_count=3)
     repo.get_job = AsyncMock(return_value=job)
     repo.update_job_status = AsyncMock()
     repo.add_log = AsyncMock()
@@ -64,3 +65,35 @@ async def test_run_sync_background_failure():
         await service.run_sync_background(job_id)
 
     repo.update_job_status.assert_any_call(job_id, SyncStatus.FAILED, "Browser Error")
+
+
+@pytest.mark.asyncio
+async def test_run_sync_background_retry_scheduled():
+    repo = MagicMock()
+    job_id = uuid4()
+    # Fresh job, retry_count=0
+    job = SyncJob(id=job_id, retry_count=0)
+    repo.get_job = AsyncMock(return_value=job)
+    repo.update_job_status = AsyncMock()
+    repo.increment_job_retry = AsyncMock()
+    repo.add_log = AsyncMock()
+
+    service = SyncService(repo=repo)
+
+    with patch.object(
+        service,
+        "_execute_sync_logic",
+        new_callable=AsyncMock,
+        return_value=SyncResult(success=False, status=SyncStatus.FAILED, message="Transient Error"),
+    ):
+        await service.run_sync_background(job_id)
+
+    # Should have called increment_job_retry, not update_job_status(FAILED)
+    repo.increment_job_retry.assert_called_once()
+    # Check that failed status was NOT finalized (only internal result status was FAILED)
+    # The actual DB update for FAILED is only called if success=True/False in run_sync_background
+    # wait, if result.success is False, it calls _handle_job_retry
+    
+    status_calls = [call.args[1] for call in repo.update_job_status.call_args_list]
+    assert SyncStatus.FAILED not in status_calls
+    assert SyncStatus.RUNNING in status_calls

@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -7,10 +8,23 @@ import logging
 from app.api.endpoints import router as api_router
 from app.infrastructure.web.routes import router as web_router
 from app.core.config import settings
+from app.core.scheduler import scheduler
 
 logger = logging.getLogger(__name__)
 
-app = FastAPI(title=settings.APP_NAME, version=settings.VERSION)
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: Start the retry scheduler
+    await scheduler.start()
+    yield
+    # Shutdown: Stop the retry scheduler
+    await scheduler.stop()
+
+app = FastAPI(
+    title=settings.APP_NAME, 
+    version=settings.VERSION,
+    lifespan=lifespan
+)
 
 
 @app.exception_handler(Exception)

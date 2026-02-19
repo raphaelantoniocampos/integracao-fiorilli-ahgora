@@ -55,11 +55,13 @@ Crie um arquivo `.env` na raiz do projeto:
 # Credenciais Fiorilli
 FIORILLI_USER=seu_usuario
 FIORILLI_PASSWORD=sua_senha
+FIORILLI_URL=fiorilli_url
 
 # Credenciais Ahgora
 AHGORA_USER=seu_usuario
 AHGORA_PASSWORD=sua_senha
 AHGORA_COMPANY=codigo_empresa
+AHGORA_URL=ahgora_url
 
 # Configurações do Banco (Local)
 DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/fiogora

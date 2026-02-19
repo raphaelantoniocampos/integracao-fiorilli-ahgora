@@ -28,12 +28,18 @@ async def list_jobs(service: SyncService = Depends(get_service)):
     return await service.list_jobs()
 
 
-@router.get("/jobs/{job_id}", response_model=SyncJob)
-async def get_job(job_id: UUID, service: SyncService = Depends(get_service)):
-    job = await service.get_job(job_id)
-    if not job:
-        raise HTTPException(status_code=404, detail="Job not found")
-    return job
+@router.post("/jobs/{job_id}/kill")
+async def kill_job(job_id: UUID, service: SyncService = Depends(get_service)):
+    success = await service.kill_job(job_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Job not found or not running")
+    return {"message": f"Kill signal sent to job {job_id}"}
+
+
+@router.post("/kill-all")
+async def kill_all_jobs(service: SyncService = Depends(get_service)):
+    count = await service.kill_all_jobs()
+    return {"message": f"Kill signal sent to {count} active jobs"}
 
 
 @router.get("/jobs/{job_id}/logs", response_model=list[SyncLog])

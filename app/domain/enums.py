@@ -6,3 +6,5 @@ class SyncStatus(StrEnum):
     RUNNING = auto()
     SUCCESS = auto()
     FAILED = auto()
+    CANCELLED = auto()
+    RETRYING = auto()

@@ -56,7 +56,7 @@ class FiorilliBrowser(BaseBrowser):
 
         if not user or not psw:
             raise ValueError(
-                "Fiorilli credentials not set in environment variables (FIORILLI_USER, FIORILLI_PSW)"
+                "Fiorilli credentials not set in environment variables (FIORILLI_USER, FIORILLI_PASSWORD)"
             )
 
         self._enter_username("O30_id-inputEl", user)

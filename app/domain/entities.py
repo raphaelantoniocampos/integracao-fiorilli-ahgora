@@ -16,6 +16,8 @@ class SyncJob:
     finished_at: Optional[datetime] = None
     error_message: Optional[str] = None
     metadata: Dict[str, Any] = field(default_factory=dict)
+    retry_count: int = 0
+    next_retry_at: Optional[datetime] = None
 
 
 @dataclass

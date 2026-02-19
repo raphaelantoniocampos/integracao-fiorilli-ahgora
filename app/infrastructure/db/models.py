@@ -21,6 +21,8 @@ class SyncJobModel(Base):
     finished_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     error_message: Mapped[str] = mapped_column(Text, nullable=True)
     metadata_info: Mapped[dict] = mapped_column("metadata", JSON, default=dict)
+    retry_count: Mapped[int] = mapped_column(default=0)
+    next_retry_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
 
     logs: Mapped[list["SyncLogModel"]] = relationship(
         back_populates="job", cascade="all, delete-orphan"
