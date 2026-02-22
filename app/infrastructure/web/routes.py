@@ -123,6 +123,16 @@ async def get_task_details_inline_partial(
         },
     )
 
+@router.get("/partials/task-details")
+async def get_task_details_partial(
+    request: Request, task_id: UUID, service: SyncService = Depends(get_service)
+):
+    task = await service.repo.get_task(task_id)
+    return templates.TemplateResponse(
+        "task_details.html",
+        {"request": request, "task": [task], "task_id": str(task_id)},
+    )
+
 
 @router.get("/partials/task-log")
 async def get_task_log_partial(

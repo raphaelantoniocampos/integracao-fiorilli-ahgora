@@ -1,6 +1,0 @@
-2026-02-13 15:26:16.608 -03 [21240] LOG:  iniciando PostgreSQL 18.1 on x86_64-windows, compiled by msvc-19.44.35221, 64-bit
-2026-02-13 15:26:16.613 -03 [21240] LOG:  não foi possível vincular o endereço IPv6 "::1": Permission denied
-2026-02-13 15:26:16.613 -03 [21240] LOG:  não foi possível vincular o endereço IPv4 "127.0.0.1": Permission denied
-2026-02-13 15:26:16.613 -03 [21240] AVISO:  não foi possível criar soquete de escuta para "localhost"
-2026-02-13 15:26:16.613 -03 [21240] FATAL:  não foi possível criar nenhum soquete TCP/IP
-2026-02-13 15:26:16.616 -03 [21240] LOG:  sistema de banco de dados está desligado

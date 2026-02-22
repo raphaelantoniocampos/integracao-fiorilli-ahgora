@@ -83,7 +83,7 @@ class AhgoraBrowser(BaseBrowser):
         self._login()
 
         # Ensure we are on the employee page
-        self.driver.get("https://app.ahgora.com.br/funcionarios")
+        self.driver.get(self.driver.current_url.replace("home", "funcionarios"))
         time.sleep(self.DELAY)
 
         # Click the 'Novo Funcionário' button
@@ -150,22 +150,10 @@ class AhgoraBrowser(BaseBrowser):
         self._login()
 
         # Navigate to employee page
-        self.driver.get("https://app.ahgora.com.br/funcionarios")
+        self.driver.get(self.driver.current_url.replace("home", f"funcionarios/edita/?matric={employee_id}"))
         time.sleep(self.DELAY)
 
-        # Search for the employee
-        self.send_keys("filtro", employee_id, By.ID)
-        self.click_element("buscar", By.ID)
-        time.sleep(self.DELAY)
-
-        # Click to Edit (assuming first row in table)
-        # Assuming the row edit button has a specific class or icon
         try:
-            self.click_element(
-                "//table[@id='tbFuncionario']//tbody//tr[1]//td//a[contains(@class, 'editar') or contains(@class, 'btn')]"
-            )
-            time.sleep(self.DELAY)
-
             # Update fields if present in payload (using similar logic to add)
             if "name" in payload and payload["name"]:
                 self.send_keys("dados-nome", payload["name"], By.ID, clear_first=True)
@@ -209,7 +197,7 @@ class AhgoraBrowser(BaseBrowser):
         self._log("INFO", f"Removing employee in Ahgora: {name}")
         self._login()
 
-        self.driver.get("https://app.ahgora.com.br/funcionarios")
+        self.driver.get(self.driver.current_url.replace("home", "funcionarios"))
         time.sleep(self.DELAY)
 
         # Search for the employee
@@ -229,7 +217,7 @@ class AhgoraBrowser(BaseBrowser):
             try:
                 self.send_keys("dt_demissao", dismissal_date, By.ID, clear_first=True)
                 time.sleep(self.DELAY)
-                self.click_element("/html/body/div[1]/div/div/div[2]/div[1]/div[2]/table/tbody/tr[1]/td/div/div[2]/div/button[2]")
+                self.click_element("(/html/body/div[1]/div/div/div[2]/div[1]/div[2]/table/tbody/tr[1]/td/div/div[2]/div/button[2])[1]")
                 time.sleep(self.DELAY * 2)
             except Exception:
                 self._log(
