@@ -11,7 +11,7 @@ from app.domain.entities import AutomationTask, AutomationTaskType
 @pytest.fixture
 def mock_repo():
     repo = MagicMock()
-    repo.save_automation_task = AsyncMock()
+    repo.save_automation_tasks_batch = AsyncMock()
     repo.add_log = AsyncMock()
     repo.update_job_status = AsyncMock()
     return repo
@@ -41,7 +41,7 @@ def test_convert_date(sync_service):
     assert pd.isna(sync_service._convert_date(None))
 
 
-@pytest.mark.async_year
+@pytest.mark.asyncio
 @pytest.mark.asyncio
 async def test_create_automation_tasks(sync_service, mock_repo):
     job_id = uuid4()
@@ -64,8 +64,10 @@ async def test_create_automation_tasks(sync_service, mock_repo):
         new_leaves_df=pd.DataFrame(),
     )
 
-    assert mock_repo.save_automation_task.call_count == 1
-    task = mock_repo.save_automation_task.call_args[0][0]
+    assert mock_repo.save_automation_tasks_batch.call_count == 1
+    tasks_passed = mock_repo.save_automation_tasks_batch.call_args[0][0]
+    assert len(tasks_passed) == 1
+    task = tasks_passed[0]
     assert isinstance(task, AutomationTask)
     assert task.type == AutomationTaskType.ADD_EMPLOYEE
     assert task.payload["id"] == "123456"

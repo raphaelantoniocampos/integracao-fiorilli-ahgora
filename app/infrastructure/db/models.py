@@ -37,11 +37,15 @@ class SyncLogModel(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     job_id: Mapped[UUID] = mapped_column(ForeignKey("sync_jobs.id"))
+    task_id: Mapped[UUID] = mapped_column(
+        ForeignKey("automation_tasks.id"), nullable=True
+    )
     level: Mapped[str] = mapped_column(String)
     message: Mapped[str] = mapped_column(Text)
     timestamp: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
 
     job: Mapped["SyncJobModel"] = relationship(back_populates="logs")
+    task: Mapped["AutomationTaskModel"] = relationship(back_populates="logs")
 
 
 class AutomationTaskModel(Base):
@@ -63,3 +67,39 @@ class AutomationTaskModel(Base):
     retry_count: Mapped[int] = mapped_column(default=0)
 
     job: Mapped["SyncJobModel"] = relationship(back_populates="automation_tasks")
+    logs: Mapped[list["SyncLogModel"]] = relationship(
+        back_populates="task", cascade="all, delete-orphan"
+    )
+
+
+class AhgoraEmployeeModel(Base):
+    """Stores the latest synced state of employees in the Ahgora system."""
+
+    __tablename__ = "ahgora_employees"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    name: Mapped[str] = mapped_column(String)
+    position: Mapped[str] = mapped_column(String, nullable=True)
+    scale: Mapped[str] = mapped_column(String, nullable=True)
+    department: Mapped[str] = mapped_column(String, nullable=True)
+    location: Mapped[str] = mapped_column(String, nullable=True)
+    admission_date: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    dismissal_date: Mapped[datetime] = mapped_column(DateTime, nullable=True)
+    last_synced_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
+
+
+class AhgoraLeaveModel(Base):
+    """Stores the latest synced state of employee leaves in the Ahgora system."""
+
+    __tablename__ = "ahgora_leaves"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    employee_id: Mapped[str] = mapped_column(String, index=True)
+    cod: Mapped[str] = mapped_column(String)
+    cod_name: Mapped[str] = mapped_column(String, nullable=True)
+    start_date: Mapped[datetime] = mapped_column(DateTime)
+    end_date: Mapped[datetime] = mapped_column(DateTime)
+    start_time: Mapped[str] = mapped_column(String, nullable=True)
+    end_time: Mapped[str] = mapped_column(String, nullable=True)
+    duration: Mapped[int] = mapped_column(nullable=True)
+    last_synced_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)

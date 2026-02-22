@@ -66,10 +66,10 @@ class SyncService:
             await self.repo.save_job(job)
         return job
 
-    async def get_job(self, job_id: UUID) -> SyncJob:
+    async def get_job(self, job_id: UUID) -> Optional[SyncJob]:
         return await self.repo.get_job(job_id)
 
-    async def get_job_status(self, job_id: UUID) -> SyncStatus:
+    async def get_job_status(self, job_id: UUID) -> Optional[SyncStatus]:
         return await self.repo.get_job_status(job_id)
 
     async def list_jobs(self) -> list[SyncJob]:
@@ -98,7 +98,8 @@ class SyncService:
 
         # Register the current task
         current_task = asyncio.current_task()
-        task_registry.register(job_id, current_task)
+        if current_task is not None:
+            task_registry.register(job_id, current_task)
 
         try:
             # Execute sync logic with a 15-minute timeout (prevents permanent hangs)
@@ -338,7 +339,10 @@ class SyncService:
                 )
 
             # 5. Run analysis and create tasks
-            await self._run_analysis_and_create_tasks(job_id)
+            ahgora_employees = await self._run_analysis_and_create_tasks(job_id)
+
+            # 6. Validate Data
+            await self._validate_ahgora_state(job_id, ahgora_employees)
 
             return SyncResult(
                 success=True,
@@ -416,6 +420,9 @@ class SyncService:
             await self._log(
                 job_id, "INFO", "Data analysis and task creation completed successfully"
             )
+
+            return ahgora_employees
+
         except Exception as e:
             error_msg = f"Critical error during analysis phase: {str(e)}"
             logger.error(error_msg, exc_info=True)
@@ -427,24 +434,38 @@ class SyncService:
     ) -> Tuple[pd.DataFrame, pd.DataFrame]:
         try:
             raw_fiorilli_path = FIORILLI_DIR / "raw_employees.txt"
-            raw_ahgora_path = AHGORA_DIR / "raw_employees.csv"
 
             if not raw_fiorilli_path.exists():
                 await self._log(
                     job_id, "WARNING", f"Fiorilli file not found: {raw_fiorilli_path}"
                 )
-            if not raw_ahgora_path.exists():
-                await self._log(
-                    job_id, "WARNING", f"Ahgora file not found: {raw_ahgora_path}"
-                )
-
-            if not raw_fiorilli_path.exists() or not raw_ahgora_path.exists():
                 return pd.DataFrame(), pd.DataFrame()
 
             fiorilli_employees = await asyncio.to_thread(
                 self._read_csv, raw_fiorilli_path
             )
-            ahgora_employees = await asyncio.to_thread(self._read_csv, raw_ahgora_path)
+
+            # 1. Try to load from Database State
+            ahgora_employees = await self.repo.get_ahgora_employees_df()
+
+            # 2. Fallback to legacy CSV if Database is empty (initial seed)
+            if ahgora_employees.empty:
+                raw_ahgora_path = AHGORA_DIR / "raw_employees.csv"
+                if raw_ahgora_path.exists():
+                    await self._log(
+                        job_id,
+                        "INFO",
+                        "Database Ahgora state empty, seeding from legacy CSV.",
+                    )
+                    ahgora_employees = await asyncio.to_thread(
+                        self._read_csv, raw_ahgora_path
+                    )
+                else:
+                    await self._log(
+                        job_id, "WARNING", "No Ahgora state found in DB or legacy CSV."
+                    )
+            else:
+                await self._log(job_id, "INFO", "Ahgora state loaded from PostgreSQL.")
 
             await self._log(
                 job_id,
@@ -458,15 +479,35 @@ class SyncService:
 
     async def _get_leaves_data(self, job_id: UUID) -> Tuple[pd.DataFrame, pd.DataFrame]:
         try:
-            last_leaves_path = FIORILLI_DIR / "leaves.csv"
             raw_leaves_path = FIORILLI_DIR / "raw_leaves.txt"
             raw_vacations_path = FIORILLI_DIR / "raw_vacations.txt"
 
-            last_leaves = pd.DataFrame()
-            if last_leaves_path.exists():
-                last_leaves = await asyncio.to_thread(self._read_csv, last_leaves_path)
+            # 1. Try to load historical leaves from Database State
+            last_leaves = await self.repo.get_ahgora_leaves_df()
+
+            # 2. Fallback to legacy CSV if Database is empty (initial seed)
+            if last_leaves.empty:
+                last_leaves_path = FIORILLI_DIR / "leaves.csv"
+                if last_leaves_path.exists():
+                    await self._log(
+                        job_id,
+                        "INFO",
+                        "Database Ahgora leaves empty, seeding from legacy CSV.",
+                    )
+                    last_leaves = await asyncio.to_thread(
+                        self._read_csv, last_leaves_path
+                    )
+                else:
+                    await self._log(
+                        job_id,
+                        "INFO",
+                        "No historical leaves found in DB or legacy CSV.",
+                    )
+            else:
                 await self._log(
-                    job_id, "INFO", f"Loaded {len(last_leaves)} historical leaves"
+                    job_id,
+                    "INFO",
+                    f"Loaded {len(last_leaves)} historical leaves from PostgreSQL.",
                 )
 
             all_leaves_list = []
@@ -502,7 +543,7 @@ class SyncService:
         path: Path,
         sep: str = ",",
         encoding: str = "utf-8",
-        header: str | None = "infer",
+        header: Any = "infer",
         columns: list[str] = [],
     ) -> pd.DataFrame:
         df = pd.DataFrame()
@@ -838,7 +879,7 @@ class SyncService:
 
         def df_to_payloads(df: pd.DataFrame) -> List[Dict[str, Any]]:
             return [
-                {k: _sanitize_value(v) for k, v in row.to_dict().items()}
+                {str(k): _sanitize_value(v) for k, v in row.to_dict().items()}
                 for _, row in df.iterrows()
             ]
 
@@ -891,3 +932,91 @@ class SyncService:
         await self._log(
             job_id, "INFO", f"Created {len(tasks_to_create)} automation tasks"
         )
+
+    async def _validate_ahgora_state(
+        self, job_id: UUID, ahgora_employees: pd.DataFrame
+    ):
+        try:
+            await self._log(job_id, "INFO", "Validating CSV vs DB state")
+
+            if ahgora_employees is None or ahgora_employees.empty:
+                await self._log(
+                    job_id, "WARNING", "No Ahgora CSV data available to validate"
+                )
+                return
+
+            # Get current DB state
+            db_employees = await self.repo.get_ahgora_employees_df()
+
+            if db_employees.empty:
+                await self._log(
+                    job_id, "WARNING", "No DB state available to validate against CSV"
+                )
+                return
+
+            # Find discrepancies (e.g. employee in CSV but not in DB, or vice-versa)
+            csv_ids = set(ahgora_employees["id"].astype(str))
+            db_ids = set(db_employees["id"].astype(str))
+
+            missing_in_db = csv_ids - db_ids
+            missing_in_csv = db_ids - csv_ids
+
+            if missing_in_db:
+                logger.warning(
+                    f"Found {len(missing_in_db)} employees in Ahgora CSV not present in DB."
+                )
+                await self._log(
+                    job_id,
+                    "WARNING",
+                    f"Validation: {len(missing_in_db)} employees in Ahgora CSV not present in DB.",
+                )
+
+            if missing_in_csv:
+                logger.warning(
+                    f"Found {len(missing_in_csv)} employees in DB not present in Ahgora CSV."
+                )
+                await self._log(
+                    job_id,
+                    "WARNING",
+                    f"Validation: {len(missing_in_csv)} employees in DB not present in Ahgora CSV. Check if dismissal syncing failed.",
+                )
+
+            # Validate column discrepancies for matching IDs
+            common_ids = csv_ids.intersection(db_ids)
+            if common_ids:
+                # Filter DFs
+                csv_common = ahgora_employees[
+                    ahgora_employees["id"].astype(str).isin(common_ids)
+                ]
+                db_common = db_employees[
+                    db_employees["id"].astype(str).isin(common_ids)
+                ]
+
+                # Check discrepancies using the _get_changed_employees_df logic
+                discrepancies_df = await self._get_changed_employees_df(
+                    fiorilli_active_employees=db_common,  # Treat DB as source of truth for this comparison
+                    ahgora_employees=csv_common,
+                )
+
+                if not discrepancies_df.empty:
+                    mismatch_count = len(discrepancies_df)
+                    await self._log(
+                        job_id,
+                        "WARNING",
+                        f"Validation: Found {mismatch_count} employees with data discrepancies between DB and Ahgora CSV.",
+                    )
+                    # Log IDs for debugging
+                    mismatched_ids = discrepancies_df["id"].tolist()
+                    logger.warning(f"Data discrepancies for IDs: {mismatched_ids}")
+                else:
+                    await self._log(
+                        job_id,
+                        "INFO",
+                        "Validation: DB and Ahgora CSV state are completely synchronized for common employees.",
+                    )
+
+        except Exception as e:
+            logger.error(
+                f"Error during Ahgora state validation: {str(e)}", exc_info=True
+            )
+            await self._log(job_id, "ERROR", f"Validation check failed: {str(e)}")

@@ -99,3 +99,49 @@ async def test_run_sync_background_retry_scheduled():
     status_calls = [call.args[1] for call in repo.update_job_status.call_args_list]
     assert SyncStatus.FAILED not in status_calls
     assert SyncStatus.RUNNING in status_calls
+
+
+@pytest.mark.asyncio
+async def test_validate_ahgora_state():
+    import pandas as pd
+
+    repo = MagicMock()
+    repo.get_ahgora_employees_df = AsyncMock(
+        return_value=pd.DataFrame(
+            [
+                {"id": "1", "name": "DB Only Employee"},
+                {"id": "2", "name": "Common Employee"},
+                {"id": "3", "name": "Changed Name DB"},
+            ]
+        )
+    )
+
+    service = SyncService(repo=repo)
+    service._log = AsyncMock()
+
+    # Mock _get_changed_employees_df to simulate "Changed Name DB" != "Changed Name CSV"
+    service._get_changed_employees_df = AsyncMock(
+        return_value=pd.DataFrame([{"id": "3"}])
+    )
+
+    csv_df = pd.DataFrame(
+        [
+            {"id": "2", "name": "Common Employee"},
+            {"id": "3", "name": "Changed Name CSV"},
+            {"id": "4", "name": "CSV Only Employee"},
+        ]
+    )
+
+    await service._validate_ahgora_state(uuid4(), csv_df)
+
+    log_calls = [call.args[2] for call in service._log.call_args_list]
+    log_text = " ".join(log_calls)
+
+    # Check that it warns about missing in DB (ID 4)
+    assert "1 employees in Ahgora CSV not present in DB" in log_text
+
+    # Check that it warns about missing in CSV (ID 1)
+    assert "1 employees in DB not present in Ahgora CSV" in log_text
+
+    # Check that it finds discrepancies for common
+    assert "Found 1 employees with data discrepancies" in log_text

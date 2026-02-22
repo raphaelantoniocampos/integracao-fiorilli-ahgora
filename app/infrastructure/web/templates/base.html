@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Fiogora | Dashboard{% endblock %}</title>
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -119,12 +120,6 @@
                 </li>
                 <li><a href="/docs" class="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors"
                         target="_blank">Documentação</a></li>
-                <li>
-                    <button hx-post="/api/sync/run" hx-swap="none"
-                        class="btn-primary px-4 py-2 rounded-lg text-sm font-semibold shadow-sm">
-                        Nova Sincronização
-                    </button>
-                </li>
             </ul>
         </div>
     </nav>

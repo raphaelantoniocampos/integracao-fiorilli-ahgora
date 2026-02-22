@@ -34,6 +34,7 @@ class SyncLog:
     job_id: UUID
     level: str
     message: str
+    task_id: Optional[UUID] = None
     timestamp: datetime = field(default_factory=datetime.now)
 
 

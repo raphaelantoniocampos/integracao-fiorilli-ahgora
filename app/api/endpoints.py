@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.domain.entities import SyncJob, SyncLog, AutomationTask
 from app.domain.enums import AutomationTaskStatus
 from app.services.sync_service import SyncService
+from app.services.task_execution_service import TaskExecutionService
 from app.infrastructure.db.sqlalchemy_repo import SqlAlchemyRepo
 from app.core.database import get_db
 from app.core.task_registry import task_registry
@@ -51,16 +52,6 @@ async def kill_job(job_id: UUID, service: SyncService = Depends(get_service)):
     if not success:
         raise HTTPException(status_code=404, detail="Job not found or not running")
     return {"message": f"Kill signal sent to job {job_id}"}
-
-
-@router.post(
-    "/kill-all",
-    summary="Kill all active jobs",
-    description="Stops every currently running synchronization job.",
-)
-async def kill_all_jobs(service: SyncService = Depends(get_service)):
-    count = await service.kill_all_jobs()
-    return {"message": f"Kill signal sent to {count} active jobs"}
 
 
 @router.get(
@@ -112,3 +103,75 @@ async def get_registry_diagnostics():
         "active_task_count": len(active_tasks),
         "job_ids": list(active_tasks.keys()),
     }
+
+
+def get_execution_service(db: AsyncSession = Depends(get_db)):
+    repo = SqlAlchemyRepo(db)
+    return TaskExecutionService(repo=repo)
+
+
+@router.post(
+    "/tasks/batch/execute",
+    summary="Execute Batch Automation Tasks",
+    description="Manually triggers the batch execution of specific task types for a job.",
+    tags=["Automation Tasks"],
+)
+async def execute_batch_tasks(
+    job_id: UUID,
+    task_type: str,
+    background_tasks: BackgroundTasks,
+    service: TaskExecutionService = Depends(get_execution_service),
+):
+    # Execute batch in background
+    background_tasks.add_task(service.execute_batch, job_id, task_type)
+    return {"message": f"Batch task execution triggered for {task_type}"}
+
+
+@router.post(
+    "/tasks/batch/cancel",
+    summary="Cancel Batch Automation Tasks",
+    description="Cancels pending or running batch execution of specific task types for a job.",
+    tags=["Automation Tasks"],
+)
+async def cancel_batch_tasks(
+    job_id: UUID,
+    task_type: str,
+    service: TaskExecutionService = Depends(get_execution_service),
+):
+    await service.cancel_batch(job_id, task_type)
+    return {"message": f"Batch tasks cancelled for {task_type}"}
+
+
+@router.post(
+    "/tasks/{task_id}/execute",
+    summary="Execute Automation Task",
+    description="Manually triggers the execution of a specific automation task via Selenium in the background.",
+    tags=["Automation Tasks"],
+)
+async def execute_task(
+    task_id: UUID,
+    background_tasks: BackgroundTasks,
+    service: TaskExecutionService = Depends(get_execution_service),
+):
+    # Execute in background to prevent blocking the API response since Selenium is slow
+    background_tasks.add_task(service.execute_task, task_id)
+    return {"message": "Task execution triggered", "task_id": str(task_id)}
+
+
+@router.post(
+    "/tasks/{task_id}/cancel",
+    summary="Cancel Automation Task",
+    description="Manually checks and cancels an individual running or pending task.",
+    tags=["Automation Tasks"],
+)
+async def cancel_task(
+    task_id: UUID,
+    service: TaskExecutionService = Depends(get_execution_service),
+):
+    success = await service.cancel_task(task_id)
+    if not success:
+        raise HTTPException(
+            status_code=400,
+            detail="Não foi possível cancelar a tarefa. Ou ela não existe ou já foi finalizada/cancelada.",
+        )
+    return {"message": "Tarefa cancelada com sucesso"}

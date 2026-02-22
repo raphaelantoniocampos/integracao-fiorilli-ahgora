@@ -33,10 +33,30 @@ class BaseBrowser(ABC):
         StaleElementReferenceException,
     )
 
-    def __init__(self, url: str):
+    def __init__(self, url: str, log_callback: Callable[[str, str], None] = None):
+        self.log_callback = log_callback
         self.driver = self._get_web_driver()
         if url:
             self.driver.get(url)
+
+    def _log(self, level: str, message: str):
+        if self.log_callback:
+            try:
+                self.log_callback(level, message)
+            except Exception as e:
+                logger.error(f"Failed to execute log_callback: {e}")
+
+        # Fallback to standard logger
+        if level == "INFO":
+            logger.info(message)
+        elif level == "ERROR":
+            logger.error(message)
+        elif level == "WARNING":
+            logger.warning(message)
+        elif level == "DEBUG":
+            logger.debug(message)
+        else:
+            logger.info(message)
 
     def _get_web_driver(self) -> webdriver.Firefox:
         options = webdriver.FirefoxOptions()
@@ -68,7 +88,7 @@ class BaseBrowser(ABC):
             except Exception as e:
                 error = e
                 if i >= max_tries - 1:
-                    logger.error(f"Failed after {max_tries} attempts: {e}")
+                    self._log("ERROR", f"Failed after {max_tries} attempts: {e}")
                     raise e
                 time.sleep(self.DELAY)
         if error:
@@ -108,10 +128,11 @@ class BaseBrowser(ABC):
         delay=DELAY,
         ignored_exceptions=IGNORED_EXCEPTIONS,
         max_tries=MAX_TRIES,
+        clear_first=False,
     ):
         self.retry_func(
             lambda: self._send_keys_helper(
-                selector, keys, selector_type, delay, ignored_exceptions
+                selector, keys, selector_type, delay, ignored_exceptions, clear_first
             ),
             max_tries,
         )
@@ -123,10 +144,14 @@ class BaseBrowser(ABC):
         selector_type,
         delay,
         ignored_exceptions,
+        clear_first=False,
     ):
-        WebDriverWait(self.driver, delay, ignored_exceptions=ignored_exceptions).until(
-            EC.presence_of_element_located((selector_type, selector))
-        ).send_keys(keys)
+        element = WebDriverWait(
+            self.driver, delay, ignored_exceptions=ignored_exceptions
+        ).until(EC.presence_of_element_located((selector_type, selector)))
+        if clear_first:
+            element.clear()
+        element.send_keys(keys)
 
     def right_click_element(
         self,
@@ -259,3 +284,30 @@ class BaseBrowser(ABC):
                 self.driver, delay, ignored_exceptions=ignored_exceptions
             ).until(EC.presence_of_element_located((selector_type, selector)))
         ).perform()
+
+    def send_enter_key(
+        self,
+        selector: str,
+        selector_type=By.XPATH,
+        delay=DELAY,
+        ignored_exceptions=IGNORED_EXCEPTIONS,
+        max_tries=MAX_TRIES,
+    ):
+        self.retry_func(
+            lambda: self._send_enter_key_helper(
+                selector, selector_type, delay, ignored_exceptions
+            ),
+            max_tries,
+        )
+
+    def _send_enter_key_helper(
+        self,
+        selector,
+        selector_type,
+        delay,
+        ignored_exceptions,
+    ):
+        element = WebDriverWait(
+            self.driver, delay, ignored_exceptions=ignored_exceptions
+        ).until(EC.presence_of_element_located((selector_type, selector)))
+        element.send_keys(Keys.ENTER)

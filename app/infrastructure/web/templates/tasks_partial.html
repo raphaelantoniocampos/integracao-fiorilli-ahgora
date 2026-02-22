@@ -1,44 +1,114 @@
-<div class="card p-6">
-    <div class="flex justify-between items-center mb-6">
-        <h3 class="text-xl font-bold text-slate-800">Tarefas de Automação Identificadas</h3>
-        <span class="text-xs text-slate-500">ID do Job: <span class="font-mono">{{ job_id.split('-')[0]
-                }}...</span></span>
+<div class="card overflow-hidden bg-white">
+    <!-- Header -->
+    <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/80">
+        <div class="flex items-center space-x-3">
+            <div class="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
+                <svg class="w-4 h-4 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01">
+                    </path>
+                </svg>
+            </div>
+            <div>
+                <h3 class="font-bold text-slate-800">Tarefas de Automação por Tipo</h3>
+                <p class="text-[11px] text-slate-400 font-mono">Job {{ job_id.split('-')[0] }}...</p>
+            </div>
+        </div>
+        <button onclick="closeModal()"
+            class="text-slate-400 hover:text-slate-700 p-1.5 hover:bg-slate-100 rounded-lg transition-all"
+            title="Fechar (Esc)">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </button>
     </div>
 
-    <div class="overflow-x-auto">
+    <!-- Content -->
+    <div class="overflow-x-auto max-h-[80vh] overflow-y-auto">
         <table class="min-w-full divide-y divide-slate-200">
             <thead class="bg-slate-50">
                 <tr>
-                    <th class="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">Tipo</th>
-                    <th class="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">Status</th>
-                    <th class="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase">Dados (Payload)</th>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase">Tipo</th>
+                    <th class="px-6 py-3 text-center text-xs font-bold text-slate-500 uppercase">Progresso</th>
+                    <th class="px-6 py-3 text-center text-xs font-bold text-slate-500 uppercase">Métricas</th>
+                    <th class="px-6 py-3 text-right text-xs font-bold text-slate-500 uppercase">Ações</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-slate-100">
-                {% for task in tasks %}
-                <tr>
-                    <td class="px-4 py-3 whitespace-nowrap">
-                        <span class="text-sm font-medium text-slate-700">{{ task.type }}</span>
+                {% for group in task_groups %}
+                <tr class="hover:bg-slate-50/50 transition-colors">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="text-sm font-bold text-slate-700">{{ group.type }}</span>
                     </td>
-                    <td class="px-4 py-3 whitespace-nowrap">
-                        {% set t_status_class = "indigo-100 text-indigo-700" %}
-                        {% if task.status == 'success' %}{% set t_status_class = "emerald-100 text-emerald-700" %}
-                        {% elif task.status == 'failed' %}{% set t_status_class = "red-100 text-red-700" %}
-                        {% endif %}
-                        <span
-                            class="px-2 py-0.5 text-[10px] font-bold rounded-full {{ t_status_class }} uppercase tracking-wider">
-                            {{ task.status }}
-                        </span>
+                    <td class="px-6 py-4">
+                        <div class="w-full bg-slate-200 rounded-full h-2.5 mb-1 flex overflow-hidden">
+                            {% set total = group.total %}
+                            {% if total > 0 %}
+                            {% set success_pct = (group.success / total) * 100 %}
+                            {% set failed_pct = (group.failed / total) * 100 %}
+                            {% set running_pct = (group.running / total) * 100 %}
+                            <div class="bg-emerald-500 h-2.5" style="width: {{ success_pct }}%"></div>
+                            <div class="bg-blue-500 h-2.5 animate-pulse" style="width: {{ running_pct }}%"></div>
+                            <div class="bg-red-500 h-2.5" style="width: {{ failed_pct }}%"></div>
+                            {% endif %}
+                        </div>
                     </td>
-                    <td class="px-4 py-3">
-                        <div class="text-xs text-slate-500 bg-slate-50 p-2 rounded border border-slate-100 font-mono">
-                            {{ task.payload }}
+                    <td class="px-6 py-4 text-center whitespace-nowrap">
+                        <div class="flex justify-center gap-2 text-xs font-medium">
+                            <span class="text-emerald-600 bg-emerald-50 px-2 rounded" title="Sucesso">{{ group.success
+                                }}</span>
+                            <span class="text-red-600 bg-red-50 px-2 rounded" title="Falha">{{ group.failed }}</span>
+                            <span class="text-slate-600 bg-slate-100 px-2 rounded" title="Restantes">{{ group.pending +
+                                group.running + group.cancelled }} / {{ group.total }}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-right whitespace-nowrap">
+                        <div class="flex justify-end items-center space-x-1">
+                            {% if group.pending > 0 or group.failed > 0 %}
+                            <button
+                                onclick="fetch('/api/tasks/batch/execute?job_id={{ job_id }}&task_type={{ group.type }}', {method: 'POST'}).then(() => { this.classList.add('opacity-50', 'cursor-not-allowed'); this.disabled = true; })"
+                                class="text-indigo-400 hover:text-indigo-700 p-2 hover:bg-indigo-50 rounded-full transition-all"
+                                title="Executar Lote de Tarefas">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z">
+                                    </path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </button>
+                            {% endif %}
+
+                            {% if group.running > 0 %}
+                            <button
+                                onclick="fetch('/api/tasks/batch/cancel?job_id={{ job_id }}&task_type={{ group.type }}', {method: 'POST'}).then(() => { this.classList.add('opacity-50', 'cursor-not-allowed'); this.disabled = true; })"
+                                class="text-red-400 hover:text-red-700 p-2 hover:bg-red-50 rounded-full transition-all"
+                                title="Parar Execução">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"></path>
+                                </svg>
+                            </button>
+                            {% endif %}
+
+                            <button hx-get="/partials/task-details?job_id={{ job_id }}&task_type={{ group.type }}"
+                                hx-target="#modal-content"
+                                class="text-slate-400 hover:text-slate-700 p-2 hover:bg-slate-50 rounded-full transition-all"
+                                title="Ver Todos os Detalhes">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10">
+                                    </path>
+                                </svg>
+                            </button>
                         </div>
                     </td>
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="3" class="px-4 py-8 text-center text-slate-400 italic">
+                    <td colspan="4" class="px-6 py-12 text-center text-slate-400 italic">
                         Nenhuma tarefa gerada para este job.
                     </td>
                 </tr>
@@ -47,10 +117,11 @@
         </table>
     </div>
 
-    <div class="mt-6 flex justify-end">
-        <button hx-on="click: document.getElementById('tasks-section').innerHTML = ''"
-            class="text-sm text-slate-400 hover:text-slate-600 underline">
-            Fechar Detalhes
+    <!-- Footer -->
+    <div class="px-6 py-3 border-t border-slate-100 bg-slate-50/80 flex justify-between items-center">
+        <span class="text-xs text-slate-400">{{ task_groups | length }} tipos encontrados</span>
+        <button onclick="closeModal()" class="text-xs text-slate-500 hover:text-slate-700 font-medium">
+            Fechar (Esc)
         </button>
     </div>
 </div>

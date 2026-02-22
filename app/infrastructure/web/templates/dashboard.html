@@ -8,15 +8,6 @@
             <p class="text-slate-500 mt-1">Gerencie e monitore as sincronizações de dados entre Fiorilli e Ahgora.</p>
         </div>
         <div class="flex space-x-3">
-            <button hx-post="/api/sync/kill-all"
-                hx-confirm="Tem certeza que deseja parar todas as execuções em andamento?"
-                class="btn-danger flex items-center px-4 py-2 rounded-lg text-sm font-semibold shadow-sm">
-                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
-                    </path>
-                </svg>
-                Parar Tudo
-            </button>
             <button hx-post="/api/sync/run" hx-swap="none"
                 class="btn-primary flex items-center px-6 py-2 rounded-lg text-sm font-semibold shadow-sm"
                 onclick="setTimeout(() => htmx.trigger('#jobs-list', 'refresh'), 500)">
@@ -32,22 +23,7 @@
         </div>
     </div>
 
-    <!-- Stats summary -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div class="card p-6 border-l-4 border-indigo-600">
-            <h3 class="text-slate-500 text-xs font-bold uppercase tracking-wider">Última Execução</h3>
-            <p id="last-run-status" class="text-2xl font-bold text-slate-800 mt-2 capitalize">{{ stats.last_run_status
-                }}</p>
-        </div>
-        <div class="card p-6 border-l-4 border-emerald-500">
-            <h3 class="text-slate-500 text-xs font-bold uppercase tracking-wider">Sincronizados Hoje</h3>
-            <p class="text-2xl font-bold text-slate-800 mt-2">{{ stats.success_today }} jobs</p>
-        </div>
-        <div class="card p-6 border-l-4 border-amber-500">
-            <h3 class="text-slate-500 text-xs font-bold uppercase tracking-wider">Pendências</h3>
-            <p class="text-2xl font-bold text-slate-800 mt-2">Pronto</p>
-        </div>
-    </div>
+
 
     <div class="card overflow-hidden">
         <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
@@ -85,8 +61,5 @@
     </div>
 </div>
 
-<!-- Tasks Preview Section (Placeholder for next step) -->
-<div id="tasks-section" class="mt-12">
-    <!-- Tasks will be loaded here -->
-</div>
+
 {% endblock %}
