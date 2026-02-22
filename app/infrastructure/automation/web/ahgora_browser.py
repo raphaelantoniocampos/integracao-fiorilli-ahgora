@@ -225,20 +225,11 @@ class AhgoraBrowser(BaseBrowser):
             )
             time.sleep(self.DELAY)
 
-            # Handle dismissal alert/modal if it appears
-            try:
-                alert = self.driver.switch_to.alert
-                # Some systems ask for date in prompt or simple confirm
-                alert.accept()
-                time.sleep(self.DELAY)
-            except Exception:
-                pass  # No browser alert
-
-            # If there is a form field for dismissal date
+            # Form field for dismissal date
             try:
                 self.send_keys("dt_demissao", dismissal_date, By.ID, clear_first=True)
                 time.sleep(self.DELAY)
-                self.click_element("(//div[contains(@class, 'icone_confirmar')])[0]")
+                self.click_element("/html/body/div[1]/div/div/div[2]/div[1]/div[2]/table/tbody/tr[1]/td/div/div[2]/div/button[2]")
                 time.sleep(self.DELAY * 2)
             except Exception:
                 self._log(

@@ -2,10 +2,17 @@
 FROM python:3.13-slim
 
 # Install system dependencies for Selenium / Firefox
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     firefox-esr \
     wget \
     gnupg \
+    libdbus-glib-1-2 \
+    libgtk-3-0 \
+    libx11-xcb1 \
+    xvfb \
+    libxt6 \
+    libxrender1 \
+    libxext6 \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Geckodriver

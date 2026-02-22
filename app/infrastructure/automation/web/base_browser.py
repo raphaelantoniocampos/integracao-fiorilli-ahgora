@@ -59,9 +59,14 @@ class BaseBrowser(ABC):
             logger.info(message)
 
     def _get_web_driver(self) -> webdriver.Firefox:
+        import os
+        os.environ["MOZ_DISABLE_CONTENT_SANDBOX"] = "1"
+        
         options = webdriver.FirefoxOptions()
         if settings.HEADLESS_MODE:
             options.add_argument("-headless")
+            
+        options.set_preference("security.sandbox.content.level", 0)
 
         # Ensure download directory exists
         settings.DOWNLOADS_DIR.mkdir(parents=True, exist_ok=True)

@@ -250,7 +250,9 @@ class SyncService:
         # 2. Cleanup any other jobs marked as RUNNING in the database
         jobs = await self.repo.list_jobs()
         for job in jobs:
-            if job.status == SyncStatus.RUNNING and job.id not in registry_job_ids:
+            if (
+                job.status == SyncStatus.RUNNING or SyncStatus.RETRYING
+            ) and job.id not in registry_job_ids:
                 logger.info(f"Cleaning up untracked RUNNING job {job.id} from database")
                 if await self.kill_job(job.id):
                     count += 1
@@ -328,12 +330,12 @@ class SyncService:
                 )
             else:
                 await self._log(job_id, "INFO", "Running tasks sequentially (UI Mode)")
-                await run_download_task_with_retries(
-                    FiorilliBrowser, "download_employees", "Fiorilli employees download"
-                )
-                await run_download_task_with_retries(
-                    FiorilliBrowser, "download_leaves", "Fiorilli leaves download"
-                )
+                # await run_download_task_with_retries(
+                #     FiorilliBrowser, "download_employees", "Fiorilli employees download"
+                # )
+                # await run_download_task_with_retries(
+                #     FiorilliBrowser, "download_leaves", "Fiorilli leaves download"
+                # )
                 await run_download_task_with_retries(
                     AhgoraBrowser, "download_employees", "Ahgora employees download"
                 )

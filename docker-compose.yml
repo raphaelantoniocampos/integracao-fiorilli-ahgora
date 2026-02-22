@@ -6,13 +6,13 @@ services:
     env_file:
       - .env
     ports:
-      - "127.0.0.1:5433:5432" # Bind only to localhost on port 5433 to avoid host conflicts
+      - "127.0.0.1:5432:5432" # Bind only to localhost for security
     volumes:
       - pgdata:/var/lib/postgresql/data
     networks:
       - app_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-postgres} -d $${POSTGRES_DB:-fiogora}"]
+      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-postgres} -d $${POSTGRES_DB:-fiogora}" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -31,6 +31,11 @@ services:
     command: bash -c "sleep 3 && uv run alembic upgrade head && uv run uvicorn app.main:app --host 0.0.0.0 --port 8000"
     ports:
       - "8000:8000"
+    shm_size: '2gb'
+    environment:
+      - MOZ_HEADLESS=1
+      - MOZ_DISABLE_CONTENT_SANDBOX=1
+      - HEADLESS_MODE=True
     env_file:
       - .env
     volumes:
@@ -41,6 +46,7 @@ services:
 
 volumes:
   pgdata:
+
 
 networks:
   app_network:

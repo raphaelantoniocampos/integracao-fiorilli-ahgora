@@ -54,6 +54,16 @@ async def kill_job(job_id: UUID, service: SyncService = Depends(get_service)):
     return {"message": f"Kill signal sent to job {job_id}"}
 
 
+@router.post(
+    "/jobs/kill-all",
+    summary="Kill all active jobs",
+    description="Stops every currently running synchronization job.",
+)
+async def kill_all_jobs(service: SyncService = Depends(get_service)):
+    count = await service.kill_all_jobs()
+    return {"message": f"Kill signal sent to {count} active jobs"}
+
+
 @router.get(
     "/jobs/{job_id}/logs",
     response_model=list[SyncLog],
