@@ -1,98 +1,111 @@
-# FioGora (Integração Fiorilli-Ahgora)
+# 🚀 FioGora (Fiorilli-Ahgora Integration)
 
-Sistema de integração automatizada entre o sistema de gestão Fiorilli e a plataforma de controle de ponto Ahgora, agora modernizado com uma API FastAPI e suporte a Docker.
+[![Python](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/downloads/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.109.0-05998b.svg)](https://fastapi.tiangolo.com/)
+[![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?logo=docker&logoColor=white)](https://www.docker.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+**FioGora** is a high-performance RPA integration service that automates the synchronization of employee data between the **Fiorilli** management system and the **Ahgora** time-tracking platform. It leverages **FastAPI** for management, **PostgreSQL** for persistence, and **Selenium** for robust automation.
 
 ---
 
-## Descrição
+## ✨ Key Features
 
-Fiogora é uma solução para automatizar a sincronização de dados entre o sistema de gestão Fiorilli e a plataforma Ahgora. Esta versão modernizeada utiliza uma arquitetura baseada em API (FastAPI) para gerenciar tarefas de sincronização em segundo plano, com persistência em banco de dados PostgreSQL.
+- 🔄 **Automated Synchronization**: Seamlessly bridge Fiorilli and Ahgora.
+- ⚡ **Asynchronous Architecture**: Background task management using FastAPI Lifespan and dedicated schedulers.
+- 🐳 **Docker-First**: Fully containerized environment for consistent deployment.
+- 📊 **Job Management**: REST API to monitor, list, and review detailed logs of every sync task.
+- 🛠️ **Task Retry System**: Built-in scheduler to handle transient automation failures.
+- 📝 **Detailed Logging**: Granular execution logs available via API.
 
-## Requisitos do Sistema
+---
 
-- **Docker & Docker Compose** (Recomendado)
-- **OU**
-- **Python 3.13** (vinda do `uv`)
-- **PostgreSQL**
-- **Firefox** (para automação Selenium local)
+## 📐 System Architecture
 
-## Como Executar
-
-### 1. Via Docker (Recomendado)
-
-O Docker Compose sobe tanto a API quanto o banco de dados PostgreSQL automaticamente.
-
-1. Configure seu arquivo `.env` (veja seção abaixo).
-2. Execute o comando:
-   ```bash
-   docker-compose up --build
-   ```
-3. A API estará disponível em `http://localhost:8000`.
-4. Documentação interativa (Swagger): `http://localhost:8000/docs`.
-
-### 2. Execução Local (Desenvolvimento)
-
-1. **Instale as dependências**:
-   ```bash
-   uv sync
-   ```
-2. **Configure o Banco de Dados**:
-   Certifique-se de ter um PostgreSQL rodando e ajuste o `DATABASE_URL` no `.env`.
-3. **Execute as migrações**:
-   ```bash
-   uv run alembic upgrade head
-   ```
-4. **Inicie o servidor**:
-   ```bash
-   uv run uvicorn app.main:app --reload
-   ```
-
-## Configuração (.env)
-
-Crie um arquivo `.env` na raiz do projeto:
-
-```env
-# Credenciais Fiorilli
-FIORILLI_USER=seu_usuario
-FIORILLI_PASSWORD=sua_senha
-FIORILLI_URL=fiorilli_url
-
-# Credenciais Ahgora
-AHGORA_USER=seu_usuario
-AHGORA_PASSWORD=sua_senha
-AHGORA_COMPANY=codigo_empresa
-AHGORA_URL=ahgora_url
-
-# Configurações do Banco (Local)
-DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/fiogora
-
-# Automação
-HEADLESS_MODE=True
+```mermaid
+graph TD
+    User([User/Admin]) -->|API Requests| FastAPI[FastAPI Service]
+    FastAPI -->|Schedule Jobs| Scheduler[Internal Scheduler筒]
+    Scheduler -->|Execute| RPA[Selenium Automation]
+    RPA -->|Scrape/Inject| Fiorilli((Fiorilli System))
+    RPA -->|Sync| Ahgora((Ahgora Platform))
+    FastAPI -->|Persist| DB[(PostgreSQL)]
+    RPA -->|Log Results| DB
 ```
 
-## Estrutura de Diretórios (Novo)
+---
 
+## 🚀 Quick Start
+
+### 1. Requirements
+
+- **Docker & Docker Compose** (Recommended)
+- **OR** Python 3.13 (`uv`), PostgreSQL, and Firefox (for local dev).
+
+### 2. Configuration
+
+Create a `.env` file from the example:
+```bash
+cp .env.example .env
 ```
+Fill in your `FIORILLI_*` and `AHGORA_*` credentials.
+
+### 3. Running with Docker (Recommended)
+
+```bash
+docker-compose up --build
+```
+- **API**: `http://localhost:8000`
+- **Docs (Swagger)**: `http://localhost:8000/docs`
+
+---
+
+## 🛠️ Development & Automation
+
+This project uses `just` for command automation.
+
+| Command | Description |
+| :--- | :--- |
+| `just all` | Clean and build the executable |
+| `just build` | Create a standalone executable using PyInstaller |
+| `just update` | Rebuild with data backup/restore |
+| `just clean` | Remove build artifacts |
+
+---
+
+## 🛣️ API Overview
+
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `POST` | `/api/sync/run` | Trigger a new sync job |
+| `GET` | `/api/sync/jobs` | List all synchronization jobs |
+| `GET` | `/api/sync/jobs/{id}` | Get specific job details |
+| `GET` | `/api/sync/jobs/{id}/logs` | Fetch detailed logs for a job |
+| `GET` | `/health` | Service health status |
+
+---
+
+## 📂 Project Structure
+
+```text
 fiogora/
 ├── app/
-│   ├── api/            # Endpoints FastAPI
-│   ├── core/           # Configurações e DB
-│   ├── domain/         # Entidades e Enums
-│   ├── infrastructure/ # Automação (Selenium) e Repositórios
-│   ├── services/       # Lógica de negócio
-│   └── main.py         # Ponto de entrada da API
-├── tests/              # Testes unitários e de integração
-├── Dockerfile          # Configuração Docker
-└── docker-compose.yml  # Orquestração de serviços
+│   ├── api/            # REST API Layer
+│   ├── core/           # Config, DB, and Scheduler logic
+│   ├── domain/         # Business entities and schemas
+│   ├── infrastructure/ # RPA (Selenium) and Repositories
+│   ├── services/       # Core business logic
+│   └── main.py         # Application Entrypoint
+├── tests/              # Test suite
+├── Dockerfile          # Container definition
+└── docker-compose.yml  # Service orchestration
 ```
 
-## API Endpoints Principais
+---
 
-- `POST /api/sync/run`: Inicia uma nova sincronização em segundo plano.
-- `GET /api/sync/jobs`: Lista todos os trabalhos de sincronização.
-- `GET /api/sync/jobs/{id}`: Detalhes de um trabalho específico.
-- `GET /api/sync/jobs/{id}/logs`: Logs detalhados de execução do trabalho.
+## 📜 License
 
-## Licença
+Distributed under the **MIT License**. See `LICENSE` for more information.
 
-Este projeto é licenciado sob os termos da [licença MIT](LICENSE).
+---
+> Developed with ❤️ for automation excellence.

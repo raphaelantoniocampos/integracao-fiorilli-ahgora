@@ -14,20 +14,33 @@ RUN GECKO_VERSION=$(wget -qO- https://api.github.com/repos/mozilla/geckodriver/r
     && tar -xzf geckodriver-$GECKO_VERSION-linux64.tar.gz -C /usr/local/bin \
     && rm geckodriver-$GECKO_VERSION-linux64.tar.gz
 
+# Create a non-root user and group
+ARG UID=1000
+ARG GID=1000
+RUN groupadd -g "${GID}" appgroup && \
+    useradd -l -u "${UID}" -g "${GID}" -m -s /bin/bash appuser
+
 # Set working directory
 WORKDIR /app
+
+# Create necessary directories and set ownership
+RUN mkdir -p /app/data /app/downloads && \
+    chown -R appuser:appgroup /app
 
 # Install uv for dependency management
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
+# Switch to non-root user
+USER appuser
+
 # Copy dependency files
-COPY pyproject.toml uv.lock ./
+COPY --chown=appuser:appgroup pyproject.toml uv.lock ./
 
 # Install dependencies (only production)
 RUN uv sync --frozen --no-dev
 
 # Copy the rest of the application
-COPY . .
+COPY --chown=appuser:appgroup . .
 
 # Expose port 8000
 EXPOSE 8000

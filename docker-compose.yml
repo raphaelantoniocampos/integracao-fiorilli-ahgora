@@ -1,38 +1,47 @@
-version: '3.8'
-
 services:
   db:
     image: postgres:16-alpine
     container_name: fiogora_db
-    environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=fiogora
+    restart: unless-stopped
+    env_file:
+      - .env
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5433:5432" # Bind only to localhost on port 5433 to avoid host conflicts
     volumes:
       - pgdata:/var/lib/postgresql/data
+    networks:
+      - app_network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-postgres} -d $${POSTGRES_DB:-fiogora}"]
       interval: 10s
       timeout: 5s
       retries: 5
 
   api:
-    build: .
+    build:
+      context: .
+      args:
+        UID: ${HOST_UID:-1000}
+        GID: ${HOST_GID:-1000}
     container_name: fiogora_api
+    restart: unless-stopped
     depends_on:
       db:
         condition: service_healthy
+    command: bash -c "sleep 3 && uv run alembic upgrade head && uv run uvicorn app.main:app --host 0.0.0.0 --port 8000"
     ports:
       - "8000:8000"
     env_file:
       - .env
-    environment:
-      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/fiogora
     volumes:
       - ./data:/app/data
       - ./downloads:/app/downloads
+    networks:
+      - app_network
 
 volumes:
   pgdata:
+
+networks:
+  app_network:
+    driver: bridge
