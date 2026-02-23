@@ -330,12 +330,12 @@ class SyncService:
                 )
             else:
                 await self._log(job_id, "INFO", "Running tasks sequentially (UI Mode)")
-                # await run_download_task_with_retries(
-                #     FiorilliBrowser, "download_employees", "Fiorilli employees download"
-                # )
-                # await run_download_task_with_retries(
-                #     FiorilliBrowser, "download_leaves", "Fiorilli leaves download"
-                # )
+                await run_download_task_with_retries(
+                    FiorilliBrowser, "download_employees", "Fiorilli employees download"
+                )
+                await run_download_task_with_retries(
+                    FiorilliBrowser, "download_leaves", "Fiorilli leaves download"
+                )
                 await run_download_task_with_retries(
                     AhgoraBrowser, "download_employees", "Ahgora employees download"
                 )

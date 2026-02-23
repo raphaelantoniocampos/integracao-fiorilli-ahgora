@@ -1,91 +1,102 @@
-# 🚀 FioGora (Fiorilli-Ahgora Integration)
+# 🤖 FioGora (Integração Fiorilli-Ahgora)
 
 [![Python](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.109.0-05998b.svg)](https://fastapi.tiangolo.com/)
 [![Docker](https://img.shields.io/badge/docker-%230db7ed.svg?logo=docker&logoColor=white)](https://www.docker.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**FioGora** is a high-performance RPA integration service that automates the synchronization of employee data between the **Fiorilli** management system and the **Ahgora** time-tracking platform. It leverages **FastAPI** for management, **PostgreSQL** for persistence, and **Selenium** for robust automation.
+**FioGora** é um serviço de integração RPA de alto desempenho que automatiza a sincronização de dados de funcionários entre o sistema de gestão **Fiorilli** e a plataforma de controle de ponto **Ahgora**. Ele utiliza **FastAPI** para gerenciamento, **PostgreSQL** para persistência e **Selenium** para automação.
 
 ---
 
-## ✨ Key Features
+## ✨ Recursos
 
-- 🔄 **Automated Synchronization**: Seamlessly bridge Fiorilli and Ahgora.
-- ⚡ **Asynchronous Architecture**: Background task management using FastAPI Lifespan and dedicated schedulers.
-- 🐳 **Docker-First**: Fully containerized environment for consistent deployment.
-- 📊 **Job Management**: REST API to monitor, list, and review detailed logs of every sync task.
-- 🛠️ **Task Retry System**: Built-in scheduler to handle transient automation failures.
-- 📝 **Detailed Logging**: Granular execution logs available via API.
-
----
-
-## 📐 System Architecture
-
-```mermaid
-graph TD
-    User([User/Admin]) -->|API Requests| FastAPI[FastAPI Service]
-    FastAPI -->|Schedule Jobs| Scheduler[Internal Scheduler筒]
-    Scheduler -->|Execute| RPA[Selenium Automation]
-    RPA -->|Scrape/Inject| Fiorilli((Fiorilli System))
-    RPA -->|Sync| Ahgora((Ahgora Platform))
-    FastAPI -->|Persist| DB[(PostgreSQL)]
-    RPA -->|Log Results| DB
-```
+- **Sincronização Automatizada**: Conexão contínua entre o Fiorilli e o Ahgora.
+- **Arquitetura Assíncrona**: Gerenciamento de tarefas em segundo plano usando FastAPI Lifespan e agendadores.
+- **Docker-First**: Ambiente totalmente em contêineres para implantação consistente.
+- **Gerenciamento de Tarefas**: API REST para monitorar, listar e revisar logs detalhados de cada tarefa de sincronização.
+- **Sistema de Repetição de Tarefas (Retry)**: Agendador integrado para lidar com falhas de automação transitórias.
+- **Logs Detalhados**: Logs de execução granulares disponíveis via API REST.
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Como Começar
 
-### 1. Requirements
+### 1. Requisitos
 
-- **Docker & Docker Compose** (Recommended)
-- **OR** Python 3.13 (`uv`), PostgreSQL, and Firefox (for local dev).
+- **Docker & Docker Compose** (Recomendado)
+- **OR** Python 3.13 (`uv`), PostgreSQL e Firefox (para desenvolvimento local).
 
-### 2. Configuration
+### 2. Configuração
 
-Create a `.env` file from the example:
+**1. Variáveis de Ambiente:**
+
+Crie um arquivo `.env` a partir do exemplo (`cp .env.example .env`) e preencha as variáveis:
+
+| Variável            | Descrição                                          | Padrão |
+| ------------------- | -------------------------------------------------- | ------ |
+| `FIORILLI_USER`     | Usuário de acesso ao sistema Fiorilli              | -      |
+| `FIORILLI_PASSWORD` | Senha de acesso ao sistema Fiorilli                | -      |
+| `FIORILLI_URL`      | URL base do sistema Fiorilli                       | -      |
+| `AHGORA_USER`       | Usuário de acesso à plataforma Ahgora              | -      |
+| `AHGORA_PASSWORD`   | Senha de acesso à plataforma Ahgora                | -      |
+| `AHGORA_COMPANY`    | Código da empresa na plataforma Ahgora             | -      |
+| `AHGORA_URL`        | URL de login da plataforma Ahgora                  | -      |
+| `HEADLESS_MODE`     | Executar navegador de forma invisível (True/False) | `True` |
+
+**2. Configuração no Fiorilli:**
+
+Configure as colunas da tabela no painel *Fiorilli 2.1 - Cadastro de Trabalhadores* e defina como padrão para seu usuário:
+
+- Registro
+- Nome
+- CPF
+- Sexo
+- Dt. Nascimento
+- PIS/PASEP/NIT
+- Nome Cargo Atual
+- Nome Local Trabalho
+- Nome Unidade Orçamentária
+- Nome Vinculo
+- Dt. Admissão
+- Dt. Desligamento
+
+### 3. Executando
+
+**1. Docker:**
+
 ```bash
-cp .env.example .env
+docker-compose up -d --build
 ```
-Fill in your `FIORILLI_*` and `AHGORA_*` credentials.
 
-### 3. Running with Docker (Recommended)
+**2. Localmente:**
 
 ```bash
-docker-compose up --build
+docker-compose up -d db
+uv run uvicorn app.main:app --reload
 ```
+
 - **API**: `http://localhost:8000`
 - **Docs (Swagger)**: `http://localhost:8000/docs`
 
 ---
 
-## 🛠️ Development & Automation
+## 📑 Documentação da API
 
-This project uses `just` for command automation.
+| Método | Endpoint                   | Descrição                                |
+|:------ |:-------------------------- |:---------------------------------------- |
+| `POST` | `/api/sync/run`            | Inicia uma nova tarefa de sincronização  |
+| `GET`  | `/api/sync/jobs`           | Lista todas as tarefas de sincronização  |
+| `GET`  | `/api/sync/jobs/{id}`      | Obtém detalhes específicos de uma tarefa |
+| `GET`  | `/api/sync/jobs/{id}/logs` | Busca os logs detalhados de uma tarefa   |
+| `POST` | `/api/sync/jobs/{id}/kill` | Interrompe uma tarefa em andamento       |
+| `GET`  | `/health`                  | Status de integridade do serviço         |
 
-| Command | Description |
-| :--- | :--- |
-| `just all` | Clean and build the executable |
-| `just build` | Create a standalone executable using PyInstaller |
-| `just update` | Rebuild with data backup/restore |
-| `just clean` | Remove build artifacts |
-
----
-
-## 🛣️ API Overview
-
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `POST` | `/api/sync/run` | Trigger a new sync job |
-| `GET` | `/api/sync/jobs` | List all synchronization jobs |
-| `GET` | `/api/sync/jobs/{id}` | Get specific job details |
-| `GET` | `/api/sync/jobs/{id}/logs` | Fetch detailed logs for a job |
-| `GET` | `/health` | Service health status |
+Para detalhes completos dos payloads, parâmetros e respostas, acesse a documentação interativa Swagger via `http://localhost:8000/docs` após iniciar o projeto.
 
 ---
 
-## 📂 Project Structure
+## 📂 Estrutura do Projeto
 
 ```text
 fiogora/
@@ -103,9 +114,6 @@ fiogora/
 
 ---
 
-## 📜 License
+## 📜 Licença
 
-Distributed under the **MIT License**. See `LICENSE` for more information.
-
----
-> Developed with ❤️ for automation excellence.
+Distribuído sob a licença **MIT**. Veja `LICENSE` para mais informações.
