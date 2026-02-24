@@ -37,15 +37,16 @@
                     <td class="px-6 py-3">
                         <div
                             class="text-[11px] text-slate-600 bg-slate-50 p-3 rounded border border-slate-100 flex flex-col gap-1.5 max-w-lg shadow-inner">
-                            {% for key, value in task.payload.items() %}
-                            <div
-                                class="flex justify-between border-b border-slate-200/60 last:border-0 pb-1.5 last:pb-0">
-                                <span class="font-semibold text-slate-500 capitalize">{{ key | replace('_', ' ')
-                                    }}:</span>
-                                <span class="font-mono text-slate-700 text-right ml-4">{{ value or '-' }}</span>
-                            </div>
-                            {% endfor %}
-                            {% if not task.payload %}
+                            {% if task.payload %}
+                                {% for key, value in task.payload.items() %}
+                                <div
+                                    class="flex justify-between border-b border-slate-200/60 last:border-0 pb-1.5 last:pb-0">
+                                    <span class="font-semibold text-slate-500 capitalize">{{ key | replace('_', ' ')
+                                        }}:</span>
+                                    <span class="font-mono text-slate-700 text-right ml-4">{{ value or '-' }}</span>
+                                </div>
+                                {% endfor %}
+                            {% else %}
                             <span class="text-slate-400 italic">No payload available</span>
                             {% endif %}
                         </div>

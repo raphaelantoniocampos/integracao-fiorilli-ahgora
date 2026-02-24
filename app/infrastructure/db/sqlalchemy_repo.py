@@ -9,6 +9,7 @@ from app.domain.entities import (
     SyncStatus,
     AutomationTask,
     AutomationTaskStatus,
+    AutomationTaskType,
 )
 import pandas as pd
 from app.infrastructure.db.models import (
@@ -59,7 +60,7 @@ class SqlAlchemyRepo:
 
         return SyncJob(
             id=db_job.id,
-            status=db_job.status,
+            status=SyncStatus(db_job.status),
             triggered_by=db_job.triggered_by,
             created_at=db_job.created_at,
             started_at=db_job.started_at,
@@ -84,7 +85,7 @@ class SqlAlchemyRepo:
         return [
             SyncJob(
                 id=db.id,
-                status=db.status,
+                status=SyncStatus(db.status),
                 triggered_by=db.triggered_by,
                 created_at=db.created_at,
                 started_at=db.started_at,
@@ -138,7 +139,7 @@ class SqlAlchemyRepo:
         return [
             SyncJob(
                 id=db.id,
-                status=db.status,
+                status=SyncStatus(db.status),
                 triggered_by=db.triggered_by,
                 created_at=db.created_at,
                 started_at=db.started_at,
@@ -236,8 +237,8 @@ class SqlAlchemyRepo:
         return AutomationTask(
             id=db_task.id,
             job_id=db_task.job_id,
-            type=db_task.type,
-            status=db_task.status,
+            type=AutomationTaskType(db_task.type),
+            status=AutomationTaskStatus(db_task.status),
             payload=db_task.payload_info,
             created_at=db_task.created_at,
             started_at=db_task.started_at,
@@ -296,8 +297,8 @@ class SqlAlchemyRepo:
             AutomationTask(
                 id=db.id,
                 job_id=db.job_id,
-                type=db.type,
-                status=db.status,
+                type=AutomationTaskType(db.type),
+                status=AutomationTaskStatus(db.status),
                 payload=db.payload_info,
                 created_at=db.created_at,
                 started_at=db.started_at,
@@ -323,8 +324,8 @@ class SqlAlchemyRepo:
             AutomationTask(
                 id=db.id,
                 job_id=db.job_id,
-                type=db.type,
-                status=db.status,
+                type=AutomationTaskType(db.type),
+                status=AutomationTaskStatus(db.status),
                 payload=db.payload_info,
                 created_at=db.created_at,
                 started_at=db.started_at,

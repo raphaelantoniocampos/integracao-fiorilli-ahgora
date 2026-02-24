@@ -125,12 +125,29 @@ async def get_task_details_inline_partial(
 
 @router.get("/partials/task-details")
 async def get_task_details_partial(
-    request: Request, task_id: UUID, service: SyncService = Depends(get_service)
+    request: Request, 
+    task_id: Optional[UUID] = None, 
+    job_id: Optional[UUID] = None,
+    task_type: Optional[str] = None,
+    service: SyncService = Depends(get_service)
 ):
-    task = await service.repo.get_task(task_id)
+    tasks = []
+    if task_id:
+        task = await service.repo.get_task(task_id)
+        if task:
+            tasks.append(task)
+    elif job_id and task_type:
+        all_tasks = await service.get_automation_tasks(job_id)
+        tasks = [
+            t for t in all_tasks 
+            if str(t.type) == task_type 
+            or getattr(t.type, "value", str(t.type)) == task_type
+            or getattr(t.type, "name", str(t.type)) == task_type
+        ]
+
     return templates.TemplateResponse(
         "task_details.html",
-        {"request": request, "task": [task], "task_id": str(task_id)},
+        {"request": request, "tasks": tasks, "task_id": str(task_id) if task_id else None},
     )
 
 
