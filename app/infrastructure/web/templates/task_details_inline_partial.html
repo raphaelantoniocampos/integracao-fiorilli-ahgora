@@ -67,8 +67,8 @@
                             {% if task.payload is mapping %}
                             {% if task.payload.get('name') %}
                             <span class="font-semibold">{{ task.payload.get('name') }}</span>
-                            {% elif task.payload.get('employee_id') %}
-                            Func ID: {{ task.payload.get('employee_id') }}
+                            {% elif task.payload.get('name_fiorilli') %}
+                            <span class="font-semibold">{{ task.payload.get('name_fiorilli') }}</span>
                             {% else %}
                             {{ task.payload }}
                             {% endif %}

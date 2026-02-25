@@ -1,13 +1,15 @@
 from datetime import datetime
 from uuid import UUID
 from typing import Optional
-from fastapi import APIRouter, Request, Depends
+from fastapi import APIRouter, Request, Depends, Form
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.services.sync_service import SyncService
 from app.infrastructure.db.sqlalchemy_repo import SqlAlchemyRepo
 from app.core.database import get_db
 from app.domain.enums import SyncStatus
+from app.core.settings import settings
+import dotenv
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/infrastructure/web/templates")
@@ -34,8 +36,40 @@ async def dashboard(request: Request, service: SyncService = Depends(get_service
     }
 
     return templates.TemplateResponse(
-        "dashboard.html", {"request": request, "stats": stats}
+        "dashboard.html", {
+            "request": request,
+            "stats": stats,
+            "headless_mode": settings.HEADLESS_MODE,
+            "headless_mode_tasks": settings.HEADLESS_MODE_TASKS,
+            "is_docker": settings.IS_DOCKER,
+        }
     )
+
+@router.post("/api/settings/toggle-headless")
+async def toggle_headless(request: Request, target: str = Form(...)):
+    if settings.IS_DOCKER:
+        return {"error": "Ação não permitida em produção"}
+        
+    env_path = str(settings.BASE_DIR / ".env")
+    
+    if target == "sync":
+        settings.HEADLESS_MODE = not settings.HEADLESS_MODE
+        dotenv.set_key(env_path, "HEADLESS_MODE", str(settings.HEADLESS_MODE))
+    elif target == "tasks":
+        settings.HEADLESS_MODE_TASKS = not settings.HEADLESS_MODE_TASKS
+        dotenv.set_key(env_path, "HEADLESS_MODE_TASKS", str(settings.HEADLESS_MODE_TASKS))
+        
+    response = templates.TemplateResponse(
+        "partials/headless_toggles.html",
+        {
+            "request": request,
+            "headless_mode": settings.HEADLESS_MODE,
+            "headless_mode_tasks": settings.HEADLESS_MODE_TASKS,
+            "is_docker": settings.IS_DOCKER,
+        }
+    )
+    response.headers["HX-Trigger"] = "refresh"
+    return response
 
 
 @router.get("/partials/jobs")

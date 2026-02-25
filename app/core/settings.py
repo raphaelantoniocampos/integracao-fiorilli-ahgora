@@ -19,10 +19,13 @@ class Settings:
     CONSTANTS_JSON_PATH: Path = CORE_DIR_PATH / "constants.json"
 
     # Browser / Automation
-    HEADLESS_MODE: bool = os.getenv("HEADLESS_MODE", "True").lower() == "true"
+    IS_DOCKER: bool = os.getenv("IS_DOCKER", "False").lower() == "true"
+    HEADLESS_MODE: bool = True if IS_DOCKER else os.getenv("HEADLESS_MODE", "True").lower() == "true"
+    HEADLESS_MODE_TASKS: bool = True if IS_DOCKER else os.getenv("HEADLESS_MODE_TASKS", "True").lower() == "true"
     FIORILLI_URL: str = os.getenv("FIORILLI_URL", "")
     AHGORA_URL: str = os.getenv("AHGORA_URL", "")
     LEAVES_MONTHS_AGO: int = int(os.getenv("LEAVES_MONTHS_AGO", "2"))
+    MAX_AGE_MINUTES: int = int(os.getenv("MAX_AGE_MINUTES", "60"))
 
     # Credentials
     FIORILLI_USER: str = os.getenv("FIORILLI_USER", "")

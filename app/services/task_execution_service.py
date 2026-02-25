@@ -187,7 +187,8 @@ class TaskExecutionService:
                 self.repo.add_log(job_id, level, msg, task_id=task_id), loop
             )
 
-        browser = AhgoraBrowser(log_callback=log_cb)
+        from app.core.settings import settings
+        browser = AhgoraBrowser(log_callback=log_cb, headless=settings.HEADLESS_MODE_TASKS)
         try:
             match task_type:
                 case TaskType.ADD_EMPLOYEE:

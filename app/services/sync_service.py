@@ -32,6 +32,7 @@ LEAVES_COLUMNS = settings.LEAVES_COLUMNS
 UPLOAD_LEAVES_COLUMNS = settings.UPLOAD_LEAVES_COLUMNS
 PT_MONTHS = settings.PT_MONTHS
 EXCEPTIONS_AND_TYPOS = settings.EXCEPTIONS_AND_TYPOS
+MAX_AGE_MINUTES = settings.MAX_AGE_MINUTES
 
 FIORILLI_DIR = FileManager.FIORILLI_DIR
 AHGORA_DIR = FileManager.AHGORA_DIR
@@ -268,10 +269,45 @@ class SyncService:
         async with self._db_lock:
             await self.repo.add_log(job_id, level, message)
 
+    def _is_download_cached(
+        self, patterns: list[str], MAX_AGE_MINUTES: int = MAX_AGE_MINUTES
+    ) -> bool:
+        """
+        Check if files matching the given patterns exist in the downloads directory
+        and are newer than max_age_minutes.
+        Returns True ONLY if all required patterns have a matching valid file.
+        """
+        if not settings.DOWNLOADS_DIR.exists() or not patterns:
+            return False
+
+        now = datetime.now()
+        found_patterns = 0
+
+        for pattern in patterns:
+            pattern_found = False
+            for file_path in settings.DOWNLOADS_DIR.iterdir():
+                if file_path.is_file() and pattern.lower() in file_path.name.lower():
+                    mtime = datetime.fromtimestamp(file_path.stat().st_mtime)
+                    if (now - mtime).total_seconds() <= MAX_AGE_MINUTES * 60:
+                        pattern_found = True
+                        break
+            if pattern_found:
+                found_patterns += 1
+
+        return found_patterns == len(patterns)
+
     async def _execute_sync_logic(self, job_id: UUID) -> SyncResult:
         async def run_download_task_with_retries(
-            browser_class, method_name, description, max_retries=3
+            browser_class, method_name, description, patterns=None, max_retries=3
         ):
+            if patterns and self._is_download_cached(patterns):
+                await self._log(
+                    job_id,
+                    "INFO",
+                    f"Skipping {description} (valid cached ({MAX_AGE_MINUTES})files found: {patterns})",
+                )
+                return True
+
             last_error = None
             for attempt in range(1, max_retries + 1):
                 await self._log(
@@ -301,7 +337,7 @@ class SyncService:
                         f"Attempt {attempt}/{max_retries} for {description} failed: {str(e)}",
                     )
                     if attempt < max_retries:
-                        await asyncio.sleep(2)  # Short wait before retry
+                        await asyncio.sleep(10)  # Short wait before retry (10s backoff)
 
             await self._log(
                 job_id,
@@ -320,24 +356,40 @@ class SyncService:
                         FiorilliBrowser,
                         "download_employees",
                         "Fiorilli employees download",
+                        patterns=["trabalhador"],
                     ),
                     run_download_task_with_retries(
-                        FiorilliBrowser, "download_leaves", "Fiorilli leaves download"
+                        FiorilliBrowser,
+                        "download_leaves",
+                        "Fiorilli leaves download",
+                        patterns=["pontoafastamentos", "pontoferias"],
                     ),
                     run_download_task_with_retries(
-                        AhgoraBrowser, "download_employees", "Ahgora employees download"
+                        AhgoraBrowser,
+                        "download_employees",
+                        "Ahgora employees download",
+                        patterns=["funcionarios"],
                     ),
                 )
             else:
                 await self._log(job_id, "INFO", "Running tasks sequentially (UI Mode)")
                 await run_download_task_with_retries(
-                    FiorilliBrowser, "download_employees", "Fiorilli employees download"
+                    FiorilliBrowser,
+                    "download_employees",
+                    "Fiorilli employees download",
+                    patterns=["trabalhador"],
                 )
                 await run_download_task_with_retries(
-                    FiorilliBrowser, "download_leaves", "Fiorilli leaves download"
+                    FiorilliBrowser,
+                    "download_leaves",
+                    "Fiorilli leaves download",
+                    patterns=["pontoafastamentos", "pontoferias"],
                 )
                 await run_download_task_with_retries(
-                    AhgoraBrowser, "download_employees", "Ahgora employees download"
+                    AhgoraBrowser,
+                    "download_employees",
+                    "Ahgora employees download",
+                    patterns=["funcionarios"],
                 )
 
             # 5. Run analysis and create tasks

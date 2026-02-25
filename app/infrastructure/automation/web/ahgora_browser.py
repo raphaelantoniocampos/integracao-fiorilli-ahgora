@@ -9,8 +9,8 @@ logger = logging.getLogger(__name__)
 
 
 class AhgoraBrowser(BaseBrowser):
-    def __init__(self, log_callback: Callable[[str, str], None] = None):
-        super().__init__(url=settings.AHGORA_URL, log_callback=log_callback)
+    def __init__(self, log_callback: Callable[[str, str], None] = None, headless: bool = None):
+        super().__init__(url=settings.AHGORA_URL, log_callback=log_callback, headless=headless)
 
     def download_employees(self):
         self._log("INFO", "Starting employees download from Ahgora")

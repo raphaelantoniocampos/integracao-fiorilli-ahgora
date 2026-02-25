@@ -33,8 +33,9 @@ class BaseBrowser(ABC):
         StaleElementReferenceException,
     )
 
-    def __init__(self, url: str, log_callback: Callable[[str, str], None] = None):
+    def __init__(self, url: str, log_callback: Callable[[str, str], None] = None, headless: bool = None):
         self.log_callback = log_callback
+        self.headless = headless if headless is not None else settings.HEADLESS_MODE
         self.driver = self._get_web_driver()
         if url:
             self.driver.get(url)
@@ -63,7 +64,7 @@ class BaseBrowser(ABC):
         os.environ["MOZ_DISABLE_CONTENT_SANDBOX"] = "1"
         
         options = webdriver.FirefoxOptions()
-        if settings.HEADLESS_MODE:
+        if self.headless:
             options.add_argument("-headless")
             
         options.set_preference("security.sandbox.content.level", 0)
