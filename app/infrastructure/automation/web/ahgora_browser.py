@@ -131,7 +131,7 @@ class AhgoraBrowser(BaseBrowser):
 
         departamento = str(payload.get("department", ""))
         if departamento:
-            self.send_keys("dados-departamento", departamento, By.ID)
+            self._set_autocomplete_select("dados-departamento", departamento)
 
         # Click Save
         self.click_element("(//button[contains(text(), 'Salvar')])[last()]")
@@ -154,32 +154,49 @@ class AhgoraBrowser(BaseBrowser):
         time.sleep(self.DELAY)
 
         try:
-            # Update fields if present in payload (using similar logic to add)
-            if "name" in payload and payload["name"]:
-                self.send_keys("dados-nome", payload["name"], By.ID, clear_first=True)
+            # Note: payload columns are suffixed with _fiorilli and _ahgora
+            # Only update if the normalized value has changed
 
-            if "position" in payload and payload["position"]:
-                self.send_keys(
-                    "dados.cargo", payload["position"], By.ID, clear_first=True
-                )
+            has_changes = False
 
-            if "department" in payload and payload["department"]:
-                self.send_keys(
-                    "dados-departamento", payload["department"], By.ID, clear_first=True
-                )
+            if payload.get("name_fiorilli_norm") != payload.get("name_ahgora_norm"):
+                if payload.get("name_fiorilli"):
+                    self.send_keys("dados-nome", payload["name_fiorilli"], By.ID, clear_first=True)
+                    has_changes = True
 
-            if "admission_date" in payload and payload["admission_date"]:
-                self.send_keys(
-                    "dados-dt_admissao",
-                    payload["admission_date"],
-                    By.ID,
-                    clear_first=True,
-                )
+            if payload.get("position_fiorilli_norm") != payload.get("position_ahgora_norm"):
+                if payload.get("position_fiorilli"):
+                    self.send_keys(
+                        "dados.cargo", payload["position_fiorilli"], By.ID, clear_first=True
+                    )
+                    has_changes = True
 
-            # Click Save
-            self.click_element("(//button[contains(text(), 'Salvar')])[last()]")
-            time.sleep(self.DELAY * 4)
-            self._log("INFO", f"Finished updating employee: {name}")
+            if payload.get("admission_date_fiorilli_norm") != payload.get("admission_date_ahgora_norm"):
+                if payload.get("admission_date_fiorilli"):
+                    self.send_keys(
+                        "dados-dt_admissao",
+                        payload["admission_date_fiorilli"],
+                        By.ID,
+                        clear_first=True,
+                    )
+                    has_changes = True
+
+            if payload.get("department_fiorilli_norm") != payload.get("department_ahgora_norm"):
+                if payload.get("department_fiorilli"):
+                    self._set_autocomplete_select("dados-departamento", payload["department_fiorilli"])
+                    has_changes = True
+                    try:
+                        self._update_location_multiselect(payload["department_fiorilli"])
+                    except Exception as e:
+                        self._log("WARNING", f"Could not update location multiselect automatically: {e}")
+
+            if has_changes:
+                # Click Save
+                self.click_element("(//button[contains(text(), 'Salvar')])[last()]")
+                time.sleep(self.DELAY * 4)
+                self._log("INFO", f"Finished updating employee: {name} ({employee_id})")
+            else:
+                self._log("INFO", f"No specific fields were changed for {name} ({employee_id}), skipping save.")
         except Exception as e:
             self._log(
                 "ERROR", f"Failed to find or edit employee {name} ({employee_id}): {e}"
@@ -268,3 +285,145 @@ class AhgoraBrowser(BaseBrowser):
         except Exception as e:
             self._log("ERROR", f"Failed to upload leaves file: {e}")
             raise e
+
+    def _set_autocomplete_select(self, element_id: str, value: str) -> None:
+        """
+        Handles <select> elements that are transformed into ui-autocomplete inputs.
+        Directly setting the value via Javascript to bypass clear() errors on uneditable inputs.
+        """
+        try:
+            # Locate the select element to check if it has the option
+            script = f"""
+                var select = document.getElementById('{element_id}');
+                if (select) {{
+                    // Try to find exact or partial match in options
+                    var options = select.options;
+                    var matchFound = false;
+                    for (var i = 0; i < options.length; i++) {{
+                        if (options[i].text.trim().toUpperCase() === '{value.upper()}') {{
+                            select.selectedIndex = i;
+                            matchFound = true;
+                            break;
+                        }}
+                    }}
+                    if (!matchFound) {{
+                        for (var i = 0; i < options.length; i++) {{
+                            if (options[i].text.trim().toUpperCase().includes('{value.upper()}')) {{
+                                select.selectedIndex = i;
+                                break;
+                            }}
+                        }}
+                    }}
+                    // Trigger change event for jQuery/React listeners
+                    var event = new Event('change', {{ bubbles: true }});
+                    select.dispatchEvent(event);
+                    
+                    // Also attempt to update the visible sibling input if it's a combobox
+                    var siblingInput = select.nextElementSibling;
+                    if (siblingInput && siblingInput.tagName.toLowerCase() === 'input') {{
+                        siblingInput.value = '{value}';
+                        siblingInput.dispatchEvent(new Event('input', {{ bubbles: true }}));
+                    }}
+                }}
+            """
+            self.driver.execute_script(script)
+            time.sleep(1)
+        except Exception as e:
+            self._log("WARNING", f"Failed to set autocomplete select '{element_id}': {e}")
+            # Fallback to standard send keys without clear
+            self.send_keys(element_id, value, By.ID, clear_first=False)
+
+    def _update_location_multiselect(self, search_text: str) -> None:
+        """
+        Interacts with the Bootstrap multiselect to update the 'Localização' field.
+        Employs intelligent token-based fuzzy matching.
+        """
+        # 1. Click the button to open the dropdown.
+        dropdown_btn_xpath = "//*[@id='form_funcionario']/div/div[2]/div[1]/div[2]/div[8]/div[2]/div/div/div/button"
+        try:
+            self.click_element(dropdown_btn_xpath, max_tries=3)
+        except Exception:
+            # Fallback
+            try:
+                self.click_element("//button[contains(@class, 'multiselect dropdown-toggle')]", max_tries=3)
+            except Exception as e:
+                self._log("WARNING", f"Could not find multiselect button: {e}")
+                return
+
+        time.sleep(1)
+
+        # 2. Clear previous selections if 'Todas localizações selecionadas' is active or checked
+        try:
+            self.click_element("//li[contains(@class, 'multiselect-all')]//label", max_tries=1)
+            time.sleep(0.5)
+        except Exception:
+            pass
+        
+        try:
+            self.click_element("//button[contains(@class, 'multiselect-clear-filter')]", max_tries=1)
+            time.sleep(0.5)
+        except Exception:
+            pass
+
+        # 3. Type into the search input
+        search_input_xpath = "//*[@id='form_funcionario']/div/div[2]/div[1]/div[2]/div[8]/div[2]/div/div/div/div/ul/li[1]/div/input"
+        try:
+            self.send_keys(search_input_xpath, search_text, By.XPATH, clear_first=True, max_tries=3)
+        except Exception:
+            # Fallback
+            try:
+                self.send_keys("//input[contains(@class, 'multiselect-search')]", search_text, By.XPATH, clear_first=True, max_tries=3)
+            except Exception:
+                pass
+            
+        time.sleep(1)
+
+        # 4. Use JS for tokenized substring match to find the actual checkbox
+        script = f"""
+            var searchTxt = "{search_text.upper()}";
+            var searchWords = searchTxt.split(' ');
+            var labels = document.querySelectorAll("ul.multiselect-container label.checkbox");
+            
+            var bestMatch = null;
+            var maxMatches = 0;
+
+            for (var i = 0; i < labels.length; i++) {{
+                var labelText = labels[i].textContent || labels[i].innerText;
+                var li = labels[i].closest('li');
+                
+                if (li && !li.classList.contains('filter') && !li.classList.contains('multiselect-all')) {{
+                    var upperLabel = labelText.toUpperCase();
+                    var matches = 0;
+                    // Exact match takes precedence
+                    if (upperLabel.trim() === searchTxt.trim()) {{
+                        bestMatch = labels[i];
+                        break;
+                    }}
+                    for(var w = 0; w < searchWords.length; w++) {{
+                        if (searchWords[w].length > 2 && upperLabel.includes(searchWords[w])) {{
+                            matches++;
+                        }}
+                    }}
+                    if (matches > maxMatches) {{
+                        maxMatches = matches;
+                        bestMatch = labels[i];
+                    }}
+                }}
+            }}
+            if (bestMatch) {{
+                bestMatch.click();
+            }}
+        """
+        try:
+            self.driver.execute_script(script)
+        except Exception as e:
+            self._log("WARNING", f"Could not explicitly select the filtered location item via JS: {e}")
+
+        # 5. Close the dropdown
+        try:
+            self.click_element(dropdown_btn_xpath, max_tries=2)
+        except Exception:
+            try:
+                self.click_element("//button[contains(@class, 'multiselect dropdown-toggle')]", max_tries=2)
+            except Exception:
+                pass

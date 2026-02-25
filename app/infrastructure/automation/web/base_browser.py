@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 
 class BaseBrowser(ABC):
-    MAX_TRIES = 50
+    MAX_TRIES = 10
     DELAY = 0.5
     IGNORED_EXCEPTIONS = (
         ElementClickInterceptedException,
