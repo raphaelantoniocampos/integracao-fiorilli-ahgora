@@ -26,8 +26,8 @@
                 <tr class="hover:bg-slate-50/50 transition-colors group">
                     <td class="px-6 py-3 whitespace-nowrap">
                         {% set t_status_class = "indigo-100 text-indigo-700" %}
-                        {% if task.status == 'SUCCESS' %}{% set t_status_class = "emerald-100 text-emerald-700" %}
-                        {% elif task.status == 'FAILED' %}{% set t_status_class = "red-100 text-red-700" %}
+                        {% if (task.status|string == 'SUCCESS' or task.status|string == 'AutomationTaskStatus.SUCCESS') or (task.status.name == 'SUCCESS') %}{% set t_status_class = "emerald-100 text-emerald-700" %}
+                        {% elif (task.status|string == 'FAILED' or task.status|string == 'AutomationTaskStatus.FAILED') or (task.status.name == 'FAILED') %}{% set t_status_class = "red-100 text-red-700" %}
                         {% endif %}
                         <span
                             class="px-2 py-1 text-[10px] font-bold rounded-full {{ t_status_class }} uppercase tracking-wider">
@@ -56,7 +56,7 @@
                     </td>
                     <td class="px-6 py-3 text-right whitespace-nowrap">
                         <div class="flex justify-end items-center space-x-1">
-                            {% if task.status != 'SUCCESS' %}
+                            {% if (task.status|string != 'SUCESS' or task.status|string != 'AutomationTaskStatus.SUCESS') or (task.status.name != 'SUCCESS') %}
                             <button
                                 onclick="fetch('/api/tasks/{{ task.id }}/execute', {method: 'POST'}).then(() => { this.classList.add('opacity-50', 'cursor-not-allowed'); this.disabled = true; })"
                                 class="text-indigo-400 hover:text-indigo-700 p-2 hover:bg-indigo-50 rounded-full transition-all opacity-0 group-hover:opacity-100"
