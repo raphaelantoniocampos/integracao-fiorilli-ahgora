@@ -107,7 +107,7 @@
                             {% if group.pending > 0 or group.failed > 0 or group.cancelled > 0 %}
                                 <button
                                     onclick="fetch('/api/sync/tasks/batch/execute?job_id={{ job_id }}&task_type={{ group.type }}', {method: 'POST'}).then(() => { this.classList.add('opacity-50', 'cursor-not-allowed'); this.disabled = true; window.location.reload(); })"
-                                    class="text-indigo-400 hover:text-indigo-700 p-3 hover:bg-indigo-50 rounded-full transition-all"
+                                    class="text-emerald-400 hover:text-emerald-700 p-3 hover:bg-emerald-50 rounded-full transition-all"
                                     title="Executar Lote de Tarefas">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -119,6 +119,7 @@
                                 </button>
                                 {% endif %}
 
+                                {% if group.running > 0 %}
                                 <button
                                     onclick="fetch('/api/sync/tasks/batch/cancel?job_id={{ job_id }}&task_type={{ group.type }}', {method: 'POST'}).then(() => { this.classList.add('opacity-50', 'cursor-not-allowed'); this.disabled = true; window.location.reload(); })"
                                     class="text-red-400 hover:text-red-700 p-3 hover:bg-red-50 rounded-full transition-all"
@@ -131,6 +132,7 @@
                                         </path>
                                     </svg>
                                 </button>
+                                {% endif %}
 
                             </div>
                         </td>

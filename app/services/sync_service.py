@@ -304,7 +304,7 @@ class SyncService:
                 await self._log(
                     job_id,
                     "INFO",
-                    f"Skipping {description} (valid cached ({MAX_AGE_MINUTES})files found: {patterns})",
+                    f"Skipping {description} (valid cached ({MAX_AGE_MINUTES} minutes) files found: {patterns})",
                 )
                 return True
 
