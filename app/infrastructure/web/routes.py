@@ -157,7 +157,7 @@ async def get_task_details_inline_partial(
         },
     )
 
-@router.get("/partials/task-details")
+@router.get("/partials/task-payload")
 async def get_task_details_partial(
     request: Request, 
     task_id: Optional[UUID] = None, 
@@ -180,7 +180,7 @@ async def get_task_details_partial(
         ]
 
     return templates.TemplateResponse(
-        "task_details.html",
+        "task_payload.html",
         {"request": request, "tasks": tasks, "task_id": str(task_id) if task_id else None},
     )
 

@@ -1,0 +1,76 @@
+<div class="card overflow-hidden bg-white">
+    <!-- Header -->
+    <div class="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/80">
+            {% for task in tasks %}
+                    <div>
+                        {% set t_status_class = "indigo-100 text-indigo-700" %}
+                        {% if (task.status|string == 'SUCCESS' or task.status|string == 'AutomationTaskStatus.SUCCESS') or (task.status.name == 'SUCCESS') %}{% set t_status_class = "emerald-100 text-emerald-700" %}
+                        {% elif (task.status|string == 'FAILED' or task.status|string == 'AutomationTaskStatus.FAILED') or (task.status.name == 'FAILED') %}{% set t_status_class = "red-100 text-red-700" %}
+                        {% endif %}
+                        <p class="text-[11px] {{ t_status_class }} font-mono uppercase tracking-wider">
+                            {{ task.status }}
+                        </p>
+                    </div>
+            {% endfor %}
+        <div>
+            <h3 class="font-bold text-slate-800">Dados da Tarefa</h3>
+        </div>
+        <button onclick="closeModal()"
+            class="text-slate-400 hover:text-slate-700 p-1.5 hover:bg-slate-100 rounded-lg transition-all"
+            title="Fechar (Esc)">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </button>
+    </div>
+
+
+
+    <!-- Content -->
+    <div class="overflow-x-auto max-h-[70vh] overflow-y-auto w-full">
+        <table class="min-w-full divide-y divide-slate-200">
+            <thead class="bg-slate-50 sticky top-0 shadow-sm z-10">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-bold text-slate-500 uppercase items-center justify-center">Payload</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 flex items-center justify-center">
+                {% for task in tasks %}
+                <tr class="hover:bg-slate-50/50 transition-colors group">
+                    <td class="px-6 py-3">
+                        <div
+                            class="text-[11px] text-slate-600 bg-slate-50 p-3 rounded border border-slate-100 flex-col gap-1.5 max-w-lg shadow-inner">
+                            {% if task.payload %}
+                                {% for key, value in task.payload.items() %}
+                                <div
+                                    class="flex justify-between border-b border-slate-200/60 last:border-0 pb-1.5 last:pb-0">
+                                    <span class="font-semibold text-slate-500 capitalize">{{ key | replace('_', ' ')
+                                        }}:</span>
+                                    <span class="font-mono text-slate-700 text-right ml-4">{{ value or '-' }}</span>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                            <span class="text-slate-400 italic">No payload available</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="4" class="px-6 py-12 text-center text-slate-400 italic">
+                        Nenhuma tarefa neste grupo.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Footer -->
+    <div class="px-6 py-3 border-t border-slate-100 bg-slate-50/80 flex justify-between items-center">
+        <span class="text-xs text-slate-400">{{ tasks | length }} itens verificados</span>
+        <button onclick="closeModal()" class="text-xs text-slate-500 hover:text-slate-700 font-medium">
+            Voltar (Esc)
+        </button>
+    </div>
+</div>

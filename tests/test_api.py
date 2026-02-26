@@ -260,7 +260,7 @@ def test_get_task_details_partial_single_task(mock_service_class, client):
     from app.api.endpoints import get_service as api_get_service
     app.dependency_overrides[api_get_service] = lambda: mock_service
 
-    response = client.get(f"/partials/task-details?task_id={task_id}")
+    response = client.get(f"/partials/task-payload?task_id={task_id}")
     assert response.status_code == 200
     assert "value" in response.text
     assert "SUCCESS" in response.text
@@ -285,7 +285,7 @@ def test_get_task_details_partial_group_tasks(mock_service_class, client):
     from app.api.endpoints import get_service as api_get_service
     app.dependency_overrides[api_get_service] = lambda: mock_service
 
-    response = client.get(f"/partials/task-details?job_id={job_id}&task_type={task_type.name}") # Use .name not .value for FastAPI query match
+    response = client.get(f"/partials/task-payload?job_id={job_id}&task_type={task_type.name}") # Use .name not .value for FastAPI query match
     assert response.status_code == 200
     assert "123" in response.text
     assert "FAILED" in response.text
