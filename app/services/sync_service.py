@@ -1,29 +1,30 @@
-from datetime import datetime, timedelta
 import asyncio
 import logging
-from typing import Optional, Dict, Any, List, Tuple
-from uuid import UUID
 import re
 import unicodedata
+from datetime import datetime, timedelta
 from pathlib import Path
-import pandas as pd
-import numpy as np
+from typing import Any, Dict, List, Optional, Tuple
+from uuid import UUID
 
+import numpy as np
+import pandas as pd
+
+from app.core.file_manager import FileManager
 from app.core.settings import settings
+from app.core.task_registry import task_registry
 from app.domain.entities import (
-    SyncJob,
-    SyncResult,
-    SyncLog,
     AutomationTask,
-    AutomationTaskType,
     AutomationTaskStatus,
+    AutomationTaskType,
+    SyncJob,
+    SyncLog,
+    SyncResult,
 )
 from app.domain.enums import SyncStatus
-from app.infrastructure.automation.web.fiorilli_browser import FiorilliBrowser
 from app.infrastructure.automation.web.ahgora_browser import AhgoraBrowser
+from app.infrastructure.automation.web.fiorilli_browser import FiorilliBrowser
 from app.infrastructure.db.sqlalchemy_repo import SqlAlchemyRepo
-from app.core.task_registry import task_registry
-from app.core.file_manager import FileManager
 
 FIORILLI_EMPLOYEES_COLUMNS = settings.FIORILLI_EMPLOYEES_COLUMNS
 AHGORA_EMPLOYEES_COLUMNS = settings.AHGORA_EMPLOYEES_COLUMNS
@@ -716,7 +717,6 @@ class SyncService:
 
     async def _generate_tasks_dfs(
         self,
-        job_id: UUID,
         fiorilli_employees: pd.DataFrame,
         ahgora_employees: pd.DataFrame,
         last_leaves: pd.DataFrame,

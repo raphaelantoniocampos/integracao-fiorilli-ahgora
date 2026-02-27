@@ -1,9 +1,9 @@
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
 from uuid import UUID, uuid4
 
-from .enums import SyncStatus, AutomationTaskType, AutomationTaskStatus
+from .enums import AutomationTaskStatus, AutomationTaskType, SyncStatus
 
 
 @dataclass

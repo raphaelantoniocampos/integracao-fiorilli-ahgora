@@ -1,5 +1,6 @@
 import asyncio
 import logging
+
 from app.core.database import async_session_factory
 from app.infrastructure.db.sqlalchemy_repo import SqlAlchemyRepo
 from app.services.sync_service import SyncService

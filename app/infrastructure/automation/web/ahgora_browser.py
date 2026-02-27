@@ -1,7 +1,9 @@
 import logging
 import time
 from typing import Callable
+
 from selenium.webdriver.common.by import By
+
 from app.core.settings import settings
 from app.infrastructure.automation.web.base_browser import BaseBrowser
 
@@ -9,8 +11,12 @@ logger = logging.getLogger(__name__)
 
 
 class AhgoraBrowser(BaseBrowser):
-    def __init__(self, log_callback: Callable[[str, str], None] = None, headless: bool = None):
-        super().__init__(url=settings.AHGORA_URL, log_callback=log_callback, headless=headless)
+    def __init__(
+        self, log_callback: Callable[[str, str], None] = None, headless: bool = None
+    ):
+        super().__init__(
+            url=settings.AHGORA_URL, log_callback=log_callback, headless=headless
+        )
 
     def download_employees(self):
         self._log("INFO", "Starting employees download from Ahgora")
@@ -150,7 +156,11 @@ class AhgoraBrowser(BaseBrowser):
         self._login()
 
         # Navigate to employee page
-        self.driver.get(self.driver.current_url.replace("home", f"funcionarios/edita/?matric={employee_id}"))
+        self.driver.get(
+            self.driver.current_url.replace(
+                "home", f"funcionarios/edita/?matric={employee_id}"
+            )
+        )
         time.sleep(self.DELAY)
 
         try:
@@ -161,17 +171,26 @@ class AhgoraBrowser(BaseBrowser):
 
             if payload.get("name_fiorilli_norm") != payload.get("name_ahgora_norm"):
                 if payload.get("name_fiorilli"):
-                    self.send_keys("dados-nome", payload["name_fiorilli"], By.ID, clear_first=True)
-                    has_changes = True
-
-            if payload.get("position_fiorilli_norm") != payload.get("position_ahgora_norm"):
-                if payload.get("position_fiorilli"):
                     self.send_keys(
-                        "dados.cargo", payload["position_fiorilli"], By.ID, clear_first=True
+                        "dados-nome", payload["name_fiorilli"], By.ID, clear_first=True
                     )
                     has_changes = True
 
-            if payload.get("admission_date_fiorilli_norm") != payload.get("admission_date_ahgora_norm"):
+            if payload.get("position_fiorilli_norm") != payload.get(
+                "position_ahgora_norm"
+            ):
+                if payload.get("position_fiorilli"):
+                    self.send_keys(
+                        "dados.cargo",
+                        payload["position_fiorilli"],
+                        By.ID,
+                        clear_first=True,
+                    )
+                    has_changes = True
+
+            if payload.get("admission_date_fiorilli_norm") != payload.get(
+                "admission_date_ahgora_norm"
+            ):
                 if payload.get("admission_date_fiorilli"):
                     self.send_keys(
                         "dados-dt_admissao",
@@ -181,15 +200,22 @@ class AhgoraBrowser(BaseBrowser):
                     )
                     has_changes = True
 
-            if payload.get("department_fiorilli_norm") != payload.get("department_ahgora_norm"):
+            if payload.get("department_fiorilli_norm") != payload.get(
+                "department_ahgora_norm"
+            ):
                 if payload.get("department_fiorilli"):
-                    self._set_autocomplete_select("dados-departamento", payload["department_fiorilli"])
+                    self._set_autocomplete_select(
+                        "dados-departamento", payload["department_fiorilli"]
+                    )
                     has_changes = True
                     try:
                         pass
                         # self._update_location_multiselect(payload["department_fiorilli"])
                     except Exception as e:
-                        self._log("WARNING", f"Could not update location multiselect automatically: {e}")
+                        self._log(
+                            "WARNING",
+                            f"Could not update location multiselect automatically: {e}",
+                        )
 
             if has_changes:
                 # Click Save
@@ -197,7 +223,10 @@ class AhgoraBrowser(BaseBrowser):
                 time.sleep(self.DELAY * 4)
                 self._log("INFO", f"Finished updating employee: {name} ({employee_id})")
             else:
-                self._log("INFO", f"No specific fields were changed for {name} ({employee_id}), skipping save.")
+                self._log(
+                    "INFO",
+                    f"No specific fields were changed for {name} ({employee_id}), skipping save.",
+                )
         except Exception as e:
             self._log(
                 "ERROR", f"Failed to find or edit employee {name} ({employee_id}): {e}"
@@ -235,7 +264,9 @@ class AhgoraBrowser(BaseBrowser):
             try:
                 self.send_keys("dt_demissao", dismissal_date, By.ID, clear_first=True)
                 time.sleep(self.DELAY)
-                self.click_element("(/html/body/div[1]/div/div/div[2]/div[1]/div[2]/table/tbody/tr[1]/td/div/div[2]/div/button[2])[1]")
+                self.click_element(
+                    "(/html/body/div[1]/div/div/div[2]/div[1]/div[2]/table/tbody/tr[1]/td/div/div[2]/div/button[2])[1]"
+                )
                 time.sleep(self.DELAY * 2)
             except Exception:
                 self._log(
@@ -294,16 +325,17 @@ class AhgoraBrowser(BaseBrowser):
         Returns a list of dicts: [{'row': 10, 'error': 'Intersecção...'}]
         """
         import re
+
         errors = []
         try:
             # The validation screen displays a log of processing, usually inside the DOM.
             # A robust way is to pull all body text and search line by line.
             body_text = self.driver.find_element(By.TAG_NAME, "body").text
-            
+
             # Match logs like "[15] Intersecção com afastamento..."
-            lines = body_text.split('\n')
+            lines = body_text.split("\n")
             regex = r"\[(\d+)\]\s*(.+)"
-            
+
             for line in lines:
                 line = line.strip()
                 match = re.search(regex, line)
@@ -311,11 +343,13 @@ class AhgoraBrowser(BaseBrowser):
                     row_idx = int(match.group(1))
                     error_msg = match.group(2).strip()
                     errors.append({"row": row_idx, "error": error_msg})
-                    
+
             self._log("INFO", f"Extracted {len(errors)} validation errors.")
             return errors
         except Exception as e:
-            self._log("WARNING", f"Failed to extract import errors (could be 0 errors): {e}")
+            self._log(
+                "WARNING", f"Failed to extract import errors (could be 0 errors): {e}"
+            )
             return []
 
     def confirm_import(self) -> None:
@@ -323,8 +357,11 @@ class AhgoraBrowser(BaseBrowser):
         Clicks the save/confirm button to finalize the import of valid records.
         """
         try:
-            self.click_element("//button[contains(text(), 'Salvar') or contains(text(), 'Confirmar') or contains(text(), 'Processar')]", max_tries=3)
-            time.sleep(self.DELAY * 5) 
+            self.click_element(
+                "//button[contains(text(), 'Salvar') or contains(text(), 'Confirmar') or contains(text(), 'Processar')]",
+                max_tries=3,
+            )
+            time.sleep(self.DELAY * 5)
             self._log("INFO", "Successfully confirmed and saved leaves import.")
         except Exception as e:
             self._log("ERROR", f"Failed to confirm leaves import: {e}")
@@ -373,7 +410,9 @@ class AhgoraBrowser(BaseBrowser):
             self.driver.execute_script(script)
             time.sleep(1)
         except Exception as e:
-            self._log("WARNING", f"Failed to set autocomplete select '{element_id}': {e}")
+            self._log(
+                "WARNING", f"Failed to set autocomplete select '{element_id}': {e}"
+            )
             # Fallback to standard send keys without clear
             self.send_keys(element_id, value, By.ID, clear_first=False)
 
@@ -402,7 +441,7 @@ class AhgoraBrowser(BaseBrowser):
     #         time.sleep(0.5)
     #     except Exception:
     #         pass
-    #     
+    #
     #     try:
     #         self.click_element("//button[contains(@class, 'multiselect-clear-filter')]", max_tries=1)
     #         time.sleep(0.5)
@@ -419,7 +458,7 @@ class AhgoraBrowser(BaseBrowser):
     #             self.send_keys("//input[contains(@class, 'multiselect-search')]", search_text, By.XPATH, clear_first=True, max_tries=3)
     #         except Exception:
     #             pass
-    #         
+    #
     #     time.sleep(1)
     #
     #     # 4. Use JS for tokenized substring match to find the actual checkbox
@@ -427,14 +466,14 @@ class AhgoraBrowser(BaseBrowser):
     #         var searchTxt = "{search_text.upper()}";
     #         var searchWords = searchTxt.split(' ');
     #         var labels = document.querySelectorAll("ul.multiselect-container label.checkbox");
-    #         
+    #
     #         var bestMatch = null;
     #         var maxMatches = 0;
     #
     #         for (var i = 0; i < labels.length; i++) {{
     #             var labelText = labels[i].textContent || labels[i].innerText;
     #             var li = labels[i].closest('li');
-    #             
+    #
     #             if (li && !li.classList.contains('filter') && !li.classList.contains('multiselect-all')) {{
     #                 var upperLabel = labelText.toUpperCase();
     #                 var matches = 0;

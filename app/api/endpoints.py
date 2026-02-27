@@ -1,14 +1,16 @@
-from uuid import UUID
 from typing import Optional
-from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException
+from uuid import UUID
+
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.domain.entities import SyncJob, SyncLog, AutomationTask
-from app.domain.enums import AutomationTaskStatus
-from app.services.sync_service import SyncService
-from app.services.task_execution_service import TaskExecutionService
-from app.infrastructure.db.sqlalchemy_repo import SqlAlchemyRepo
+
 from app.core.database import get_db
 from app.core.task_registry import task_registry
+from app.domain.entities import AutomationTask, SyncJob, SyncLog
+from app.domain.enums import AutomationTaskStatus
+from app.infrastructure.db.sqlalchemy_repo import SqlAlchemyRepo
+from app.services.sync_service import SyncService
+from app.services.task_execution_service import TaskExecutionService
 
 router = APIRouter()
 

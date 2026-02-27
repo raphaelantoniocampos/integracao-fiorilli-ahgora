@@ -1,23 +1,25 @@
+from datetime import datetime
 from typing import List, Optional
 from uuid import UUID
-from datetime import datetime
+
+import pandas as pd
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from app.domain.entities import (
-    SyncJob,
-    SyncLog,
-    SyncStatus,
     AutomationTask,
     AutomationTaskStatus,
     AutomationTaskType,
+    SyncJob,
+    SyncLog,
+    SyncStatus,
 )
-import pandas as pd
 from app.infrastructure.db.models import (
-    SyncJobModel,
-    SyncLogModel,
-    AutomationTaskModel,
     AhgoraEmployeeModel,
     AhgoraLeaveModel,
+    AutomationTaskModel,
+    SyncJobModel,
+    SyncLogModel,
 )
 
 

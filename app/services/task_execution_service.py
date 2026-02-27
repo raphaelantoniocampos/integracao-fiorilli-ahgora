@@ -1,14 +1,15 @@
-import logging
 import asyncio
+import logging
 from uuid import UUID
 
-
 from app.domain.enums import (
-    AutomationTaskType as TaskType,
     AutomationTaskStatus as TaskStatus,
 )
-from app.infrastructure.db.sqlalchemy_repo import SqlAlchemyRepo
+from app.domain.enums import (
+    AutomationTaskType as TaskType,
+)
 from app.infrastructure.automation.web.ahgora_browser import AhgoraBrowser
+from app.infrastructure.db.sqlalchemy_repo import SqlAlchemyRepo
 
 logger = logging.getLogger(__name__)
 
@@ -101,6 +102,7 @@ class TaskExecutionService:
         if task_type == "ADD_LEAVE":
             logger.info("Delegating ADD_LEAVE batch to LeaveSyncService")
             from app.services.leave_sync_service import LeaveSyncService
+
             leave_service = LeaveSyncService(self.repo)
             await leave_service.execute_leaves_batch(job_id)
             return
@@ -195,7 +197,10 @@ class TaskExecutionService:
             )
 
         from app.core.settings import settings
-        browser = AhgoraBrowser(log_callback=log_cb, headless=settings.HEADLESS_MODE_TASKS)
+
+        browser = AhgoraBrowser(
+            log_callback=log_cb, headless=settings.HEADLESS_MODE_TASKS
+        )
         try:
             match task_type:
                 case TaskType.ADD_EMPLOYEE:
@@ -205,7 +210,9 @@ class TaskExecutionService:
                 case TaskType.REMOVE_EMPLOYEE:
                     browser.remove_employee(payload)
                 case TaskType.ADD_LEAVE:
-                    logger.error("ADD_LEAVE must be executed via batch (execute_batch). Individual execution not supported.")
+                    logger.error(
+                        "ADD_LEAVE must be executed via batch (execute_batch). Individual execution not supported."
+                    )
                     return False
                 case _:
                     logger.error(f"Unsupported task type for automation: {task_type}")

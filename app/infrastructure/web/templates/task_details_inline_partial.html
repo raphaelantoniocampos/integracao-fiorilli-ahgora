@@ -20,7 +20,7 @@
                     <th class="px-5 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-widest w-1/3">
                         Alvo / Carga</th>
                     <th class="px-5 py-3 text-right text-xs font-bold text-slate-500 uppercase tracking-widest w-1/6">
-                        Ações</th>
+                        Ações </th>
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-slate-50">
@@ -30,7 +30,7 @@
                         <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border
                             {% if (task.status|string == 'SUCCESS' or task.status|string == 'AutomationTaskStatus.SUCCESS') or (task.status.name == 'SUCCESS') %} bg-emerald-50 text-emerald-700 border-emerald-200
                             {% elif (task.status|string == 'FAILED' or task.status|string == 'AutomationTaskStatus.FAILED') or (task.status.name == 'FAILED') %} bg-red-50 text-red-700 border-red-200
-                            {% elif (task.status|string == 'CANCELLED' or task.status|string == 'AutomationTaskStatus.CANCELLED') or (task.status.name == 'CANCELLED') %} bg-red-50 text-red-700 border-red-200
+                            {% elif (task.status|string == 'CANCELLED' or task.status|string == 'AutomationTaskStatus.CANCELLED') or (task.status.name == 'CANCELLED') %} bg-slate-50 text-slate-700 border-slate-200
                             {% elif (task.status|string == 'RUNNING' or task.status|string == 'AutomationTaskStatus.RUNNING') or (task.status.name == 'RUNNING') %} bg-blue-50 text-blue-700 border-blue-200 animate-pulse
                             {% else %} bg-slate-100 text-slate-700 border-slate-200 {% endif %}">
 
@@ -91,7 +91,7 @@
                             <!-- Manual Execute Action -->
                             {% if ((task.status|string != 'SUCCESS' and task.status|string !=
                             'AutomationTaskStatus.SUCCESS') and (not task.status.name or task.status.name != 'SUCCESS'))
-                            and (task.status|string != 'RUNNING' or task.status|string != 'AutomationTaskStatus.RUNNING') and (not task.status.name or task.status.name != 'RUNNING')
+                            and (task.status|string != 'RUNNING' or task.status|string != 'AutomationTaskStatus.RUNNING') and (not task.status.name or task.status.name != 'RUNNING') and (task_type != 'add_leave')
                             %}
                             <button
                                 onclick="fetch('/api/sync/tasks/{{ task.id }}/execute', {method: 'POST'}).then(() => { this.classList.add('opacity-50', 'cursor-not-allowed'); this.disabled = true; window.location.reload(); })"

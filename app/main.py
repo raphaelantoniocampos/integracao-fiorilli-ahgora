@@ -1,14 +1,15 @@
+import logging
+import traceback
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
-import traceback
-import logging
 
 from app.api.endpoints import router as api_router
-from app.infrastructure.web.routes import router as web_router
-from app.core.settings import settings
 from app.core.scheduler import scheduler
+from app.core.settings import settings
+from app.infrastructure.web.routes import router as web_router
 
 logger = logging.getLogger(__name__)
 

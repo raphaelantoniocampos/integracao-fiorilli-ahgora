@@ -1,7 +1,7 @@
-import time
 import logging
+import time
 from abc import ABC
-from typing import Callable, Any, Union, List
+from typing import Any, Callable, List, Union
 
 from selenium import webdriver
 from selenium.common.exceptions import (
@@ -33,7 +33,12 @@ class BaseBrowser(ABC):
         StaleElementReferenceException,
     )
 
-    def __init__(self, url: str, log_callback: Callable[[str, str], None] = None, headless: bool = None):
+    def __init__(
+        self,
+        url: str,
+        log_callback: Callable[[str, str], None] = None,
+        headless: bool = None,
+    ):
         self.log_callback = log_callback
         self.headless = headless if headless is not None else settings.HEADLESS_MODE
         self.driver = self._get_web_driver()
@@ -61,12 +66,13 @@ class BaseBrowser(ABC):
 
     def _get_web_driver(self) -> webdriver.Firefox:
         import os
+
         os.environ["MOZ_DISABLE_CONTENT_SANDBOX"] = "1"
-        
+
         options = webdriver.FirefoxOptions()
         if self.headless:
             options.add_argument("-headless")
-            
+
         options.set_preference("security.sandbox.content.level", 0)
 
         # Ensure download directory exists

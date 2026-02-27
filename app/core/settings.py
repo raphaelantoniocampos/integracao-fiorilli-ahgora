@@ -1,6 +1,7 @@
-import os
 import json
+import os
 from pathlib import Path
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -20,8 +21,14 @@ class Settings:
 
     # Browser / Automation
     IS_DOCKER: bool = os.getenv("IS_DOCKER", "False").lower() == "true"
-    HEADLESS_MODE: bool = True if IS_DOCKER else os.getenv("HEADLESS_MODE", "True").lower() == "true"
-    HEADLESS_MODE_TASKS: bool = True if IS_DOCKER else os.getenv("HEADLESS_MODE_TASKS", "True").lower() == "true"
+    HEADLESS_MODE: bool = (
+        True if IS_DOCKER else os.getenv("HEADLESS_MODE", "True").lower() == "true"
+    )
+    HEADLESS_MODE_TASKS: bool = (
+        True
+        if IS_DOCKER
+        else os.getenv("HEADLESS_MODE_TASKS", "True").lower() == "true"
+    )
     FIORILLI_URL: str = os.getenv("FIORILLI_URL", "")
     AHGORA_URL: str = os.getenv("AHGORA_URL", "")
     LEAVES_MONTHS_AGO: int = int(os.getenv("LEAVES_MONTHS_AGO", "2"))

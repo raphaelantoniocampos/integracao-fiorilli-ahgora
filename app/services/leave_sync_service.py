@@ -1,16 +1,18 @@
-import logging
 import asyncio
-from uuid import UUID
-from pathlib import Path
+import logging
 import tempfile
+from pathlib import Path
+from uuid import UUID
+
 import pandas as pd
 
-from app.domain.enums import AutomationTaskStatus
-from app.infrastructure.db.sqlalchemy_repo import SqlAlchemyRepo
-from app.infrastructure.automation.web.ahgora_browser import AhgoraBrowser
 from app.core.settings import settings
+from app.domain.enums import AutomationTaskStatus
+from app.infrastructure.automation.web.ahgora_browser import AhgoraBrowser
+from app.infrastructure.db.sqlalchemy_repo import SqlAlchemyRepo
 
 logger = logging.getLogger(__name__)
+
 
 class LeaveSyncService:
     def __init__(self, repo: SqlAlchemyRepo):
@@ -21,12 +23,14 @@ class LeaveSyncService:
         Executes all pending ADD_LEAVE tasks as a single batch using the Ahgora file importer.
         """
         logger.info(f"Starting batched leaf upload for job {job_id}")
-        
+
         # 1. Fetch pending tasks
         tasks = await self.repo.get_automation_tasks_by_job(job_id)
         leave_tasks = [
-            t for t in tasks 
-            if str(t.type).endswith("ADD_LEAVE") and t.status in [AutomationTaskStatus.PENDING, AutomationTaskStatus.FAILED]
+            t
+            for t in tasks
+            if str(t.type).endswith("ADD_LEAVE")
+            and t.status in [AutomationTaskStatus.PENDING, AutomationTaskStatus.FAILED]
         ]
 
         if not leave_tasks:
@@ -35,7 +39,9 @@ class LeaveSyncService:
 
         for t in leave_tasks:
             await self.repo.update_task_status(t.id, AutomationTaskStatus.RUNNING)
-            await self.repo.add_log(job_id, "INFO", "Iniciando batch import de afastamento", task_id=t.id)
+            await self.repo.add_log(
+                job_id, "INFO", "Iniciando batch import de afastamento", task_id=t.id
+            )
 
         # Build DataFrame from task payloads
         payloads = [t.payload for t in leave_tasks]
@@ -45,35 +51,54 @@ class LeaveSyncService:
         loop = asyncio.get_running_loop()
         try:
             results = await asyncio.to_thread(
-                self._run_browser_batch_import,
-                df,
-                job_id,
-                loop
+                self._run_browser_batch_import, df, job_id, loop
             )
-            
+
             # Analyze results and update task statuses
             # results is a list of dicts: [{'payload': {...}, 'status': 'success' or 'error', 'message': '...', 'index': 0}]
-            
+
             for i, task in enumerate(leave_tasks):
                 task_result = results[i]
-                if task_result['status'] == 'success':
-                    await self.repo.update_task_status(task.id, AutomationTaskStatus.SUCCESS)
-                    await self.repo.add_log(job_id, "INFO", "Afastamento importado com sucesso", task_id=task.id)
+                if task_result["status"] == "success":
+                    await self.repo.update_task_status(
+                        task.id, AutomationTaskStatus.SUCCESS
+                    )
+                    await self.repo.add_log(
+                        job_id,
+                        "INFO",
+                        "Afastamento importado com sucesso",
+                        task_id=task.id,
+                    )
                 else:
-                    await self.repo.update_task_status(task.id, AutomationTaskStatus.FAILED, message=task_result['message'])
-                    await self.repo.add_log(job_id, "ERROR", f"Falha na importação: {task_result['message']}", task_id=task.id)
-                    
+                    await self.repo.update_task_status(
+                        task.id,
+                        AutomationTaskStatus.FAILED,
+                        message=task_result["message"],
+                    )
+                    await self.repo.add_log(
+                        job_id,
+                        "ERROR",
+                        f"Falha na importação: {task_result['message']}",
+                        task_id=task.id,
+                    )
+
         except Exception as e:
             logger.exception("Batched leaf sync failed catastrophically.")
             for t in leave_tasks:
-                await self.repo.update_task_status(t.id, AutomationTaskStatus.FAILED, message=str(e))
-                await self.repo.add_log(job_id, "ERROR", f"Falha crítica no lote: {str(e)}", task_id=t.id)
+                await self.repo.update_task_status(
+                    t.id, AutomationTaskStatus.FAILED, message=str(e)
+                )
+                await self.repo.add_log(
+                    job_id, "ERROR", f"Falha crítica no lote: {str(e)}", task_id=t.id
+                )
 
-
-    def _run_browser_batch_import(self, df: pd.DataFrame, job_id: UUID, loop: asyncio.AbstractEventLoop) -> list[dict]:
+    def _run_browser_batch_import(
+        self, df: pd.DataFrame, job_id: UUID, loop: asyncio.AbstractEventLoop
+    ) -> list[dict]:
         """
         Sync execution of the browser automation for leaves batch.
         """
+
         def log_cb(level: str, msg: str):
             asyncio.run_coroutine_threadsafe(
                 self.repo.add_log(job_id, level, msg), loop
@@ -81,15 +106,19 @@ class LeaveSyncService:
 
         results = []
         for i, row in df.iterrows():
-            results.append({
-                'payload': row.to_dict(),
-                'status': 'success',
-                'message': '',
-                'index': i
-            })
+            results.append(
+                {
+                    "payload": row.to_dict(),
+                    "status": "success",
+                    "message": "",
+                    "index": i,
+                }
+            )
 
-        browser = AhgoraBrowser(log_callback=log_cb, headless=settings.HEADLESS_MODE_TASKS)
-        
+        browser = AhgoraBrowser(
+            log_callback=log_cb, headless=settings.HEADLESS_MODE_TASKS
+        )
+
         with tempfile.TemporaryDirectory() as temp_dir:
             try:
                 temp_path = Path(temp_dir)
@@ -98,52 +127,58 @@ class LeaveSyncService:
 
                 # Ensure required columns exist, mapping from payload back to UPLOAD_LEAVES_COLUMNS
                 upload_cols = settings.UPLOAD_LEAVES_COLUMNS
-                
+
                 # Filter/Map columns
                 export_df = df.copy()
                 for col in upload_cols:
                     if col not in export_df.columns:
                         export_df[col] = ""
-                        
+
                 # 1. Generate initial CSV
-                export_df[upload_cols].to_csv(initial_file, index=False, header=False, sep=",")
-                
+                export_df[upload_cols].to_csv(
+                    initial_file, index=False, header=False, sep=","
+                )
+
                 # 2. Upload initial CSV
                 browser.upload_leaves_file(str(initial_file))
-                
+
                 # 3. Extract errors
                 import_errors = browser.extract_import_errors()
-                
+
                 # import_errors format: [{'row': 10, 'error': 'Intersecção...'}]
-                error_rows = {err['row'] for err in import_errors}
-                
+                error_rows = {err["row"] for err in import_errors}
+
                 # Mark errors in results
                 # Note: Ahgora row errors might be 1-indexed. Let's assume 1-indexed based on legacy script
                 for err in import_errors:
-                    idx = err['row'] - 1 
+                    idx = err["row"] - 1
                     if 0 <= idx < len(results):
-                        results[idx]['status'] = 'error'
-                        results[idx]['message'] = err['error']
-                
+                        results[idx]["status"] = "error"
+                        results[idx]["message"] = err["error"]
+
                 # 4. Filter DF
                 # Drop rows that had errors (1-indexed matching)
-                valid_indices = [i for i in range(len(export_df)) if (i + 1) not in error_rows]
-                
+                valid_indices = [
+                    i for i in range(len(export_df)) if (i + 1) not in error_rows
+                ]
+
                 if not valid_indices:
                     log_cb("WARNING", "All leave records failed validation.")
                     return results
-                    
+
                 final_df = export_df.iloc[valid_indices]
-                
+
                 # 5. Generate final CSV
-                final_df[upload_cols].to_csv(final_file, index=False, header=False, sep=",")
-                
+                final_df[upload_cols].to_csv(
+                    final_file, index=False, header=False, sep=","
+                )
+
                 # 6. Upload final CSV and Confirm
                 browser.upload_leaves_file(str(final_file))
-                
+
                 # Optionally wait, then confirm
                 browser.confirm_import()
-                
+
                 return results
 
             except Exception as e:

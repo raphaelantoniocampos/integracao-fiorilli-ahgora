@@ -1,6 +1,6 @@
 import asyncio
-from uuid import UUID
 import logging
+from uuid import UUID
 
 logger = logging.getLogger(__name__)
 

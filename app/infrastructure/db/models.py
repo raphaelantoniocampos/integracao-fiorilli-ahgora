@@ -1,11 +1,12 @@
 from datetime import datetime
 from uuid import UUID, uuid4
-from sqlalchemy import String, DateTime, ForeignKey, Text, JSON
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from sqlalchemy import JSON, DateTime, ForeignKey, String, Text
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
-from app.domain.enums import SyncStatus, AutomationTaskType, AutomationTaskStatus
+from app.domain.enums import AutomationTaskStatus, AutomationTaskType, SyncStatus
 
 
 class SyncJobModel(Base):

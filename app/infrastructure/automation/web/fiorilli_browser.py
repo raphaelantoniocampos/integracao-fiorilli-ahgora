@@ -1,8 +1,10 @@
 import logging
+from datetime import date, datetime
 from time import sleep
-from datetime import datetime, date
+
 from dateutil.relativedelta import relativedelta
 from selenium.webdriver.common.by import By
+
 from app.core.settings import settings
 from app.infrastructure.automation.web.base_browser import BaseBrowser
 

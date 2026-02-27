@@ -1,12 +1,14 @@
+from unittest.mock import AsyncMock, MagicMock, patch
+from uuid import uuid4
+
 import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import MagicMock, AsyncMock, patch
-from uuid import uuid4
-from app.main import app
+
+from app.api.endpoints import get_execution_service, get_service
 from app.core.database import get_db
-from app.api.endpoints import get_service, get_execution_service
-from app.domain.entities import SyncJob, SyncLog, AutomationTask
+from app.domain.entities import AutomationTask, SyncJob, SyncLog
 from app.domain.enums import AutomationTaskStatus, AutomationTaskType
+from app.main import app
 
 # Mock database dependency
 mock_db = MagicMock()
@@ -248,16 +250,18 @@ def test_cancel_batch_tasks(mock_exec_service_class, client):
 def test_get_task_details_partial_single_task(mock_service_class, client):
     mock_service = mock_service_class.return_value
     task_id = uuid4()
+
     class MockTask:
         id = task_id
         status = "SUCCESS"
         error_message = None
         payload = {"key": "value"}
-        
+
     mock_service.repo.get_task = AsyncMock(return_value=MockTask())
-    
+
     # Import the dependency override for main.py where get_service is defined and used
     from app.api.endpoints import get_service as api_get_service
+
     app.dependency_overrides[api_get_service] = lambda: mock_service
 
     response = client.get(f"/partials/task-payload?task_id={task_id}")
@@ -273,19 +277,23 @@ def test_get_task_details_partial_group_tasks(mock_service_class, client):
     mock_service = mock_service_class.return_value
     job_id = uuid4()
     task_type = AutomationTaskType.ADD_EMPLOYEE
+
     class MockGroupTask:
         id = uuid4()
         type = task_type.name
         status = "FAILED"
         error_message = None
         payload = {"employee_id": "123"}
-        
+
     mock_service.get_automation_tasks = AsyncMock(return_value=[MockGroupTask()])
-    
+
     from app.api.endpoints import get_service as api_get_service
+
     app.dependency_overrides[api_get_service] = lambda: mock_service
 
-    response = client.get(f"/partials/task-payload?job_id={job_id}&task_type={task_type.name}") # Use .name not .value for FastAPI query match
+    response = client.get(
+        f"/partials/task-details-inline?job_id={job_id}&task_type={task_type.name}"
+    )  # Use .name not .value for FastAPI query match
     assert response.status_code == 200
     assert "123" in response.text
     assert "FAILED" in response.text
@@ -302,14 +310,21 @@ def test_get_task_log_partial(mock_service_class, client):
         job_id=uuid4(),
         type=AutomationTaskType.ADD_EMPLOYEE,
         status=AutomationTaskStatus.PENDING,
-        payload={}
+        payload={},
     )
-    log_entry = SyncLog(id=1, job_id=task.job_id, task_id=task_id, level="INFO", message="Executed step 1")
-    
+    log_entry = SyncLog(
+        id=1,
+        job_id=task.job_id,
+        task_id=task_id,
+        level="INFO",
+        message="Executed step 1",
+    )
+
     mock_service.repo.get_task = AsyncMock(return_value=task)
     mock_service.repo.get_task_logs = AsyncMock(return_value=[log_entry])
-    
+
     from app.api.endpoints import get_service as api_get_service
+
     app.dependency_overrides[api_get_service] = lambda: mock_service
 
     response = client.get(f"/partials/task-log?task_id={task_id}")

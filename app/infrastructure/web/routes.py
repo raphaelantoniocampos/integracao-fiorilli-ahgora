@@ -1,15 +1,17 @@
 from datetime import datetime
-from uuid import UUID
 from typing import Optional
-from fastapi import APIRouter, Request, Depends, Form
+from uuid import UUID
+
+import dotenv
+from fastapi import APIRouter, Depends, Form, Request
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.services.sync_service import SyncService
-from app.infrastructure.db.sqlalchemy_repo import SqlAlchemyRepo
+
 from app.core.database import get_db
-from app.domain.enums import SyncStatus
 from app.core.settings import settings
-import dotenv
+from app.domain.enums import SyncStatus
+from app.infrastructure.db.sqlalchemy_repo import SqlAlchemyRepo
+from app.services.sync_service import SyncService
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/infrastructure/web/templates")
@@ -36,29 +38,33 @@ async def dashboard(request: Request, service: SyncService = Depends(get_service
     }
 
     return templates.TemplateResponse(
-        "dashboard.html", {
+        "dashboard.html",
+        {
             "request": request,
             "stats": stats,
             "headless_mode": settings.HEADLESS_MODE,
             "headless_mode_tasks": settings.HEADLESS_MODE_TASKS,
             "is_docker": settings.IS_DOCKER,
-        }
+        },
     )
+
 
 @router.post("/api/settings/toggle-headless")
 async def toggle_headless(request: Request, target: str = Form(...)):
     if settings.IS_DOCKER:
         return {"error": "Ação não permitida em produção"}
-        
+
     env_path = str(settings.BASE_DIR / ".env")
-    
+
     if target == "sync":
         settings.HEADLESS_MODE = not settings.HEADLESS_MODE
         dotenv.set_key(env_path, "HEADLESS_MODE", str(settings.HEADLESS_MODE))
     elif target == "tasks":
         settings.HEADLESS_MODE_TASKS = not settings.HEADLESS_MODE_TASKS
-        dotenv.set_key(env_path, "HEADLESS_MODE_TASKS", str(settings.HEADLESS_MODE_TASKS))
-        
+        dotenv.set_key(
+            env_path, "HEADLESS_MODE_TASKS", str(settings.HEADLESS_MODE_TASKS)
+        )
+
     response = templates.TemplateResponse(
         "partials/headless_toggles.html",
         {
@@ -66,7 +72,7 @@ async def toggle_headless(request: Request, target: str = Form(...)):
             "headless_mode": settings.HEADLESS_MODE,
             "headless_mode_tasks": settings.HEADLESS_MODE_TASKS,
             "is_docker": settings.IS_DOCKER,
-        }
+        },
     )
     response.headers["HX-Trigger"] = "refresh"
     return response
@@ -87,7 +93,8 @@ async def get_task_groups_page(
     request: Request, job_id: UUID, service: SyncService = Depends(get_service)
 ):
     from collections import defaultdict
-    from typing import Dict, Any
+    from typing import Any, Dict
+
     from app.domain.enums import AutomationTaskStatus
 
     tasks = await service.get_automation_tasks(job_id)
@@ -157,32 +164,24 @@ async def get_task_details_inline_partial(
         },
     )
 
+
 @router.get("/partials/task-payload")
 async def get_task_details_partial(
-    request: Request, 
-    task_id: Optional[UUID] = None, 
-    job_id: Optional[UUID] = None,
-    task_type: Optional[str] = None,
-    service: SyncService = Depends(get_service)
+    request: Request,
+    task_id: Optional[UUID] = None,
+    service: SyncService = Depends(get_service),
 ):
     if task_id:
         task = await service.repo.get_task(task_id)
         if task:
             return templates.TemplateResponse(
                 "task_payload.html",
-                {"request": request, "task": task, "task_id": str(task_id) if task_id else None},
+                {
+                    "request": request,
+                    "task": task,
+                    "task_id": str(task_id) if task_id else None,
+                },
             )
-    #         tasks.append(task)
-    # elif job_id and task_type:
-    #     all_tasks = await service.get_automation_tasks(job_id)
-    #     tasks = [
-    #         t for t in all_tasks 
-    #         if str(t.type) == task_type 
-    #         or getattr(t.type, "value", str(t.type)) == task_type
-    #         or getattr(t.type, "name", str(t.type)) == task_type
-    #     ]
-
-
 
 @router.get("/partials/task-log")
 async def get_task_log_partial(
