@@ -98,6 +98,13 @@ class TaskExecutionService:
 
         logger.info(f"Starting batch execution for job {job_id}, type {task_type}")
 
+        if task_type == "ADD_LEAVE":
+            logger.info("Delegating ADD_LEAVE batch to LeaveSyncService")
+            from app.services.leave_sync_service import LeaveSyncService
+            leave_service = LeaveSyncService(self.repo)
+            await leave_service.execute_leaves_batch(job_id)
+            return
+
         # We need a custom repo method or we fetch all and filter
         tasks = await self.repo.get_automation_tasks_by_job(job_id)
         batch = [
@@ -139,7 +146,7 @@ class TaskExecutionService:
         await self.repo.add_log(
             task.job_id,
             "WARNING",
-            f"Tarefa {task.type} cancelada pelo usuário.",
+            f"Task {task.type} cancelled by user.",
             task_id=task_id,
         )
         return True
@@ -198,7 +205,8 @@ class TaskExecutionService:
                 case TaskType.REMOVE_EMPLOYEE:
                     browser.remove_employee(payload)
                 case TaskType.ADD_LEAVE:
-                    logger.warning("Add leave automation not fully implemented yet.")
+                    logger.error("ADD_LEAVE must be executed via batch (execute_batch). Individual execution not supported.")
+                    return False
                 case _:
                     logger.error(f"Unsupported task type for automation: {task_type}")
                     return False

@@ -186,7 +186,8 @@ class AhgoraBrowser(BaseBrowser):
                     self._set_autocomplete_select("dados-departamento", payload["department_fiorilli"])
                     has_changes = True
                     try:
-                        self._update_location_multiselect(payload["department_fiorilli"])
+                        pass
+                        # self._update_location_multiselect(payload["department_fiorilli"])
                     except Exception as e:
                         self._log("WARNING", f"Could not update location multiselect automatically: {e}")
 
@@ -247,9 +248,10 @@ class AhgoraBrowser(BaseBrowser):
             self._log("ERROR", f"Failed to remove employee {name} ({employee_id}): {e}")
             raise e
 
-    def add_leave(self, file_path: str) -> None:
+    def upload_leaves_file(self, file_path: str) -> None:
         """
-        Uploads a CSV/TXT file of leaves to Ahgora.
+        Uploads a CSV/TXT file of leaves to Ahgora for validation (step 1).
+        Does NOT save the records.
         """
         self._log("INFO", "Starting leave upload to Ahgora")
         self._login()
@@ -264,11 +266,10 @@ class AhgoraBrowser(BaseBrowser):
         try:
             # Find the file input element and send the file path
             file_input = self.driver.find_element(By.XPATH, "//input[@type='file']")
-            file_input.send_keys(file_path)
+            file_input.send_keys(str(file_path))
             time.sleep(self.DELAY)
 
             # Ensure the specific layout is selected (pw_afimport_01)
-            # Assuming there is a select dropdown or it defaults to the user's config
             try:
                 self.send_keys("layout_id", "pw_afimport_01", By.ID)
             except Exception:
@@ -284,6 +285,49 @@ class AhgoraBrowser(BaseBrowser):
             self._log("INFO", f"Finished uploading leaves file from {file_path}")
         except Exception as e:
             self._log("ERROR", f"Failed to upload leaves file: {e}")
+            raise e
+
+    def extract_import_errors(self) -> list[dict]:
+        """
+        Extracts errors from the Ahgora import validation screen.
+        Expects errors in the format: '[10] Intersecção com afastamento existente'.
+        Returns a list of dicts: [{'row': 10, 'error': 'Intersecção...'}]
+        """
+        import re
+        errors = []
+        try:
+            # The validation screen displays a log of processing, usually inside the DOM.
+            # A robust way is to pull all body text and search line by line.
+            body_text = self.driver.find_element(By.TAG_NAME, "body").text
+            
+            # Match logs like "[15] Intersecção com afastamento..."
+            lines = body_text.split('\n')
+            regex = r"\[(\d+)\]\s*(.+)"
+            
+            for line in lines:
+                line = line.strip()
+                match = re.search(regex, line)
+                if match:
+                    row_idx = int(match.group(1))
+                    error_msg = match.group(2).strip()
+                    errors.append({"row": row_idx, "error": error_msg})
+                    
+            self._log("INFO", f"Extracted {len(errors)} validation errors.")
+            return errors
+        except Exception as e:
+            self._log("WARNING", f"Failed to extract import errors (could be 0 errors): {e}")
+            return []
+
+    def confirm_import(self) -> None:
+        """
+        Clicks the save/confirm button to finalize the import of valid records.
+        """
+        try:
+            self.click_element("//button[contains(text(), 'Salvar') or contains(text(), 'Confirmar') or contains(text(), 'Processar')]", max_tries=3)
+            time.sleep(self.DELAY * 5) 
+            self._log("INFO", "Successfully confirmed and saved leaves import.")
+        except Exception as e:
+            self._log("ERROR", f"Failed to confirm leaves import: {e}")
             raise e
 
     def _set_autocomplete_select(self, element_id: str, value: str) -> None:
@@ -333,97 +377,97 @@ class AhgoraBrowser(BaseBrowser):
             # Fallback to standard send keys without clear
             self.send_keys(element_id, value, By.ID, clear_first=False)
 
-    def _update_location_multiselect(self, search_text: str) -> None:
-        """
-        Interacts with the Bootstrap multiselect to update the 'Localização' field.
-        Employs intelligent token-based fuzzy matching.
-        """
-        # 1. Click the button to open the dropdown.
-        dropdown_btn_xpath = "//*[@id='form_funcionario']/div/div[2]/div[1]/div[2]/div[8]/div[2]/div/div/div/button"
-        try:
-            self.click_element(dropdown_btn_xpath, max_tries=3)
-        except Exception:
-            # Fallback
-            try:
-                self.click_element("//button[contains(@class, 'multiselect dropdown-toggle')]", max_tries=3)
-            except Exception as e:
-                self._log("WARNING", f"Could not find multiselect button: {e}")
-                return
-
-        time.sleep(1)
-
-        # 2. Clear previous selections if 'Todas localizações selecionadas' is active or checked
-        try:
-            self.click_element("//li[contains(@class, 'multiselect-all')]//label", max_tries=1)
-            time.sleep(0.5)
-        except Exception:
-            pass
-        
-        try:
-            self.click_element("//button[contains(@class, 'multiselect-clear-filter')]", max_tries=1)
-            time.sleep(0.5)
-        except Exception:
-            pass
-
-        # 3. Type into the search input
-        search_input_xpath = "//*[@id='form_funcionario']/div/div[2]/div[1]/div[2]/div[8]/div[2]/div/div/div/div/ul/li[1]/div/input"
-        try:
-            self.send_keys(search_input_xpath, search_text, By.XPATH, clear_first=True, max_tries=3)
-        except Exception:
-            # Fallback
-            try:
-                self.send_keys("//input[contains(@class, 'multiselect-search')]", search_text, By.XPATH, clear_first=True, max_tries=3)
-            except Exception:
-                pass
-            
-        time.sleep(1)
-
-        # 4. Use JS for tokenized substring match to find the actual checkbox
-        script = f"""
-            var searchTxt = "{search_text.upper()}";
-            var searchWords = searchTxt.split(' ');
-            var labels = document.querySelectorAll("ul.multiselect-container label.checkbox");
-            
-            var bestMatch = null;
-            var maxMatches = 0;
-
-            for (var i = 0; i < labels.length; i++) {{
-                var labelText = labels[i].textContent || labels[i].innerText;
-                var li = labels[i].closest('li');
-                
-                if (li && !li.classList.contains('filter') && !li.classList.contains('multiselect-all')) {{
-                    var upperLabel = labelText.toUpperCase();
-                    var matches = 0;
-                    // Exact match takes precedence
-                    if (upperLabel.trim() === searchTxt.trim()) {{
-                        bestMatch = labels[i];
-                        break;
-                    }}
-                    for(var w = 0; w < searchWords.length; w++) {{
-                        if (searchWords[w].length > 2 && upperLabel.includes(searchWords[w])) {{
-                            matches++;
-                        }}
-                    }}
-                    if (matches > maxMatches) {{
-                        maxMatches = matches;
-                        bestMatch = labels[i];
-                    }}
-                }}
-            }}
-            if (bestMatch) {{
-                bestMatch.click();
-            }}
-        """
-        try:
-            self.driver.execute_script(script)
-        except Exception as e:
-            self._log("WARNING", f"Could not explicitly select the filtered location item via JS: {e}")
-
-        # 5. Close the dropdown
-        try:
-            self.click_element(dropdown_btn_xpath, max_tries=2)
-        except Exception:
-            try:
-                self.click_element("//button[contains(@class, 'multiselect dropdown-toggle')]", max_tries=2)
-            except Exception:
-                pass
+    # def _update_location_multiselect(self, search_text: str) -> None:
+    #     """
+    #     Interacts with the Bootstrap multiselect to update the 'Localização' field.
+    #     Employs intelligent token-based fuzzy matching.
+    #     """
+    #     # 1. Click the button to open the dropdown.
+    #     dropdown_btn_xpath = "//*[@id='form_funcionario']/div/div[2]/div[1]/div[2]/div[8]/div[2]/div/div/div/button"
+    #     try:
+    #         self.click_element(dropdown_btn_xpath, max_tries=3)
+    #     except Exception:
+    #         # Fallback
+    #         try:
+    #             self.click_element("//button[contains(@class, 'multiselect dropdown-toggle')]", max_tries=3)
+    #         except Exception as e:
+    #             self._log("WARNING", f"Could not find multiselect button: {e}")
+    #             return
+    #
+    #     time.sleep(1)
+    #
+    #     # 2. Clear previous selections if 'Todas localizações selecionadas' is active or checked
+    #     try:
+    #         self.click_element("//li[contains(@class, 'multiselect-all')]//label", max_tries=1)
+    #         time.sleep(0.5)
+    #     except Exception:
+    #         pass
+    #     
+    #     try:
+    #         self.click_element("//button[contains(@class, 'multiselect-clear-filter')]", max_tries=1)
+    #         time.sleep(0.5)
+    #     except Exception:
+    #         pass
+    #
+    #     # 3. Type into the search input
+    #     search_input_xpath = "//*[@id='form_funcionario']/div/div[2]/div[1]/div[2]/div[8]/div[2]/div/div/div/div/ul/li[1]/div/input"
+    #     try:
+    #         self.send_keys(search_input_xpath, search_text, By.XPATH, clear_first=True, max_tries=3)
+    #     except Exception:
+    #         # Fallback
+    #         try:
+    #             self.send_keys("//input[contains(@class, 'multiselect-search')]", search_text, By.XPATH, clear_first=True, max_tries=3)
+    #         except Exception:
+    #             pass
+    #         
+    #     time.sleep(1)
+    #
+    #     # 4. Use JS for tokenized substring match to find the actual checkbox
+    #     script = f"""
+    #         var searchTxt = "{search_text.upper()}";
+    #         var searchWords = searchTxt.split(' ');
+    #         var labels = document.querySelectorAll("ul.multiselect-container label.checkbox");
+    #         
+    #         var bestMatch = null;
+    #         var maxMatches = 0;
+    #
+    #         for (var i = 0; i < labels.length; i++) {{
+    #             var labelText = labels[i].textContent || labels[i].innerText;
+    #             var li = labels[i].closest('li');
+    #             
+    #             if (li && !li.classList.contains('filter') && !li.classList.contains('multiselect-all')) {{
+    #                 var upperLabel = labelText.toUpperCase();
+    #                 var matches = 0;
+    #                 // Exact match takes precedence
+    #                 if (upperLabel.trim() === searchTxt.trim()) {{
+    #                     bestMatch = labels[i];
+    #                     break;
+    #                 }}
+    #                 for(var w = 0; w < searchWords.length; w++) {{
+    #                     if (searchWords[w].length > 2 && upperLabel.includes(searchWords[w])) {{
+    #                         matches++;
+    #                     }}
+    #                 }}
+    #                 if (matches > maxMatches) {{
+    #                     maxMatches = matches;
+    #                     bestMatch = labels[i];
+    #                 }}
+    #             }}
+    #         }}
+    #         if (bestMatch) {{
+    #             bestMatch.click();
+    #         }}
+    #     """
+    #     try:
+    #         self.driver.execute_script(script)
+    #     except Exception as e:
+    #         self._log("WARNING", f"Could not explicitly select the filtered location item via JS: {e}")
+    #
+    #     # 5. Close the dropdown
+    #     try:
+    #         self.click_element(dropdown_btn_xpath, max_tries=2)
+    #     except Exception:
+    #         try:
+    #             self.click_element("//button[contains(@class, 'multiselect dropdown-toggle')]", max_tries=2)
+    #         except Exception:
+    #             pass
