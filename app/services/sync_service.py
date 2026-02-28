@@ -199,7 +199,10 @@ class SyncService:
             logger.warning(f"Kill failed: Job {job_id} not found in database")
             return False
 
-        is_zombie = task is None and job.status == SyncStatus.RUNNING
+        is_zombie = task is None and job.status in (
+            SyncStatus.RUNNING,
+            SyncStatus.RETRYING,
+        )
 
         if not task and not is_zombie:
             active_tasks = task_registry.get_all_tasks()
@@ -253,9 +256,11 @@ class SyncService:
         jobs = await self.repo.list_jobs()
         for job in jobs:
             if (
-                job.status == SyncStatus.RUNNING or SyncStatus.RETRYING
+                job.status in (SyncStatus.RUNNING, SyncStatus.RETRYING)
             ) and job.id not in registry_job_ids:
-                logger.info(f"Cleaning up untracked RUNNING job {job.id} from database")
+                logger.info(
+                    f"Cleaning up untracked RUNNING/RETRYING job {job.id} from database"
+                )
                 if await self.kill_job(job.id):
                     count += 1
 
@@ -363,7 +368,7 @@ class SyncService:
                         FiorilliBrowser,
                         "download_leaves",
                         "Fiorilli leaves download",
-                        patterns=["pontoafastamentos", "pontoferias"],
+                        patterns=["afastamentos", "ferias"],
                     ),
                     run_download_task_with_retries(
                         AhgoraBrowser,
@@ -453,7 +458,6 @@ class SyncService:
                 changed_employees_df,
                 new_leaves_df,
             ) = await self._generate_tasks_dfs(
-                job_id,
                 fiorilli_employees=fiorilli_employees,
                 ahgora_employees=ahgora_employees,
                 last_leaves=last_leaves,

@@ -263,7 +263,6 @@ class BaseBrowser(ABC):
         selector,
         selector_type,
         delay,
-        ignored_exceptions,
     ):
         WebDriverWait(self.driver, delay).until(
             EC.invisibility_of_element_located((selector_type, selector))

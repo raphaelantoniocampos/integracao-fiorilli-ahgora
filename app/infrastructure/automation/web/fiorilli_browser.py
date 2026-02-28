@@ -61,20 +61,20 @@ class FiorilliBrowser(BaseBrowser):
                 "Fiorilli credentials not set in environment variables (FIORILLI_USER, FIORILLI_PASSWORD)"
             )
 
-        self._enter_username("O30_id-inputEl", user)
-        self._enter_password("O34_id-inputEl", psw)
+        self._enter_username("//input[@placeholder='(Usuário)']", user)
+        self._enter_password("//input[@placeholder='(Senha)']", psw)
         self._click_login_button()
         self._wait_for_login_to_complete()
         sleep(self.DELAY)
 
     def _enter_username(self, selector: str, user: str) -> None:
-        self.send_keys(selector, user, selector_type=By.ID)
+        self.send_keys(selector, user, selector_type=By.XPATH)
 
     def _enter_password(self, selector: str, password: str) -> None:
-        self.send_keys(selector, password, selector_type=By.ID)
+        self.send_keys(selector, password, selector_type=By.XPATH)
 
     def _click_login_button(self) -> None:
-        self.click_element("O40_id-btnEl", selector_type=By.ID)
+        self.click_element("//span[text()='Entrar']")
 
     def _wait_for_login_to_complete(self) -> None:
         self.wait_desappear("//*[contains(text(), 'Acessando SIP 7.5')]")

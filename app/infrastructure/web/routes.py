@@ -183,6 +183,7 @@ async def get_task_details_partial(
                 },
             )
 
+
 @router.get("/partials/task-log")
 async def get_task_log_partial(
     request: Request, task_id: UUID, service: SyncService = Depends(get_service)
