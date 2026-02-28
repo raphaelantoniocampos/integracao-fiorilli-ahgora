@@ -66,7 +66,7 @@ async def toggle_headless(request: Request, target: str = Form(...)):
         )
 
     response = templates.TemplateResponse(
-        "partials/headless_toggles.html",
+        f"partials/headless_{target}_toggle.html",
         {
             "request": request,
             "headless_mode": settings.HEADLESS_MODE,
