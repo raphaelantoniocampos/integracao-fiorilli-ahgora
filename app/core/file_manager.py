@@ -36,13 +36,13 @@ class FileManager:
 
             file_name_lower = file.name.lower()
             if "trabalhador" in file_name_lower:
-                cls.move_file(file, cls.FIORILLI_DIR / "raw_employees.txt")
+                cls.copy_file(file, cls.FIORILLI_DIR / "raw_employees.txt")
             elif "funcionarios" in file_name_lower:
-                cls.move_file(file, cls.AHGORA_DIR / "raw_employees.csv")
+                cls.copy_file(file, cls.AHGORA_DIR / "raw_employees.csv")
             elif "pontoafastamentos" in file_name_lower:
-                cls.move_file(file, cls.FIORILLI_DIR / "raw_leaves.txt")
+                cls.copy_file(file, cls.FIORILLI_DIR / "raw_leaves.txt")
             elif "pontoferias" in file_name_lower:
-                cls.move_file(file, cls.FIORILLI_DIR / "raw_vacations.txt")
+                cls.copy_file(file, cls.FIORILLI_DIR / "raw_vacations.txt")
 
     @staticmethod
     def move_file(source: Path, destination: Path):
