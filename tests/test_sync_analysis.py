@@ -75,14 +75,13 @@ async def test_create_automation_tasks(sync_service, mock_repo):
 
 @pytest.mark.asyncio
 async def test_generate_tasks_dfs_new_employee(sync_service):
-    job_id = uuid4()
     fiorilli_df = pd.DataFrame(
         [{"id": "000001", "name": "NEW USER", "dismissal_date": None, "binding": "CLT"}]
     )
     ahgora_df = pd.DataFrame(columns=["id", "name", "dismissal_date"])
 
     new_emp, dismissed, changed, leaves = await sync_service._generate_tasks_dfs(
-        job_id, fiorilli_df, ahgora_df, pd.DataFrame(), pd.DataFrame()
+        fiorilli_df, ahgora_df, pd.DataFrame(), pd.DataFrame()
     )
 
     assert len(new_emp) == 1
@@ -93,7 +92,6 @@ async def test_generate_tasks_dfs_new_employee(sync_service):
 
 @pytest.mark.asyncio
 async def test_generate_tasks_dfs_dismissed(sync_service):
-    job_id = uuid4()
     fiorilli_df = pd.DataFrame(
         [
             {
@@ -107,7 +105,7 @@ async def test_generate_tasks_dfs_dismissed(sync_service):
     ahgora_df = pd.DataFrame([{"id": "000001", "name": "USER", "dismissal_date": None}])
 
     new_emp, dismissed, changed, leaves = await sync_service._generate_tasks_dfs(
-        job_id, fiorilli_df, ahgora_df, pd.DataFrame(), pd.DataFrame()
+        fiorilli_df, ahgora_df, pd.DataFrame(), pd.DataFrame()
     )
 
     assert new_emp.empty
