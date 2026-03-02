@@ -91,7 +91,7 @@
                             <!-- Manual Execute Action -->
                             {% if ((task.status|string != 'SUCCESS' and task.status|string !=
                             'AutomationTaskStatus.SUCCESS') and (not task.status.name or task.status.name != 'SUCCESS'))
-                            and (task.status|string != 'RUNNING' or task.status|string != 'AutomationTaskStatus.RUNNING') and (not task.status.name or task.status.name != 'RUNNING') and (task_type != 'add_leave')
+                            and (task.status|string != 'RUNNING' and task.status|string != 'AutomationTaskStatus.RUNNING') and (not task.status.name or task.status.name != 'RUNNING') and ('ADD_LEAVE' not in task_type|string|upper)
                             %}
                             <button
                                 onclick="fetch('/api/sync/tasks/{{ task.id }}/execute', {method: 'POST'}).then(() => { this.classList.add('opacity-50', 'cursor-not-allowed'); this.disabled = true; window.location.reload(); })"

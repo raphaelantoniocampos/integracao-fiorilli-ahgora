@@ -99,7 +99,7 @@ class TaskExecutionService:
 
         logger.info(f"Starting batch execution for job {job_id}, type {task_type}")
 
-        if task_type == "ADD_LEAVE":
+        if "ADD_LEAVE" in str(task_type).upper():
             logger.info("Delegating ADD_LEAVE batch to LeaveSyncService")
             from app.services.leave_sync_service import LeaveSyncService
 
