@@ -1,5 +1,5 @@
 <div id="log-entries"
-    hx-get="/partials/log-entries?{% if task_id %}task_id={{ task_id }}{% else %}job_id={{ job_id }}{% endif %}"
+    hx-get="/partials/log-entries?{% if task_id %}task_id={{ task_id }}{% else %}job_id={{ job_id }}{% endif %}{% if task_type %}&task_type={{ task_type }}{% endif %}"
     hx-trigger="every 5s" hx-swap="outerHTML"
     class="bg-slate-900 p-4 font-mono text-[13px] leading-relaxed overflow-y-auto" style="max-height: 80vh;">
     {% for log in logs %}

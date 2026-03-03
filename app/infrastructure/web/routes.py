@@ -198,9 +198,20 @@ async def get_task_log_partial(
 
 @router.get("/partials/logs")
 async def get_logs_partial(
-    request: Request, job_id: UUID, service: SyncService = Depends(get_service)
+    request: Request, job_id: UUID, task_type: Optional[str] = None, service: SyncService = Depends(get_service)
 ):
     logs = await service.get_job_logs(job_id)
+    if task_type:
+        tasks = await service.get_automation_tasks(job_id)
+        valid_task_ids = {
+            str(t.id) for t in tasks 
+            if str(t.type).upper() == task_type.upper() or getattr(t.type, "name", str(t.type)).upper() == task_type.upper()
+        }
+        logs = [
+            log for log in logs 
+            if (log.task_id and str(log.task_id) in valid_task_ids) or not log.task_id
+        ]
+        
     job_status = await service.get_job_status(job_id)
     return templates.TemplateResponse(
         "logs_partial.html",
@@ -209,6 +220,7 @@ async def get_logs_partial(
             "logs": logs,
             "job_id": str(job_id),
             "job_status": job_status,
+            "task_type": task_type,
         },
     )
 
@@ -218,6 +230,7 @@ async def get_log_entries_partial(
     request: Request,
     job_id: Optional[UUID] = None,
     task_id: Optional[UUID] = None,
+    task_type: Optional[str] = None,
     service: SyncService = Depends(get_service),
 ):
     if task_id:
@@ -228,9 +241,19 @@ async def get_log_entries_partial(
         )
     if job_id:
         logs = await service.get_job_logs(job_id)
+        if task_type:
+            tasks = await service.get_automation_tasks(job_id)
+            valid_task_ids = {
+                str(t.id) for t in tasks 
+                if str(t.type).upper() == task_type.upper() or getattr(t.type, "name", str(t.type)).upper() == task_type.upper()
+            }
+            logs = [
+                log for log in logs 
+                if (log.task_id and str(log.task_id) in valid_task_ids) or not log.task_id
+            ]
         return templates.TemplateResponse(
             "log_entries_partial.html",
-            {"request": request, "logs": logs, "job_id": str(job_id)},
+            {"request": request, "logs": logs, "job_id": str(job_id), "task_type": task_type},
         )
 
     return templates.TemplateResponse(

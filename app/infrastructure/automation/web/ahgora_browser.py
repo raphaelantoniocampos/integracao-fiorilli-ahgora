@@ -302,15 +302,13 @@ class AhgoraBrowser(BaseBrowser):
 
             # Ensure the specific layout is selected (pw_afimport_01)
             try:
-                self.send_keys("layout_id", "pw_afimport_01", By.ID)
+                self.click_element("pw_afimport_01", By.ID)
             except Exception:
                 self._log("DEBUG", "Could not find layout selector, assuming default.")
 
             # Click the upload/process button
             # Button might be labeled 'Obter Registros' or 'Importar'
-            self.click_element(
-                "//button[contains(text(), 'Obter Registros') or contains(text(), 'Importar') or contains(text(), 'Enviar')]"
-            )
+            self.click_element("//*/form/div[6]/button[2]")
 
             time.sleep(self.DELAY * 5)  # Let the upload process
             self._log("INFO", f"Finished uploading leaves file from {file_path}")
@@ -330,18 +328,19 @@ class AhgoraBrowser(BaseBrowser):
         try:
             # The validation screen displays a log of processing, usually inside the DOM.
             # A robust way is to pull all body text and search line by line.
-            body_text = self.driver.find_element(By.TAG_NAME, "body").text
+            self.move_to_element(selector="obterErro", selector_type=By.ID,delay=2,max_tries=50)
+            body_text = self.driver.find_element(By.ID, "obterErro").text
 
-            # Match logs like "[15] Intersecção com afastamento..."
+            # Match logs like "Intersecção com afastamento... [15]"
             lines = body_text.split("\n")
-            regex = r"\[(\d+)\]\s*(.+)"
+            regex = r"(.+?)\s*\[(\d+)\]$"
 
             for line in lines:
                 line = line.strip()
                 match = re.search(regex, line)
                 if match:
-                    row_idx = int(match.group(1))
-                    error_msg = match.group(2).strip()
+                    error_msg = match.group(1).strip()
+                    row_idx = int(match.group(2))
                     errors.append({"row": row_idx, "error": error_msg})
 
             self._log("INFO", f"Extracted {len(errors)} validation errors.")
@@ -361,7 +360,7 @@ class AhgoraBrowser(BaseBrowser):
                 "//button[contains(text(), 'Salvar') or contains(text(), 'Confirmar') or contains(text(), 'Processar')]",
                 max_tries=3,
             )
-            time.sleep(self.DELAY * 5)
+            time.sleep(self.DELAY * 10)
             self._log("INFO", "Successfully confirmed and saved leaves import.")
         except Exception as e:
             self._log("ERROR", f"Failed to confirm leaves import: {e}")

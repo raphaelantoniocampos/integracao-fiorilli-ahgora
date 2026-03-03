@@ -122,6 +122,14 @@ def get_execution_service(db: AsyncSession = Depends(get_db)):
     return TaskExecutionService(repo=repo)
 
 
+async def _run_batch_standalone(job_id: UUID, task_type: str):
+    from app.core.database import async_session_factory
+    from app.infrastructure.db.sqlalchemy_repo import SqlAlchemyRepo
+    async with async_session_factory() as session:
+        repo = SqlAlchemyRepo(session)
+        service = TaskExecutionService(repo=repo)
+        await service.execute_batch(job_id, task_type)
+
 @router.post(
     "/tasks/batch/execute",
     summary="Execute Batch Automation Tasks",
@@ -132,10 +140,9 @@ async def execute_batch_tasks(
     job_id: UUID,
     task_type: str,
     background_tasks: BackgroundTasks,
-    service: TaskExecutionService = Depends(get_execution_service),
 ):
-    # Execute batch in background
-    background_tasks.add_task(service.execute_batch, job_id, task_type)
+    # Execute batch in background with a new db session
+    background_tasks.add_task(_run_batch_standalone, job_id, task_type)
     return {"message": f"Batch task execution triggered for {task_type}"}
 
 
@@ -154,6 +161,14 @@ async def cancel_batch_tasks(
     return {"message": f"Batch tasks cancelled for {task_type}"}
 
 
+async def _run_task_standalone(task_id: UUID):
+    from app.core.database import async_session_factory
+    from app.infrastructure.db.sqlalchemy_repo import SqlAlchemyRepo
+    async with async_session_factory() as session:
+        repo = SqlAlchemyRepo(session)
+        service = TaskExecutionService(repo=repo)
+        await service.execute_task(task_id)
+
 @router.post(
     "/tasks/{task_id}/execute",
     summary="Execute Automation Task",
@@ -163,10 +178,9 @@ async def cancel_batch_tasks(
 async def execute_task(
     task_id: UUID,
     background_tasks: BackgroundTasks,
-    service: TaskExecutionService = Depends(get_execution_service),
 ):
-    # Execute in background to prevent blocking the API response since Selenium is slow
-    background_tasks.add_task(service.execute_task, task_id)
+    # Execute in background with a new db session
+    background_tasks.add_task(_run_task_standalone, task_id)
     return {"message": "Task execution triggered", "task_id": str(task_id)}
 
 

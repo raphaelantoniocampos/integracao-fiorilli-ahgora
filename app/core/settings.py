@@ -31,7 +31,7 @@ class Settings:
     )
     FIORILLI_URL: str = os.getenv("FIORILLI_URL", "")
     AHGORA_URL: str = os.getenv("AHGORA_URL", "")
-    LEAVES_MONTHS_AGO: int = int(os.getenv("LEAVES_MONTHS_AGO", "2"))
+    LEAVES_MONTHS_AGO: int = int(os.getenv("LEAVES_MONTHS_AGO", "3"))
     MAX_AGE_MINUTES: int = int(os.getenv("MAX_AGE_MINUTES", "60"))
 
     # Credentials

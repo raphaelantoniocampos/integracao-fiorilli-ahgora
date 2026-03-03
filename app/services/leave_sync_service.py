@@ -29,8 +29,13 @@ class LeaveSyncService:
         leave_tasks = [
             t
             for t in tasks
-            if str(t.type).endswith("ADD_LEAVE")
-            and t.status in [AutomationTaskStatus.PENDING, AutomationTaskStatus.FAILED]
+            if str(t.type).upper().endswith("ADD_LEAVE")
+            and t.status
+            in [
+                AutomationTaskStatus.PENDING,
+                AutomationTaskStatus.FAILED,
+                AutomationTaskStatus.CANCELLED,
+            ]
         ]
 
         if not leave_tasks:
@@ -122,6 +127,7 @@ class LeaveSyncService:
         with tempfile.TemporaryDirectory() as temp_dir:
             try:
                 temp_path = Path(temp_dir)
+
                 initial_file = temp_path / "upload_leaves_initial.csv"
                 final_file = temp_path / "upload_leaves_final.csv"
 
@@ -133,6 +139,11 @@ class LeaveSyncService:
                 for col in upload_cols:
                     if col not in export_df.columns:
                         export_df[col] = ""
+                    if col in ["start_date", "end_date"]:
+                        export_df[col] = pd.to_datetime(
+                            export_df[col], format="ISO8601"
+                        )
+                        export_df[col] = export_df[col].dt.strftime("%d/%m/%Y")
 
                 # 1. Generate initial CSV
                 export_df[upload_cols].to_csv(
@@ -142,14 +153,22 @@ class LeaveSyncService:
                 # 2. Upload initial CSV
                 browser.upload_leaves_file(str(initial_file))
 
+
                 # 3. Extract errors
                 import_errors = browser.extract_import_errors()
+
 
                 # import_errors format: [{'row': 10, 'error': 'Intersecção...'}]
                 error_rows = {err["row"] for err in import_errors}
 
+                # FIX: Remove this
+                from time import sleep
+                print(f"\n\n{error_rows}\n\n")
+                print(f"\n\n{temp_path}\n\n")
+                sleep(50)
+
                 # Mark errors in results
-                # Note: Ahgora row errors might be 1-indexed. Let's assume 1-indexed based on legacy script
+                # Note: Ahgora row errors are 1-indexed.
                 for err in import_errors:
                     idx = err["row"] - 1
                     if 0 <= idx < len(results):
@@ -162,6 +181,7 @@ class LeaveSyncService:
                     i for i in range(len(export_df)) if (i + 1) not in error_rows
                 ]
 
+                #FIX: Error here
                 if not valid_indices:
                     log_cb("WARNING", "All leave records failed validation.")
                     return results
