@@ -17,30 +17,16 @@ class AhgoraBrowser(BaseBrowser):
         super().__init__(
             url=settings.AHGORA_URL, log_callback=log_callback, headless=headless
         )
-        try:
-            self._login()
-        except Exception as e:
-            try:
-                self.driver.save_screenshot("downloads/ahgora_login_error.png")
-            except:
-                pass
-            raise e
+        self._login()
 
     def download_employees(self):
         self._log("INFO", "Starting employees download from Ahgora")
         try:
-            try:
-                self.driver.get(self.driver.current_url.replace("home", "funcionarios"))
-                self._show_dismissed_employees()
-                self._click_plus_button()
-                self._export_to_csv()
-                self._log("INFO", "Download of employees from Ahgora completed")
-            except Exception as e:
-                try:
-                    self.driver.save_screenshot("downloads/ahgora_download_error.png")
-                except:
-                    pass
-                raise e
+            self.driver.get(self.driver.current_url.replace("home", "funcionarios"))
+            self._show_dismissed_employees()
+            self._click_plus_button()
+            self._export_to_csv()
+            self._log("INFO", "Download of employees from Ahgora completed")
         finally:
             self.close_driver()
 
