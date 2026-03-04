@@ -399,10 +399,10 @@ class SyncService:
                 )
 
             # 5. Run analysis and create tasks
-            await self._run_analysis_and_create_tasks(job_id)
+            ahgora_employees = await self._run_analysis_and_create_tasks(job_id)
 
             # 6. Validate Data
-            await self._validate_ahgora_state(job_id)
+            await self._validate_ahgora_state(job_id, ahgora_employees)
 
             # 7. Remove downloads from download dir
             await asyncio.to_thread(FileManager.cleanup)
@@ -483,6 +483,8 @@ class SyncService:
                 job_id, "INFO", "Data analysis and task creation completed successfully"
             )
 
+            return ahgora_employees
+
         except Exception as e:
             error_msg = f"Critical error during analysis phase: {str(e)}"
             logger.error(error_msg, exc_info=True)
@@ -508,6 +510,30 @@ class SyncService:
             # 1. Try to load from Database State
             ahgora_employees = await self.repo.get_ahgora_employees_df()
 
+            # 2. Fallback to legacy CSV if Database is empty (initial seed)
+            if ahgora_employees.empty:
+                raw_ahgora_path = AHGORA_DIR / "raw_employees.csv"
+                if raw_ahgora_path.exists():
+                    await self._log(
+                        job_id,
+                        "INFO",
+                        "Database Ahgora state empty, seeding from legacy CSV.",
+                    )
+                    ahgora_employees = await asyncio.to_thread(
+                        self._read_csv, raw_ahgora_path
+                    )
+                else:
+                    raw_ahgora_path = AHGORA_DIR / "raw_employees.csv"
+                    if raw_ahgora_path.exists():
+                        await self._log(
+                            job_id,
+                            "INFO",
+                            "Ingesting fresh Ahgora state from downloaded CSV.",
+                        )
+                        ahgora_employees_raw = await asyncio.to_thread(
+                            self._read_csv, raw_ahgora_path
+                        )
+
             # 2. Ingest recent downloads into DB if present
             raw_ahgora_path = AHGORA_DIR / "raw_employees.csv"
             if raw_ahgora_path.exists():
@@ -520,32 +546,14 @@ class SyncService:
                     self._read_csv, raw_ahgora_path
                 )
                 
-                if not ahgora_employees_raw.empty:
-                    seed_records = []
-                    for _, row in ahgora_employees_raw.iterrows():
-                        # Sanitize row to handle NaNs and convert types
-                        record = {k: (None if pd.isna(v) else v) for k, v in row.to_dict().items()}
-                        
-                        for col in ["admission_date", "dismissal_date"]:
-                            val = record.get(col)
-                            if val and isinstance(val, str):
-                                try:
-                                    record[col] = datetime.strptime(val, "%d/%m/%Y")
-                                except ValueError:
-                                    record[col] = None
-                        seed_records.append(record)
-                    
-                    await self.repo.save_ahgora_employees_batch(seed_records)
-                    # Re-fetch from DB to ensure format consistency with db state
-                    ahgora_employees = await self.repo.get_ahgora_employees_df()
             else:
-                # 3. Fallback to current DB state if no new download
-                if ahgora_employees.empty:
                     await self._log(
-                        job_id, "WARNING", "No Ahgora state found in DB or recently downloaded CSV."
+
+                        job_id, "WARNING", "No Ahgora state found in DB or legacy CSV."
                     )
-                else:
-                    await self._log(job_id, "INFO", "Ahgora state loaded from PostgreSQL (no new download found).")
+
+            else:
+                await self._log(job_id, "INFO", "Ahgora state loaded from PostgreSQL.")
 
             await self._log(
                 job_id,
@@ -1040,22 +1048,13 @@ class SyncService:
             job_id, "INFO", f"Created {len(tasks_to_create)} automation tasks"
         )
 
-    async def _validate_ahgora_state(self, job_id: UUID):
+    async def _validate_ahgora_state(
+        self, job_id: UUID, ahgora_employees: pd.DataFrame
+    ):
         try:
             await self._log(job_id, "INFO", "Validating CSV vs DB state")
 
-            raw_ahgora_path = AHGORA_DIR / "raw_employees.csv"
-            if not raw_ahgora_path.exists():
-                await self._log(
-                    job_id, "WARNING", "No Ahgora CSV data available to validate"
-                )
-                return
-
-            ahgora_csv_employees = await asyncio.to_thread(
-                self._read_csv, raw_ahgora_path
-            )
-
-            if ahgora_csv_employees.empty:
+            if ahgora_employees is None or ahgora_employees.empty:
                 await self._log(
                     job_id, "WARNING", "No Ahgora CSV data available to validate"
                 )
@@ -1071,8 +1070,8 @@ class SyncService:
                 return
 
             # Find discrepancies (e.g. employee in CSV but not in DB, or vice-versa)
-            csv_ids = set(ahgora_csv_employees["id"].astype(str).str.zfill(6))
-            db_ids = set(db_employees["id"].astype(str).str.zfill(6))
+            csv_ids = set(ahgora_employees["id"].astype(str))
+            db_ids = set(db_employees["id"].astype(str))
 
             missing_in_db = csv_ids - db_ids
             missing_in_csv = db_ids - csv_ids
@@ -1101,11 +1100,11 @@ class SyncService:
             common_ids = csv_ids.intersection(db_ids)
             if common_ids:
                 # Filter DFs
-                csv_common = ahgora_csv_employees[
-                    ahgora_csv_employees["id"].astype(str).str.zfill(6).isin(common_ids)
+                csv_common = ahgora_employees[
+                    ahgora_employees["id"].astype(str).isin(common_ids)
                 ]
                 db_common = db_employees[
-                    db_employees["id"].astype(str).str.zfill(6).isin(common_ids)
+                    db_employees["id"].astype(str).isin(common_ids)
                 ]
 
                 # Check discrepancies using the _get_changed_employees_df logic
