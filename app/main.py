@@ -16,6 +16,18 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Startup: Cleanup any jobs/tasks stuck as RUNNING due to a system crash
+    from app.core.database import async_session_factory
+    from app.infrastructure.db.sqlalchemy_repo import SqlAlchemyRepo
+    
+    try:
+        async with async_session_factory() as session:
+            repo = SqlAlchemyRepo(session)
+            await repo.cleanup_stuck_executions()
+            logger.info("Cleaned up stuck RUNNING jobs/tasks successfully.")
+    except Exception as e:
+        logger.error(f"Error cleaning up stuck executions on startup: {e}")
+
     # Startup: Start the retry scheduler
     await scheduler.start()
     yield

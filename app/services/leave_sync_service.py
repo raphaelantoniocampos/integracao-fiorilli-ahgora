@@ -100,6 +100,8 @@ class LeaveSyncService:
                     job_id, "ERROR", f"Falha crítica no lote: {str(e)}", task_id=t.id
                 )
 
+        await self.repo.evaluate_and_update_job_status(job_id)
+
     def _run_browser_batch_import(
         self,
         df: pd.DataFrame,

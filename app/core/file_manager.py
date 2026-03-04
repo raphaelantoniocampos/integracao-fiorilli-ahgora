@@ -1,4 +1,3 @@
-import shutil
 from pathlib import Path
 
 import pandas as pd
@@ -7,8 +6,6 @@ from app.core.settings import settings
 
 
 class FileManager:
-    FIORILLI_DIR = settings.DATA_DIR / "fiorilli"
-    AHGORA_DIR = settings.DATA_DIR / "ahgora"
     TASKS_DIR = settings.BASE_DIR / "tasks"
 
     @classmethod
@@ -18,8 +15,6 @@ class FileManager:
             settings.DATA_DIR,
             settings.DOWNLOADS_DIR,
             cls.TASKS_DIR,
-            cls.FIORILLI_DIR,
-            cls.AHGORA_DIR,
         ]
         for directory in directories:
             directory.mkdir(parents=True, exist_ok=True)
@@ -36,13 +31,13 @@ class FileManager:
 
             file_name_lower = file.name.lower()
             if "trabalhador" in file_name_lower:
-                cls.copy_file(file, cls.FIORILLI_DIR / "raw_employees.txt")
+                cls.move_file(file, settings.DATA_DIR / "fiorilli_employees.txt")
             elif "funcionarios" in file_name_lower:
-                cls.copy_file(file, cls.AHGORA_DIR / "raw_employees.csv")
+                cls.move_file(file, settings.DATA_DIR / "ahgora_employees.txt")
             elif "pontoafastamentos" in file_name_lower:
-                cls.copy_file(file, cls.FIORILLI_DIR / "raw_leaves.txt")
+                cls.move_file(file, settings.DATA_DIR / "raw_leaves.txt")
             elif "pontoferias" in file_name_lower:
-                cls.copy_file(file, cls.FIORILLI_DIR / "raw_vacations.txt")
+                cls.move_file(file, settings.DATA_DIR / "raw_vacations.txt")
 
     @staticmethod
     def move_file(source: Path, destination: Path):
@@ -51,12 +46,6 @@ class FileManager:
         if destination.exists():
             destination.unlink()
         source.replace(destination)
-
-    @staticmethod
-    def copy_file(source: Path, destination: Path):
-        """Copy a file with metadata."""
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(source, destination)
 
     @staticmethod
     def save_df(df: pd.DataFrame, path: Path, header=True, columns=None):

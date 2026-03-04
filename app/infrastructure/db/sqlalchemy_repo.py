@@ -269,6 +269,68 @@ class SqlAlchemyRepo:
 
             await self.session.commit()
 
+    async def evaluate_and_update_job_status(self, job_id: UUID, message: Optional[str] = None) -> None:
+        """
+        Evaluates and updates the job status based on its associated tasks.
+        Rules:
+        - If ANY task is PENDING or RUNNING -> Job is PENDING (or RUNNING)
+        - Else If ANY task is FAILED -> Job is FAILED
+        - Else (All SUCCESS or CANCELLED) -> Job is SUCCESS
+        """
+        db_job = await self.session.get(SyncJobModel, job_id)
+        if not db_job:
+            return
+
+        result = await self.session.execute(
+            select(AutomationTaskModel).filter_by(job_id=job_id)
+        )
+        tasks = result.scalars().all()
+
+        if not tasks:
+            new_status = SyncStatus.SUCCESS
+            if new_status != db_job.status or message:
+                db_job.status = new_status
+                db_job.finished_at = datetime.now()
+                if message:
+                    db_job.error_message = message
+                await self.session.commit()
+            return
+
+        has_running = False
+        has_pending = False
+        has_failed = False
+
+        for t in tasks:
+            if t.status == AutomationTaskStatus.RUNNING:
+                has_running = True
+            elif t.status == AutomationTaskStatus.PENDING:
+                has_pending = True
+            elif t.status == AutomationTaskStatus.FAILED:
+                has_failed = True
+
+        if has_running:
+            new_status = SyncStatus.RUNNING
+        elif has_pending:
+            new_status = SyncStatus.PENDING
+        elif has_failed:
+            new_status = SyncStatus.FAILED
+        else:
+            new_status = SyncStatus.SUCCESS
+
+        if new_status != db_job.status or message:
+            db_job.status = new_status
+            if new_status in [
+                SyncStatus.SUCCESS,
+                SyncStatus.FAILED,
+                SyncStatus.CANCELLED,
+            ]:
+                db_job.finished_at = datetime.now()
+            
+            if message:
+                db_job.error_message = message
+            
+            await self.session.commit()
+
     async def save_automation_tasks_batch(self, tasks: List[AutomationTask]) -> None:
         db_tasks = [
             AutomationTaskModel(
@@ -391,6 +453,36 @@ class SqlAlchemyRepo:
                 last_synced_at=datetime.now(),
             )
             await self.session.merge(db_emp)
+        await self.session.commit()
+
+    async def cleanup_stuck_executions(self) -> None:
+        """
+        Marks any RUNNING jobs or tasks as FAILED since the server is starting up.
+        This handles cases where the system crashed or process was killed abruptly.
+        """
+        from sqlalchemy import update
+        
+        # 1. Update jobs
+        await self.session.execute(
+            update(SyncJobModel)
+            .where(SyncJobModel.status == SyncStatus.RUNNING)
+            .values(
+                status=SyncStatus.FAILED,
+                error_message="Sistema reiniciado/crash. Job interrompido.",
+                finished_at=datetime.now()
+            )
+        )
+        
+        # 2. Update tasks
+        await self.session.execute(
+            update(AutomationTaskModel)
+            .where(AutomationTaskModel.status == AutomationTaskStatus.RUNNING)
+            .values(
+                status=AutomationTaskStatus.FAILED,
+                error_message="Sistema reiniciado/crash. Tarefa interrompida.",
+                finished_at=datetime.now()
+            )
+        )
         await self.session.commit()
 
     async def save_ahgora_leaves_batch(self, leaves: List[dict]) -> None:

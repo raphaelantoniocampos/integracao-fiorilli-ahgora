@@ -1,4 +1,3 @@
-from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
@@ -27,14 +26,16 @@ async def dashboard(request: Request, service: SyncService = Depends(get_service
     jobs = await service.list_jobs()
     last_run = jobs[0] if jobs else None
 
-    # Simple stats for the cards
-    today = datetime.now().date()
-    jobs_today = [j for j in jobs if j.created_at.date() == today]
-    success_today = len([j for j in jobs_today if j.status == SyncStatus.SUCCESS])
+    # Total stats instead of daily, since jobs run rarely
+    total_jobs = len(jobs)
+    success_jobs = len([j for j in jobs if j.status == SyncStatus.SUCCESS])
+    failed_jobs = len([j for j in jobs if j.status == SyncStatus.FAILED])
 
     stats = {
         "last_run_status": last_run.status if last_run else "Nenhuma",
-        "success_today": success_today,
+        "total_jobs": total_jobs,
+        "success_jobs": success_jobs,
+        "failed_jobs": failed_jobs,
     }
 
     return templates.TemplateResponse(
@@ -42,6 +43,8 @@ async def dashboard(request: Request, service: SyncService = Depends(get_service
         {
             "request": request,
             "stats": stats,
+            "headless_mode": settings.HEADLESS_MODE,
+            "use_cached_files": settings.USE_CACHED_FILES,
             "is_docker": settings.IS_DOCKER,
         },
     )
@@ -69,6 +72,28 @@ async def toggle_headless(request: Request, target: str = Form(...)):
             "request": request,
             "headless_mode": settings.HEADLESS_MODE,
             "headless_mode_tasks": settings.HEADLESS_MODE_TASKS,
+            "use_cached_files": settings.USE_CACHED_FILES,
+            "is_docker": settings.IS_DOCKER,
+        },
+    )
+    response.headers["HX-Trigger"] = "refresh"
+    return response
+
+
+@router.post("/api/settings/toggle-cached")
+async def toggle_cached_files(request: Request):
+    if settings.IS_DOCKER:
+        return {"error": "Ação não permitida em produção"}
+
+    env_path = str(settings.BASE_DIR / ".env")
+    settings.USE_CACHED_FILES = not settings.USE_CACHED_FILES
+    dotenv.set_key(env_path, "USE_CACHED_FILES", str(settings.USE_CACHED_FILES))
+
+    response = templates.TemplateResponse(
+        "partials/use_cached_files_toggle.html",
+        {
+            "request": request,
+            "use_cached_files": settings.USE_CACHED_FILES,
             "is_docker": settings.IS_DOCKER,
         },
     )

@@ -203,7 +203,7 @@ class DataManager:
         columns: list[str] = [],
     ) -> pd.DataFrame:
         match path.name:
-            case "raw_employees.txt":
+            case "fiorilli_employees.txt":
                 return self.prepare_dataframe(
                     df=pd.read_csv(
                         path,
@@ -215,7 +215,7 @@ class DataManager:
                     columns=FIORILLI_EMPLOYEES_COLUMNS,
                 )
 
-            case "raw_employees.csv":
+            case "ahgora_employees.txt":
                 return self.prepare_dataframe(
                     df=pd.read_csv(
                         path,
@@ -662,8 +662,8 @@ class DataManager:
         """
         console.log("Recuperando dados de funcionários")
         time.sleep(0.5)
-        raw_fiorilli_employees_path = FIORILLI_DIR / "raw_employees.txt"
-        raw_ahgora_employees_path = AHGORA_DIR / "raw_employees.csv"
+        raw_fiorilli_employees_path = FIORILLI_DIR / "fiorilli_employees.txt"
+        raw_ahgora_employees_path = AHGORA_DIR / "ahgora_employees.txt"
 
         raw_fiorilli_employees = self.read_csv(raw_fiorilli_employees_path)
         raw_ahgora_employees = self.read_csv(raw_ahgora_employees_path)

@@ -35,8 +35,6 @@ PT_MONTHS = settings.PT_MONTHS
 EXCEPTIONS_AND_TYPOS = settings.EXCEPTIONS_AND_TYPOS
 MAX_AGE_MINUTES = settings.MAX_AGE_MINUTES
 
-FIORILLI_DIR = FileManager.FIORILLI_DIR
-AHGORA_DIR = FileManager.AHGORA_DIR
 DATA_DIR = settings.DATA_DIR
 
 logger = logging.getLogger(__name__)
@@ -111,9 +109,7 @@ class SyncService:
 
             if result.success:
                 async with self._db_lock:
-                    await self.repo.update_job_status(
-                        job_id, SyncStatus.SUCCESS, result.message
-                    )
+                    await self.repo.evaluate_and_update_job_status(job_id, result.message)
                 await self._log(
                     job_id,
                     "INFO",
@@ -283,20 +279,38 @@ class SyncService:
         and are newer than max_age_minutes.
         Returns True ONLY if all required patterns have a matching valid file.
         """
-        if not settings.DOWNLOADS_DIR.exists() or not patterns:
+        if not settings.USE_CACHED_FILES or not patterns:
             return False
 
         now = datetime.now()
         found_patterns = 0
 
-        for pattern in patterns:
+        search_dirs = []
+        if hasattr(settings, "DOWNLOADS_DIR") and settings.DOWNLOADS_DIR.exists():
+            search_dirs.append(settings.DOWNLOADS_DIR)
+        if hasattr(settings, "DATA_DIR") and settings.DATA_DIR.exists():
+            search_dirs.append(settings.DATA_DIR)
+
+        if not search_dirs:
+            return False
+
+        for pattern_set in patterns:
             pattern_found = False
-            for file_path in settings.DOWNLOADS_DIR.iterdir():
-                if file_path.is_file() and pattern.lower() in file_path.name.lower():
-                    mtime = datetime.fromtimestamp(file_path.stat().st_mtime)
-                    if (now - mtime).total_seconds() <= MAX_AGE_MINUTES * 60:
-                        pattern_found = True
-                        break
+            alternatives = [p.strip().lower() for p in pattern_set.split("|")]
+            
+            for directory in search_dirs:
+                if pattern_found:
+                    break
+                for file_path in directory.iterdir():
+                    if not file_path.is_file():
+                        continue
+                    
+                    filename = file_path.name.lower()
+                    if any(alt in filename for alt in alternatives):
+                        mtime = datetime.fromtimestamp(file_path.stat().st_mtime)
+                        if (now - mtime).total_seconds() <= MAX_AGE_MINUTES * 60:
+                            pattern_found = True
+                            break
             if pattern_found:
                 found_patterns += 1
 
@@ -362,19 +376,19 @@ class SyncService:
                         FiorilliBrowser,
                         "download_employees",
                         "Fiorilli employees download",
-                        patterns=["trabalhador"],
+                        patterns=["trabalhador|fiorilli_employees"],
                     ),
                     run_download_task_with_retries(
                         FiorilliBrowser,
                         "download_leaves",
                         "Fiorilli leaves download",
-                        patterns=["afastamentos", "ferias"],
+                        patterns=["pontoafastamentos|raw_leaves", "pontoferias|raw_vacations"],
                     ),
                     run_download_task_with_retries(
                         AhgoraBrowser,
                         "download_employees",
                         "Ahgora employees download",
-                        patterns=["funcionarios"],
+                        patterns=["funcionarios|ahgora_employees"],
                     ),
                 )
             else:
@@ -383,19 +397,19 @@ class SyncService:
                     FiorilliBrowser,
                     "download_employees",
                     "Fiorilli employees download",
-                    patterns=["trabalhador"],
+                    patterns=["trabalhador|fiorilli_employees"],
                 )
                 await run_download_task_with_retries(
                     FiorilliBrowser,
                     "download_leaves",
                     "Fiorilli leaves download",
-                    patterns=["pontoafastamentos", "pontoferias"],
+                    patterns=["pontoafastamentos|raw_leaves", "pontoferias|raw_vacations"],
                 )
                 await run_download_task_with_retries(
                     AhgoraBrowser,
                     "download_employees",
                     "Ahgora employees download",
-                    patterns=["funcionarios"],
+                    patterns=["funcionarios|ahgora_employees"],
                 )
 
             # 5. Run analysis and create tasks
@@ -495,7 +509,7 @@ class SyncService:
         self, job_id: UUID
     ) -> Tuple[pd.DataFrame, pd.DataFrame]:
         try:
-            raw_fiorilli_path = FIORILLI_DIR / "raw_employees.txt"
+            raw_fiorilli_path = settings.DATA_DIR / "fiorilli_employees.txt"
 
             if not raw_fiorilli_path.exists():
                 await self._log(
@@ -512,7 +526,7 @@ class SyncService:
 
             # 2. Fallback to legacy CSV if Database is empty (initial seed)
             if ahgora_employees.empty:
-                raw_ahgora_path = AHGORA_DIR / "raw_employees.csv"
+                raw_ahgora_path = settings.DATA_DIR / "ahgora_employees.txt"
                 if raw_ahgora_path.exists():
                     await self._log(
                         job_id,
@@ -541,15 +555,15 @@ class SyncService:
 
     async def _get_leaves_data(self, job_id: UUID) -> Tuple[pd.DataFrame, pd.DataFrame]:
         try:
-            raw_leaves_path = FIORILLI_DIR / "raw_leaves.txt"
-            raw_vacations_path = FIORILLI_DIR / "raw_vacations.txt"
+            raw_leaves_path = settings.DATA_DIR / "raw_leaves.txt"
+            raw_vacations_path = settings.DATA_DIR / "raw_vacations.txt"
 
             # 1. Try to load historical leaves from Database State
             last_leaves = await self.repo.get_ahgora_leaves_df()
 
             # 2. Fallback to legacy CSV if Database is empty (initial seed)
             if last_leaves.empty:
-                last_leaves_path = FIORILLI_DIR / "leaves.csv"
+                last_leaves_path = settings.DATA_DIR / "leaves.csv"
                 if last_leaves_path.exists():
                     await self._log(
                         job_id,
@@ -611,7 +625,7 @@ class SyncService:
         df = pd.DataFrame()
         try:
             match path.name:
-                case "raw_employees.txt":
+                case "fiorilli_employees.txt":
                     df = pd.read_csv(
                         path,
                         sep="|",
@@ -621,7 +635,7 @@ class SyncService:
                     )
                     df = self._prepare_dataframe(df, columns=FIORILLI_EMPLOYEES_COLUMNS)
 
-                case "raw_employees.csv":
+                case "ahgora_employees.txt":
                     df = pd.read_csv(path, index_col=False, header=None)
                     df = self._prepare_dataframe(df, columns=AHGORA_EMPLOYEES_COLUMNS)
 

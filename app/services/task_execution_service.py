@@ -88,6 +88,7 @@ class TaskExecutionService:
                 task_id, TaskStatus.FAILED, message=error_msg
             )
 
+        await self.repo.evaluate_and_update_job_status(task.job_id)
         return success
 
     async def execute_batch(self, job_id: UUID, task_type: str) -> None:
@@ -105,6 +106,7 @@ class TaskExecutionService:
 
             leave_service = LeaveSyncService(self.repo)
             await leave_service.execute_leaves_batch(job_id)
+            await self.repo.evaluate_and_update_job_status(job_id)
             return
 
         # We need a custom repo method or we fetch all and filter
@@ -123,35 +125,37 @@ class TaskExecutionService:
         for t in batch:
             await self.execute_task(t.id)
 
+        await self.repo.evaluate_and_update_job_status(job_id)
+
     async def cancel_task(self, task_id: UUID) -> bool:
         """
-        Cancels a single automation task if it is pending or running.
+        Cancels a single automation task if it is pending, running, or failed.
         Returns True if cancelled successfully.
         """
-        from app.domain.enums import AutomationTaskStatus
 
         task = await self.repo.get_task(task_id)
         if not task:
             logger.error(f"Task {task_id} not found.")
             return False
 
-        if task.status not in [
-            AutomationTaskStatus.PENDING,
-            AutomationTaskStatus.RUNNING,
+        if task.status in [
+            TaskStatus.PENDING,
+            TaskStatus.RUNNING,
+            TaskStatus.FAILED,
         ]:
+            await self.repo.update_task_status(
+                task_id, TaskStatus.CANCELLED, "Cancelled by user via API"
+            )
+            logger.info(f"Task {task_id} cancelled.")
+
+            # Re-evaluate job status since a task was cancelled
+            await self.repo.evaluate_and_update_job_status(task.job_id)
+            return True
+        else:
             logger.warning(
                 f"Task {task_id} cannot be cancelled in state {task.status}."
             )
             return False
-
-        await self.repo.update_task_status(task_id, AutomationTaskStatus.CANCELLED)
-        await self.repo.add_log(
-            task.job_id,
-            "WARNING",
-            f"Task {task.type} cancelled by user.",
-            task_id=task_id,
-        )
-        return True
 
     async def cancel_batch(self, job_id: UUID, task_type: str) -> None:
         """
@@ -172,11 +176,13 @@ class TaskExecutionService:
                 or t.type.name == task_type
                 or str(t.type) == task_type
             )
-            and t.status in [AutomationTaskStatus.PENDING, AutomationTaskStatus.RUNNING]
+            and t.status in [AutomationTaskStatus.PENDING, AutomationTaskStatus.RUNNING, AutomationTaskStatus.FAILED]
         ]
 
         for t in batch:
             await self.cancel_task(t.id)
+
+        await self.repo.evaluate_and_update_job_status(job_id)
 
     def _run_browser_automation(
         self,
@@ -198,10 +204,11 @@ class TaskExecutionService:
 
         from app.core.settings import settings
 
-        browser = AhgoraBrowser(
-            log_callback=log_cb, headless=settings.HEADLESS_MODE_TASKS
-        )
+        browser = None
         try:
+            browser = AhgoraBrowser(
+                log_callback=log_cb, headless=settings.HEADLESS_MODE_TASKS
+            )
             match task_type:
                 case TaskType.ADD_EMPLOYEE:
                     browser.add_employee(payload)
@@ -222,9 +229,10 @@ class TaskExecutionService:
             logger.error(f"Browser automation failed: {str(e)}")
             raise e
         finally:
-            browser.close_driver()
+            if browser:
+                browser.close_driver()
 
-        return False
+        return True
 
     async def _update_ahgora_state(self, task_type: TaskType, payload: dict):
         """

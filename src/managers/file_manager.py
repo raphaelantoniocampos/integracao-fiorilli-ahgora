@@ -29,12 +29,12 @@ class FileManager:
             if "trabalhador" in file.name.lower():
                 FileManager.move_file(
                     source=file,
-                    destination=FIORILLI_DIR / "raw_employees.txt",
+                    destination=FIORILLI_DIR / "fiorilli_employees.txt",
                 )
             elif "funcionarios" in file.name.lower():
                 FileManager.move_file(
                     source=file,
-                    destination=AHGORA_DIR / "raw_employees.csv",
+                    destination=AHGORA_DIR / "ahgora_employees.txt",
                 )
             elif "pontoafastamentos" in file.name.lower():
                 FileManager.move_file(
@@ -83,9 +83,9 @@ class FileManager:
     def file_name_to_file_path(file_name: str, raw: bool = True) -> Path:
         match file_name:
             case "ahgora_employees":
-                return AHGORA_DIR / "raw_employees.csv"
+                return AHGORA_DIR / "ahgora_employees.txt"
             case "fiorilli_employees":
-                return FIORILLI_DIR / "raw_employees.txt"
+                return FIORILLI_DIR / "fiorilli_employees.txt"
             case "leaves":
                 return FIORILLI_DIR / "raw_leaves.txt"
 
@@ -108,8 +108,8 @@ class FileManager:
     @staticmethod
     def get_missing_files():
         files_to_check = [
-            Path(FIORILLI_DIR / "raw_employees.txt"),
-            Path(AHGORA_DIR / "raw_employees.csv"),
+            Path(FIORILLI_DIR / "fiorilli_employees.txt"),
+            Path(AHGORA_DIR / "ahgora_employees.txt"),
             Path(FIORILLI_DIR / "raw_leaves.txt"),
             Path(FIORILLI_DIR / "raw_vacations.txt"),
         ]

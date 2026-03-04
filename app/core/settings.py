@@ -33,6 +33,7 @@ class Settings:
     AHGORA_URL: str = os.getenv("AHGORA_URL", "")
     LEAVES_MONTHS_AGO: int = int(os.getenv("LEAVES_MONTHS_AGO", "3"))
     MAX_AGE_MINUTES: int = int(os.getenv("MAX_AGE_MINUTES", "60"))
+    USE_CACHED_FILES: bool = os.getenv("USE_CACHED_FILES", "True").lower() == "true"
 
     # Credentials
     FIORILLI_USER: str = os.getenv("FIORILLI_USER", "")
