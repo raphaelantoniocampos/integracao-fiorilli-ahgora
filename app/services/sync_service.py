@@ -523,35 +523,9 @@ class SyncService:
                         self._read_csv, raw_ahgora_path
                     )
                 else:
-                    raw_ahgora_path = AHGORA_DIR / "raw_employees.csv"
-                    if raw_ahgora_path.exists():
-                        await self._log(
-                            job_id,
-                            "INFO",
-                            "Ingesting fresh Ahgora state from downloaded CSV.",
-                        )
-                        ahgora_employees_raw = await asyncio.to_thread(
-                            self._read_csv, raw_ahgora_path
-                        )
-
-            # 2. Ingest recent downloads into DB if present
-            raw_ahgora_path = AHGORA_DIR / "raw_employees.csv"
-            if raw_ahgora_path.exists():
-                await self._log(
-                    job_id,
-                    "INFO",
-                    "Ingesting fresh Ahgora state from downloaded CSV.",
-                )
-                ahgora_employees_raw = await asyncio.to_thread(
-                    self._read_csv, raw_ahgora_path
-                )
-                
-            else:
                     await self._log(
-
                         job_id, "WARNING", "No Ahgora state found in DB or legacy CSV."
                     )
-
             else:
                 await self._log(job_id, "INFO", "Ahgora state loaded from PostgreSQL.")
 
