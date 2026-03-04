@@ -256,7 +256,7 @@ class SyncService:
         jobs = await self.repo.list_jobs()
         for job in jobs:
             if (
-                job.status in (SyncStatus.RUNNING, SyncStatus.RETRYING)
+                job.status in (SyncStatus.RUNNING, SyncStatus.RETRYING, SyncStatus.PENDING)
             ) and job.id not in registry_job_ids:
                 logger.info(
                     f"Cleaning up untracked RUNNING/RETRYING job {job.id} from database"
