@@ -2,6 +2,8 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 
+import pandas as pd
+
 from app.domain.enums import AutomationTaskStatus
 from app.services.leave_sync_service import LeaveSyncService
 
@@ -37,6 +39,7 @@ async def test_execute_leaves_batch_success():
     )
 
     repo.get_automation_tasks_by_job = AsyncMock(return_value=[task])
+    repo.get_ahgora_leaves_df = AsyncMock(return_value=pd.DataFrame())
     repo.update_task_status = AsyncMock()
     repo.add_log = AsyncMock()
 
@@ -55,7 +58,7 @@ async def test_execute_leaves_batch_success():
     # Assert repo methods were called to update status
     # First to RUNNING, then to SUCCESS
     repo.update_task_status.assert_any_call(task_id, AutomationTaskStatus.RUNNING)
-    repo.update_task_status.assert_any_call(task_id, AutomationTaskStatus.SUCCESS)
+    repo.update_task_status.assert_any_call(task_id, AutomationTaskStatus.SUCCESS, message="")
 
 
 @pytest.mark.asyncio
@@ -91,6 +94,7 @@ async def test_execute_leaves_batch_with_validation_errors():
     )
 
     repo.get_automation_tasks_by_job = AsyncMock(return_value=[task1, task2])
+    repo.get_ahgora_leaves_df = AsyncMock(return_value=pd.DataFrame())
     repo.update_task_status = AsyncMock()
     repo.add_log = AsyncMock()
 
@@ -114,7 +118,7 @@ async def test_execute_leaves_batch_with_validation_errors():
     repo.update_task_status.assert_any_call(
         task_id_1, AutomationTaskStatus.FAILED, message="Interseccao"
     )
-    repo.update_task_status.assert_any_call(task_id_2, AutomationTaskStatus.SUCCESS)
+    repo.update_task_status.assert_any_call(task_id_2, AutomationTaskStatus.SUCCESS, message="")
 
 
 @pytest.mark.asyncio
@@ -140,6 +144,7 @@ async def test_execute_leaves_batch_catastrophic_failure():
         payload={"id": "000001"},
     )
     repo.get_automation_tasks_by_job = AsyncMock(return_value=[task])
+    repo.get_ahgora_leaves_df = AsyncMock(return_value=pd.DataFrame())
     repo.update_task_status = AsyncMock()
     repo.add_log = AsyncMock()
 

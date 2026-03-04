@@ -54,9 +54,10 @@ class LeaveSyncService:
 
         # 2. Run browser automation in thread
         loop = asyncio.get_running_loop()
+        log_lock = asyncio.Lock()
         try:
             results = await asyncio.to_thread(
-                self._run_browser_batch_import, df, job_id, loop
+                self._run_browser_batch_import, df, job_id, loop, log_lock
             )
 
             # Analyze results and update task statuses
@@ -66,7 +67,9 @@ class LeaveSyncService:
                 task_result = results[i]
                 if task_result["status"] == "success":
                     await self.repo.update_task_status(
-                        task.id, AutomationTaskStatus.SUCCESS
+                        task.id,
+                        AutomationTaskStatus.SUCCESS,
+                        message=task_result["message"],
                     )
                     await self.repo.add_log(
                         job_id,
@@ -88,7 +91,7 @@ class LeaveSyncService:
                     )
 
         except Exception as e:
-            logger.exception("Batched leaf sync failed catastrophically.")
+            logger.exception(f"Batched leaf sync failed catastrophically: {e}.")
             for t in leave_tasks:
                 await self.repo.update_task_status(
                     t.id, AutomationTaskStatus.FAILED, message=str(e)
@@ -98,16 +101,22 @@ class LeaveSyncService:
                 )
 
     def _run_browser_batch_import(
-        self, df: pd.DataFrame, job_id: UUID, loop: asyncio.AbstractEventLoop
+        self,
+        df: pd.DataFrame,
+        job_id: UUID,
+        loop: asyncio.AbstractEventLoop,
+        log_lock: asyncio.Lock,
     ) -> list[dict]:
         """
         Sync execution of the browser automation for leaves batch.
         """
 
+        async def safe_log(level: str, msg: str):
+            async with log_lock:
+                await self.repo.add_log(job_id, level, msg)
+
         def log_cb(level: str, msg: str):
-            asyncio.run_coroutine_threadsafe(
-                self.repo.add_log(job_id, level, msg), loop
-            )
+            asyncio.run_coroutine_threadsafe(safe_log(level, msg), loop)
 
         results = []
         for i, row in df.iterrows():
@@ -153,19 +162,11 @@ class LeaveSyncService:
                 # 2. Upload initial CSV
                 browser.upload_leaves_file(str(initial_file))
 
-
                 # 3. Extract errors
                 import_errors = browser.extract_import_errors()
 
-
                 # import_errors format: [{'row': 10, 'error': 'Intersecção...'}]
                 error_rows = {err["row"] for err in import_errors}
-
-                # FIX: Remove this
-                from time import sleep
-                print(f"\n\n{error_rows}\n\n")
-                print(f"\n\n{temp_path}\n\n")
-                sleep(50)
 
                 # Mark errors in results
                 # Note: Ahgora row errors are 1-indexed.
@@ -181,9 +182,10 @@ class LeaveSyncService:
                     i for i in range(len(export_df)) if (i + 1) not in error_rows
                 ]
 
-                #FIX: Error here
                 if not valid_indices:
-                    log_cb("WARNING", "All leave records failed validation.")
+                    log_cb("INFO", "No leaves to import")
+                    for result in results:
+                        result["status"] = "success"
                     return results
 
                 final_df = export_df.iloc[valid_indices]
@@ -199,10 +201,20 @@ class LeaveSyncService:
                 # Optionally wait, then confirm
                 browser.confirm_import()
 
+                # Update leaves results
+                for result in results:
+                    if (
+                        "Intersecção com afastamento existente no registro".lower().strip()
+                        in result["message"].lower().strip()
+                    ):
+                        result["status"] = "success"
+
                 return results
 
             except Exception as e:
                 log_cb("ERROR", f"Batch import process failed: {e}")
+                for result in results:
+                    result["status"] = "failed"
                 raise e
             finally:
                 browser.close_driver()

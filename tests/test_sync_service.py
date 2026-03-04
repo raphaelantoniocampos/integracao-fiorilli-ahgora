@@ -101,8 +101,9 @@ async def test_run_sync_background_retry_scheduled():
     assert SyncStatus.RUNNING in status_calls
 
 
+@patch("app.services.sync_service.Path.exists", return_value=True)
 @pytest.mark.asyncio
-async def test_validate_ahgora_state():
+async def test_validate_ahgora_state(mock_exists):
     import pandas as pd
 
     repo = MagicMock()
@@ -131,8 +132,9 @@ async def test_validate_ahgora_state():
             {"id": "4", "name": "CSV Only Employee"},
         ]
     )
+    service._read_csv = MagicMock(return_value=csv_df)
 
-    await service._validate_ahgora_state(uuid4(), csv_df)
+    await service._validate_ahgora_state(uuid4())
 
     log_calls = [call.args[2] for call in service._log.call_args_list]
     log_text = " ".join(log_calls)

@@ -69,3 +69,13 @@ class FileManager:
             header=header,
             columns=columns,
         )
+
+    @staticmethod
+    def cleanup():
+        """Delete old files in the download folder"""
+        if not settings.DOWNLOADS_DIR.exists():
+            return
+        for file in settings.DOWNLOADS_DIR.iterdir():
+            if not file.is_file():
+                continue
+            file.unlink()

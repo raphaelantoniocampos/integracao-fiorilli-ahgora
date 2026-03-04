@@ -165,6 +165,7 @@ def test_get_registry_diagnostics(mock_task, mock_registry, client):
 @patch("app.api.endpoints.TaskExecutionService")
 def test_execute_task(mock_exec_service_class, client):
     mock_exec_service = mock_exec_service_class.return_value
+    mock_exec_service.execute_task = AsyncMock(return_value=True)
     task_id = uuid4()
 
     app.dependency_overrides[get_execution_service] = lambda: mock_exec_service
@@ -182,6 +183,7 @@ def test_execute_task(mock_exec_service_class, client):
 @patch("app.api.endpoints.TaskExecutionService")
 def test_execute_batch_tasks(mock_exec_service_class, client):
     mock_exec_service = mock_exec_service_class.return_value
+    mock_exec_service.execute_batch = AsyncMock(return_value=None)
     job_id = uuid4()
     task_type = "ADD_EMPLOYEE"
 
