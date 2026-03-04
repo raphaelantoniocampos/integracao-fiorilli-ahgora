@@ -66,7 +66,9 @@
                     <!-- Group Row (Clickable Accordion) -->
                     <tr class="hover:bg-slate-50/50 transition-colors cursor-pointer group-row"
                         hx-get="/partials/task-details-inline?job_id={{ job_id }}&task_type={{ group.type }}"
-                        hx-target="#tasks-container-{{ loop.index }}" hx-trigger="click once" hx-swap="innerHTML"
+                        hx-target="#tasks-container-{{ loop.index }}" 
+                        hx-trigger="load, click"
+                        hx-swap="innerHTML"
                         onclick="document.getElementById('accordion-{{ loop.index }}').classList.toggle('hidden'); document.getElementById('icon-{{ loop.index }}').classList.toggle('rotate-90');">
                         <td class="px-6 py-4 whitespace-nowrap flex items-center gap-3">
                             <svg class="w-4 h-4 text-slate-400 transform transition-transform duration-200"

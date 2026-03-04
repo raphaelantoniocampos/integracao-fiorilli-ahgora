@@ -1,7 +1,11 @@
 <div id="log-entries"
     hx-get="/partials/log-entries?{% if task_id %}task_id={{ task_id }}{% else %}job_id={{ job_id }}{% endif %}{% if task_type %}&task_type={{ task_type }}{% endif %}"
-    hx-trigger="every 5s" hx-swap="outerHTML"
-    class="bg-slate-900 p-4 font-mono text-[13px] leading-relaxed overflow-y-auto" style="max-height: 80vh;">
+    hx-trigger="{% if job_status == 'running' %}every 5s{% endif %}"
+    hx-target="#log-entries"
+    hx-swap="innerHTML"
+    hx-on:htmx:afterSwap="this.scrollTop = this.scrollHeight"
+    class="bg-slate-900 p-4 font-mono text-[13px] leading-relaxed overflow-y-auto" 
+    style="max-height: 80vh;">
     {% for log in logs %}
     <div class="flex py-0.5 hover:bg-slate-800/50 px-2 -mx-2 rounded">
         <span class="text-slate-600 mr-4 flex-shrink-0 select-none tabular-nums">{{ log.timestamp.strftime('%H:%M:%S')

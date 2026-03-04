@@ -42,8 +42,6 @@ async def dashboard(request: Request, service: SyncService = Depends(get_service
         {
             "request": request,
             "stats": stats,
-            "headless_mode": settings.HEADLESS_MODE,
-            "headless_mode_tasks": settings.HEADLESS_MODE_TASKS,
             "is_docker": settings.IS_DOCKER,
         },
     )

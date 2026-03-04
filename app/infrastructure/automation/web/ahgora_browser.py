@@ -324,7 +324,7 @@ class AhgoraBrowser(BaseBrowser):
         try:
             # The validation screen displays a log of processing, usually inside the DOM.
             # A robust way is to pull all body text and search line by line.
-            self.move_to_element(selector="obterErro", selector_type=By.ID,delay=2,max_tries=50)
+            self.click_element(selector="obterErro", selector_type=By.ID,delay=1,max_tries=240)
             body_text = self.driver.find_element(By.ID, "obterErro").text
 
             # Match logs like "Intersecção com afastamento... [15]"
