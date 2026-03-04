@@ -17,16 +17,30 @@ class AhgoraBrowser(BaseBrowser):
         super().__init__(
             url=settings.AHGORA_URL, log_callback=log_callback, headless=headless
         )
+        try:
+            self._login()
+        except Exception as e:
+            try:
+                self.driver.save_screenshot("downloads/ahgora_login_error.png")
+            except:
+                pass
+            raise e
 
     def download_employees(self):
         self._log("INFO", "Starting employees download from Ahgora")
         try:
-            self._login()
-            self.driver.get(self.driver.current_url.replace("home", "funcionarios"))
-            self._show_dismissed_employees()
-            self._click_plus_button()
-            self._export_to_csv()
-            self._log("INFO", "Download of employees from Ahgora completed")
+            try:
+                self.driver.get(self.driver.current_url.replace("home", "funcionarios"))
+                self._show_dismissed_employees()
+                self._click_plus_button()
+                self._export_to_csv()
+                self._log("INFO", "Download of employees from Ahgora completed")
+            except Exception as e:
+                try:
+                    self.driver.save_screenshot("downloads/ahgora_download_error.png")
+                except:
+                    pass
+                raise e
         finally:
             self.close_driver()
 
@@ -86,7 +100,6 @@ class AhgoraBrowser(BaseBrowser):
         """
         name = payload.get("name", "")
         self._log("INFO", f"Adding employee to Ahgora: {name}")
-        self._login()
 
         # Ensure we are on the employee page
         self.driver.get(self.driver.current_url.replace("home", "funcionarios"))
@@ -153,7 +166,6 @@ class AhgoraBrowser(BaseBrowser):
         name = payload.get("name", "")
         employee_id = str(payload.get("id", ""))
         self._log("INFO", f"Updating employee in Ahgora: {name}")
-        self._login()
 
         # Navigate to employee page
         self.driver.get(
@@ -242,7 +254,6 @@ class AhgoraBrowser(BaseBrowser):
         dismissal_date = str(payload.get("dismissal_date", ""))
 
         self._log("INFO", f"Removing employee in Ahgora: {name}")
-        self._login()
 
         self.driver.get(self.driver.current_url.replace("home", "funcionarios"))
         time.sleep(self.DELAY)
@@ -285,7 +296,6 @@ class AhgoraBrowser(BaseBrowser):
         Does NOT save the records.
         """
         self._log("INFO", "Starting leave upload to Ahgora")
-        self._login()
 
         import_path = settings.AHGORA_URL.replace("home", "afastamentos/importa")
         if import_path == settings.AHGORA_URL:  # Defense if URL structure was weird
@@ -307,7 +317,7 @@ class AhgoraBrowser(BaseBrowser):
                 self._log("DEBUG", "Could not find layout selector, assuming default.")
 
             # Click the upload/process button
-            # Button might be labeled 'Obter Registros' or 'Importar'
+            # Button labeled 'Obter Registros'
             self.click_element("//*/form/div[6]/button[2]")
 
             time.sleep(self.DELAY * 5)  # Let the upload process
@@ -356,11 +366,8 @@ class AhgoraBrowser(BaseBrowser):
         Clicks the save/confirm button to finalize the import of valid records.
         """
         try:
-            self.click_element(
-                "//button[contains(text(), 'Salvar') or contains(text(), 'Confirmar') or contains(text(), 'Processar')]",
-                max_tries=3,
-            )
-            time.sleep(self.DELAY * 10)
+            self.click_element(selector="sendLeave", selector_type=By.ID)
+            time.sleep(self.DELAY * 20)
             self._log("INFO", "Successfully confirmed and saved leaves import.")
         except Exception as e:
             self._log("ERROR", f"Failed to confirm leaves import: {e}")
