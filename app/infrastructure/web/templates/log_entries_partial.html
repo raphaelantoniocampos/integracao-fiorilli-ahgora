@@ -1,8 +1,14 @@
 <div id="log-entries"
     hx-get="/partials/log-entries?{% if task_id %}task_id={{ task_id }}{% else %}job_id={{ job_id }}{% endif %}{% if task_type %}&task_type={{ task_type }}{% endif %}"
     {% if job_status|string=='running' or job_status|string=='SyncStatus.RUNNING' or
-    job_status|string=='AutomationTaskStatus.RUNNING' %}hx-trigger="every 5s" {% endif %} hx-target="#log-entries"
-    hx-swap="outerHTML" hx-on:htmx:afterSwap="this.scrollTop = this.scrollHeight"
+    job_status|string=='AutomationTaskStatus.RUNNING' %}
+    hx-trigger="every 5s" 
+    {% else %}
+    hx-trigger="every 30s"
+    {% endif %} 
+    hx-target="#log-entries"
+    hx-swap="outerHTML" 
+    hx-on:htmx:afterSwap="this.scrollTop = this.scrollHeight"
     class="bg-slate-900 p-4 font-mono text-[13px] leading-relaxed overflow-y-auto" style="max-height: 80vh;">
     {% for group in grouped_logs %}
     {% if group.is_job_log %}

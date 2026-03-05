@@ -71,18 +71,17 @@
                         <div class="text-sm text-slate-700 font-mono break-all line-clamp-2">
                             {% if task.payload is mapping %}
                             {% if task.payload.get('name') %}
-                            <span class="font-semibold">
-                                {{ task.payload.get('name') }}
-                            </span>
+                                <span class="font-semibold">
+                                    {{ task.payload.get('name') }}
+                                </span>
                             {% elif task.payload.get('name_fiorilli') %}
-                            <span class="font-semibold">{{ task.payload.get('name_fiorilli') }}</span>
-                            {% elif task.payload.get('id') %}
-                            <span class="font-semibold">id: {{ task.payload.get('id') }}</span>
-                            <span class="font-semibold">cod: {{ task.payload.get('cod') }}</span>
-                            <span class="font-semibold">start_date: {{ task.payload.get('start_date') }}</span>
-                            <span class="font-semibold">end_date: {{ task.payload.get('end_date') }}</span>
+                                <span class="font-semibold">{{ task.payload.get('name_fiorilli') }}</span>
                             {% else %}
-                            {{ task.payload }}
+                                {% for key, value in task.payload.items() %}
+                                    {% if value is iterable and value is not string and value is not mapping %}
+                                        <span class="font-semibold">{{ value | length }} items</span>
+                                    {% endif %}
+                                {% endfor %}
                             {% endif %}
                             {% else %}
                             {{ task.payload }}

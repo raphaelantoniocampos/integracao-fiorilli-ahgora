@@ -453,7 +453,7 @@ class SyncService:
             await self._log(job_id, "INFO", "Loading leave data from files...")
             last_leaves, all_leaves = await self._get_leaves_data(job_id)
 
-            leave_codes_path = DATA_DIR / "leave_codes.csv"
+            leave_codes_path = settings.BASE_DIR / "app" / "core" / "leave_codes.csv"
             if leave_codes_path.exists():
                 await self._log(job_id, "INFO", "Enriching leave data with codes...")
                 leave_codes = await asyncio.to_thread(
@@ -1026,14 +1026,14 @@ class SyncService:
                 )
 
         if not new_leaves_df.empty:
-            for payload in df_to_payloads(new_leaves_df):
-                tasks_to_create.append(
-                    AutomationTask(
-                        job_id=job_id,
-                        type=AutomationTaskType.ADD_LEAVE,
-                        payload=payload,
-                    )
+            leaves_payloads = df_to_payloads(new_leaves_df)
+            tasks_to_create.append(
+                AutomationTask(
+                    job_id=job_id,
+                    type=AutomationTaskType.ADD_LEAVE,
+                    payload={"leaves": leaves_payloads},
                 )
+            )
 
         # Save all tasks in a single batch commit
         if tasks_to_create:
