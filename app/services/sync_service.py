@@ -879,7 +879,11 @@ class SyncService:
                     df[col] = df[col].replace(EXCEPTIONS_AND_TYPOS)
 
         if last_leaves.empty:
-            return all_leaves
+            all_leaves_copy = all_leaves.copy()
+            for col in ["start_date", "end_date"]:
+                if col in all_leaves_copy.columns:
+                    all_leaves_copy[col] = all_leaves_copy[col].dt.strftime("%d/%m/%Y").fillna("")
+            return all_leaves_copy
 
         # Filter using composite key (employee id + cod + start_date + end_date)
         last_leaves_match = last_leaves.copy()
@@ -913,6 +917,10 @@ class SyncService:
         
         # Return only the items from all_leaves that don't match the composite key
         new_leaves = all_leaves[~already_existing].copy()
+        
+        for col in ["start_date", "end_date"]:
+            if col in new_leaves.columns:
+                new_leaves[col] = new_leaves[col].dt.strftime("%d/%m/%Y").fillna("")
         
         return new_leaves
 

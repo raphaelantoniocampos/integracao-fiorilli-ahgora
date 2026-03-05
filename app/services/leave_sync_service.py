@@ -152,7 +152,7 @@ class LeaveSyncService:
                         export_df[col] = ""
                     if col in ["start_date", "end_date"]:
                         export_df[col] = pd.to_datetime(
-                            export_df[col], format="ISO8601"
+                            export_df[col], format="mixed", dayfirst=True
                         )
                         export_df[col] = export_df[col].dt.strftime("%d/%m/%Y")
 

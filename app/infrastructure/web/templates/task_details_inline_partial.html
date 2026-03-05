@@ -76,6 +76,11 @@
                             </span>
                             {% elif task.payload.get('name_fiorilli') %}
                             <span class="font-semibold">{{ task.payload.get('name_fiorilli') }}</span>
+                            {% elif task.payload.get('id') %}
+                            <span class="font-semibold">id: {{ task.payload.get('id') }}</span>
+                            <span class="font-semibold">cod: {{ task.payload.get('cod') }}</span>
+                            <span class="font-semibold">start_date: {{ task.payload.get('start_date') }}</span>
+                            <span class="font-semibold">end_date: {{ task.payload.get('end_date') }}</span>
                             {% else %}
                             {{ task.payload }}
                             {% endif %}

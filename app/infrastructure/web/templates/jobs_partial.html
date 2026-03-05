@@ -59,7 +59,6 @@
             </button>
             {% endif %}
 
-            {% if job.status == 'success' or job.status == 'pending' %}
             <a href="/jobs/{{ job.id }}/tasks"
                 class="text-indigo-400 hover:text-indigo-700 p-2 hover:bg-indigo-50 rounded-full transition-all flex items-center justify-center cursor-pointer"
                 title="Ver Detalhes">
@@ -69,7 +68,6 @@
                     </path>
                 </svg>
             </a>
-            {% endif %}
 
             <button hx-get="/partials/logs?job_id={{ job.id }}" hx-target="#modal-content"
                 class="text-blue-400 hover:text-blue-700 p-3 hover:bg-blue-50 rounded-full transition-all flex items-center justify-center"
