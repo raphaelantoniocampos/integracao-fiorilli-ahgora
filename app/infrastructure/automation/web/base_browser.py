@@ -1,5 +1,6 @@
 import logging
 import time
+import threading
 from abc import ABC
 from typing import Any, Callable, List, Union
 
@@ -22,6 +23,10 @@ from app.core.settings import settings
 logger = logging.getLogger(__name__)
 
 
+class BrowserCancelledException(Exception):
+    pass
+
+
 class BaseBrowser(ABC):
     MAX_TRIES = 10
     DELAY = 0.5
@@ -38,9 +43,11 @@ class BaseBrowser(ABC):
         url: str,
         log_callback: Callable[[str, str], None] = None,
         headless: bool = None,
+        cancel_event: threading.Event = None,
     ):
         self.log_callback = log_callback
         self.headless = headless if headless is not None else settings.HEADLESS_MODE
+        self.cancel_event = cancel_event
         self.driver = self._get_web_driver()
         if url:
             self.driver.get(url)
@@ -91,18 +98,34 @@ class BaseBrowser(ABC):
         except Exception:
             pass
 
+    def check_cancel(self):
+        if self.cancel_event and self.cancel_event.is_set():
+            self._log("WARNING", "Browser execution cancelled via kill-switch")
+            self.close_driver()
+            raise BrowserCancelledException("Task cancelled by user.")
+
+    def wait(self, seconds: float):
+        end_time = time.time() + seconds
+        while time.time() < end_time:
+            self.check_cancel()
+            time.sleep(min(0.5, end_time - time.time()))
+
     def retry_func(self, func: Callable[[], Any], max_tries: int = MAX_TRIES) -> Any:
         error = None
         for i in range(max_tries):
+            self.check_cancel()
             try:
-                time.sleep(self.DELAY)
+                self.wait(self.DELAY)
+                self.check_cancel()
                 return func()
+            except BrowserCancelledException as e:
+                raise e
             except Exception as e:
                 error = e
                 if i >= max_tries - 1:
                     self._log("ERROR", f"Failed after {max_tries} attempts: {e}")
                     raise e
-                time.sleep(self.DELAY)
+                self.wait(self.DELAY)
         if error:
             raise error
 

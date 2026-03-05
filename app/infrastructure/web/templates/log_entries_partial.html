@@ -1,26 +1,62 @@
 <div id="log-entries"
     hx-get="/partials/log-entries?{% if task_id %}task_id={{ task_id }}{% else %}job_id={{ job_id }}{% endif %}{% if task_type %}&task_type={{ task_type }}{% endif %}"
-    hx-trigger="{% if job_status == 'running' %}every 5s{% endif %}"
-    hx-target="#log-entries"
-    hx-swap="innerHTML"
-    hx-on:htmx:afterSwap="this.scrollTop = this.scrollHeight"
-    class="bg-slate-900 p-4 font-mono text-[13px] leading-relaxed overflow-y-auto" 
-    style="max-height: 80vh;">
-    {% for log in logs %}
+    {% if job_status|string=='running' or job_status|string=='SyncStatus.RUNNING' or
+    job_status|string=='AutomationTaskStatus.RUNNING' %}hx-trigger="every 5s" {% endif %} hx-target="#log-entries"
+    hx-swap="outerHTML" hx-on:htmx:afterSwap="this.scrollTop = this.scrollHeight"
+    class="bg-slate-900 p-4 font-mono text-[13px] leading-relaxed overflow-y-auto" style="max-height: 80vh;">
+    {% for group in grouped_logs %}
+    {% if group.is_job_log %}
+    {% for log in group.logs %}
     <div class="flex py-0.5 hover:bg-slate-800/50 px-2 -mx-2 rounded">
         <span class="text-slate-600 mr-4 flex-shrink-0 select-none tabular-nums">{{ log.timestamp.strftime('%H:%M:%S')
             }}</span>
         {% if log.level == 'ERROR' %}
-        <span class="text-red-400 font-bold mr-3 flex-shrink-0 w-14">[ERR]</span>
-        <span class="text-red-300">{{ log.message }}</span>
+        <span class="text-red-400 font-bold mr-3 flex-shrink-0 w-14">[ERR]</span><span class="text-red-300">{{
+            log.message }}</span>
         {% elif log.level == 'WARNING' %}
-        <span class="text-amber-400 mr-3 flex-shrink-0 w-14">[WRN]</span>
-        <span class="text-amber-200/80">{{ log.message }}</span>
+        <span class="text-amber-400 mr-3 flex-shrink-0 w-14">[WRN]</span><span class="text-amber-200/80">{{ log.message
+            }}</span>
         {% else %}
-        <span class="text-indigo-400/60 mr-3 flex-shrink-0 w-14">[INF]</span>
-        <span class="text-slate-300">{{ log.message }}</span>
+        <span class="text-indigo-400/60 mr-3 flex-shrink-0 w-14">[INF]</span><span class="text-slate-300">{{ log.message
+            }}</span>
         {% endif %}
     </div>
+    {% endfor %}
+    {% else %}
+    <details
+        class="group bg-slate-800/30 rounded border border-slate-700/50 mt-1 mb-2 shadow-sm open:bg-slate-800/50 transition-colors"
+        open>
+        <summary class="flex items-center cursor-pointer p-2 hover:bg-slate-700/50 transition-colors rounded">
+            <svg class="w-4 h-4 mr-2 text-slate-500 transform transition-transform group-open:rotate-90 stroke-current"
+                fill="none" viewBox="0 0 24 24" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+            <span class="text-xs font-semibold text-slate-300 mr-2">Subtarefa:</span>
+            <span class="text-xs text-indigo-400 font-medium">[{{ (group.task_id | string).split('-')[0] }}...]</span>
+            <span class="ml-auto text-xs text-slate-500 bg-slate-800 px-2 py-0.5 rounded-full">{{ group.logs|length
+                }}s</span>
+        </summary>
+        <div
+            class="px-2 py-2 border-t border-slate-700/50 bg-[#0d1117] rounded-b border-x border-b border-l-[3px] border-l-indigo-500/50">
+            {% for log in group.logs %}
+            <div class="flex py-0.5 hover:bg-slate-800/50 px-2 -mx-2 rounded">
+                <span class="text-slate-600 mr-4 flex-shrink-0 select-none tabular-nums">{{
+                    log.timestamp.strftime('%H:%M:%S') }}</span>
+                {% if log.level == 'ERROR' %}
+                <span class="text-red-400 font-bold mr-3 flex-shrink-0 w-14">[ERR]</span><span class="text-red-300">{{
+                    log.message }}</span>
+                {% elif log.level == 'WARNING' %}
+                <span class="text-amber-400 mr-3 flex-shrink-0 w-14">[WRN]</span><span class="text-amber-200/80">{{
+                    log.message }}</span>
+                {% else %}
+                <span class="text-indigo-400/60 mr-3 flex-shrink-0 w-14">[INF]</span><span class="text-slate-300">{{
+                    log.message }}</span>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </details>
+    {% endif %}
     {% else %}
     <div class="text-slate-500 italic text-center py-8">Nenhum log disponível para esta execução.</div>
     {% endfor %}

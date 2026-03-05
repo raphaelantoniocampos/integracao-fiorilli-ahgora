@@ -1,8 +1,11 @@
 import asyncio
 import logging
 import tempfile
+import threading
 from pathlib import Path
 from uuid import UUID
+
+from app.core.task_registry import task_registry
 
 import pandas as pd
 
@@ -52,12 +55,17 @@ class LeaveSyncService:
         payloads = [t.payload for t in leave_tasks]
         df = pd.DataFrame(payloads)
 
+        cancel_event = task_registry.get_cancel_event(job_id)
+        if not cancel_event:
+            cancel_event = threading.Event()
+            task_registry.register_cancel_event(job_id, cancel_event)
+
         # 2. Run browser automation in thread
         loop = asyncio.get_running_loop()
         log_lock = asyncio.Lock()
         try:
             results = await asyncio.to_thread(
-                self._run_browser_batch_import, df, job_id, loop, log_lock
+                self._run_browser_batch_import, df, job_id, loop, log_lock, cancel_event
             )
 
             # Analyze results and update task statuses
@@ -108,6 +116,7 @@ class LeaveSyncService:
         job_id: UUID,
         loop: asyncio.AbstractEventLoop,
         log_lock: asyncio.Lock,
+        cancel_event: threading.Event = None,
     ) -> list[dict]:
         """
         Sync execution of the browser automation for leaves batch.
@@ -132,7 +141,7 @@ class LeaveSyncService:
             )
 
         browser = AhgoraBrowser(
-            log_callback=log_cb, headless=settings.HEADLESS_MODE_TASKS
+            log_callback=log_cb, headless=settings.HEADLESS_MODE_TASKS, cancel_event=cancel_event
         )
 
         with tempfile.TemporaryDirectory() as temp_dir:

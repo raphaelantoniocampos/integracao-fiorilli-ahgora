@@ -170,7 +170,7 @@ class SqlAlchemyRepo:
     async def get_job_logs(self, job_id: UUID) -> List[SyncLog]:
         result = await self.session.execute(
             select(SyncLogModel)
-            .filter_by(job_id=job_id, task_id=None)
+            .filter_by(job_id=job_id)
             .order_by(SyncLogModel.timestamp.asc())
         )
         db_logs = result.scalars().all()

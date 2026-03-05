@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import threading
 from uuid import UUID
 
 logger = logging.getLogger(__name__)
@@ -13,6 +14,7 @@ class TaskRegistry:
 
     _instance = None
     _tasks: dict[str, asyncio.Task] = {}
+    _cancel_events: dict[str, "threading.Event"] = {}
 
     def __new__(cls):
         if cls._instance is None:
@@ -28,10 +30,11 @@ class TaskRegistry:
 
     def unregister(self, job_id: UUID):
         job_key = str(job_id)
-        if job_key in self._tasks:
-            del self._tasks[job_key]
+        popped_task = self._tasks.pop(job_key, None)
+        popped_event = self._cancel_events.pop(job_key, None)
+        if popped_task or popped_event:
             logger.info(
-                f"Unregistered task for job {job_key}. Total active tasks: {len(self._tasks)}"
+                f"Unregistered task/event for job {job_key}. Total active tasks: {len(self._tasks)}"
             )
         else:
             logger.warning(
@@ -51,6 +54,14 @@ class TaskRegistry:
 
     def get_all_tasks(self) -> dict[str, asyncio.Task]:
         return self._tasks.copy()
+
+    def register_cancel_event(self, job_id: UUID, event: threading.Event):
+        job_key = str(job_id)
+        self._cancel_events[job_key] = event
+        logger.info(f"Registered cancel event for job {job_key}")
+
+    def get_cancel_event(self, job_id: UUID) -> threading.Event | None:
+        return self._cancel_events.get(str(job_id))
 
 
 task_registry = TaskRegistry()

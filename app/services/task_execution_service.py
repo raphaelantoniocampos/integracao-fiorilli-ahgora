@@ -1,6 +1,9 @@
 import asyncio
 import logging
+import threading
 from uuid import UUID
+
+from app.core.task_registry import task_registry
 
 from app.domain.enums import (
     AutomationTaskStatus as TaskStatus,
@@ -43,6 +46,11 @@ class TaskExecutionService:
         success = False
         error_msg = None
 
+        cancel_event = task_registry.get_cancel_event(task.job_id)
+        if not cancel_event:
+            cancel_event = threading.Event()
+            task_registry.register_cancel_event(task.job_id, cancel_event)
+
         try:
             # We run the browser automation in a separate thread so we don't block the async loop
             loop = asyncio.get_running_loop()
@@ -53,6 +61,7 @@ class TaskExecutionService:
                 task.job_id,
                 task_id,
                 loop,
+                cancel_event,
             )
         except Exception as e:
             logger.exception(f"Error executing task {task_id}")
@@ -143,6 +152,11 @@ class TaskExecutionService:
             TaskStatus.RUNNING,
             TaskStatus.FAILED,
         ]:
+            if task.status == TaskStatus.RUNNING:
+                cancel_event = task_registry.get_cancel_event(task.job_id)
+                if cancel_event:
+                    cancel_event.set()
+                    
             await self.repo.update_task_status(
                 task_id, TaskStatus.CANCELLED, "Cancelled by user via API"
             )
@@ -191,6 +205,7 @@ class TaskExecutionService:
         job_id: UUID,
         task_id: UUID,
         loop: asyncio.AbstractEventLoop,
+        cancel_event: threading.Event = None,
     ) -> bool:
         """
         Runs the actual Selenium browser automation based on task type.
@@ -207,7 +222,7 @@ class TaskExecutionService:
         browser = None
         try:
             browser = AhgoraBrowser(
-                log_callback=log_cb, headless=settings.HEADLESS_MODE_TASKS
+                log_callback=log_cb, headless=settings.HEADLESS_MODE_TASKS, cancel_event=cancel_event
             )
             match task_type:
                 case TaskType.ADD_EMPLOYEE:

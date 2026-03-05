@@ -12,10 +12,10 @@ logger = logging.getLogger(__name__)
 
 class AhgoraBrowser(BaseBrowser):
     def __init__(
-        self, log_callback: Callable[[str, str], None] = None, headless: bool = None
+        self, log_callback: Callable[[str, str], None] = None, headless: bool = None, cancel_event=None
     ):
         super().__init__(
-            url=settings.AHGORA_URL, log_callback=log_callback, headless=headless
+            url=settings.AHGORA_URL, log_callback=log_callback, headless=headless, cancel_event=cancel_event
         )
         self._login()
 
@@ -46,7 +46,7 @@ class AhgoraBrowser(BaseBrowser):
         self._click_enter_button()
         self._select_company(company)
         self._close_banner()
-        time.sleep(self.DELAY)
+        self.wait(self.DELAY)
 
     def _enter_username(self, selector: str, user: str) -> None:
         self.send_keys(selector, user, selector_type=By.NAME)
@@ -66,7 +66,7 @@ class AhgoraBrowser(BaseBrowser):
             # but BaseBrowser usually has its own retry logic.
             self.click_element("buttonAdjustPunch", selector_type=By.ID)
         except Exception:
-            time.sleep(self.DELAY)
+            self.wait(self.DELAY)
 
     def _show_dismissed_employees(self) -> None:
         self.click_element("filtro_demitido", selector_type=By.ID)
@@ -77,7 +77,7 @@ class AhgoraBrowser(BaseBrowser):
     def _export_to_csv(self) -> None:
         self.click_element("arquivo_csv", selector_type=By.ID)
         # Give some time for the download to start/finish
-        time.sleep(10)
+        self.wait(10)
 
     def add_employee(self, payload: dict) -> None:
         """
@@ -89,11 +89,11 @@ class AhgoraBrowser(BaseBrowser):
 
         # Ensure we are on the employee page
         self.driver.get(self.driver.current_url.replace("home", "funcionarios"))
-        time.sleep(self.DELAY)
+        self.wait(self.DELAY)
 
         # Click the 'Novo Funcionário' button
         self.click_element("//button[contains(text(), 'Novo Funcionário')]")
-        time.sleep(self.DELAY * 2)
+        self.wait(self.DELAY * 2)
 
         # Fill General Data
         self.send_keys("dados-nome", name, By.ID)
@@ -142,7 +142,7 @@ class AhgoraBrowser(BaseBrowser):
         self.click_element("(//button[contains(text(), 'Salvar')])[last()]")
 
         # Small wait for the request to process
-        time.sleep(self.DELAY * 4)
+        self.wait(self.DELAY * 4)
         self._log("INFO", f"Finished adding employee: {name}")
 
     def update_employee(self, payload: dict) -> None:
@@ -159,7 +159,7 @@ class AhgoraBrowser(BaseBrowser):
                 "home", f"funcionarios/edita/?matric={employee_id}"
             )
         )
-        time.sleep(self.DELAY)
+        self.wait(self.DELAY)
 
         try:
             # Note: payload columns are suffixed with _fiorilli and _ahgora
@@ -218,7 +218,7 @@ class AhgoraBrowser(BaseBrowser):
             if has_changes:
                 # Click Save
                 self.click_element("(//button[contains(text(), 'Salvar')])[last()]")
-                time.sleep(self.DELAY * 4)
+                self.wait(self.DELAY * 4)
                 self._log("INFO", f"Finished updating employee: {name} ({employee_id})")
             else:
                 self._log(
@@ -242,29 +242,29 @@ class AhgoraBrowser(BaseBrowser):
         self._log("INFO", f"Removing employee in Ahgora: {name}")
 
         self.driver.get(self.driver.current_url.replace("home", "funcionarios"))
-        time.sleep(self.DELAY)
+        self.wait(self.DELAY)
 
         # Search for the employee
         self.send_keys("filtro_funcionarios", employee_id, By.ID)
-        time.sleep(self.DELAY)
+        self.wait(self.DELAY)
         self.send_enter_key("filtro_funcionarios", By.ID)
-        time.sleep(self.DELAY)
+        self.wait(self.DELAY)
 
         try:
             # Click to Delete/Dismiss
             self.click_element(
                 f"//a[contains(@title, 'Demitir funcionario {name.upper()}') or contains(@class, 'icone_remover')]"
             )
-            time.sleep(self.DELAY)
+            self.wait(self.DELAY)
 
             # Form field for dismissal date
             try:
                 self.send_keys("dt_demissao", dismissal_date, By.ID, clear_first=True)
-                time.sleep(self.DELAY)
+                self.wait(self.DELAY)
                 self.click_element(
                     "(/html/body/div[1]/div/div/div[2]/div[1]/div[2]/table/tbody/tr[1]/td/div/div[2]/div/button[2])[1]"
                 )
-                time.sleep(self.DELAY * 2)
+                self.wait(self.DELAY * 2)
             except Exception:
                 self._log(
                     "INFO",
@@ -288,13 +288,13 @@ class AhgoraBrowser(BaseBrowser):
             import_path = "https://app.ahgora.com.br/afastamentos/importa"
 
         self.driver.get(import_path)
-        time.sleep(self.DELAY * 2)
+        self.wait(self.DELAY * 2)
 
         try:
             # Find the file input element and send the file path
             file_input = self.driver.find_element(By.XPATH, "//input[@type='file']")
             file_input.send_keys(str(file_path))
-            time.sleep(self.DELAY)
+            self.wait(self.DELAY)
 
             # Ensure the specific layout is selected (pw_afimport_01)
             try:
@@ -306,7 +306,7 @@ class AhgoraBrowser(BaseBrowser):
             # Button labeled 'Obter Registros'
             self.click_element("//*/form/div[6]/button[2]")
 
-            time.sleep(self.DELAY * 5)  # Let the upload process
+            self.wait(self.DELAY * 5)  # Let the upload process
             self._log("INFO", f"Finished uploading leaves file from {file_path}")
         except Exception as e:
             self._log("ERROR", f"Failed to upload leaves file: {e}")
@@ -353,7 +353,7 @@ class AhgoraBrowser(BaseBrowser):
         """
         try:
             self.click_element(selector="sendLeave", selector_type=By.ID)
-            time.sleep(self.DELAY * 20)
+            self.wait(self.DELAY * 20)
             self._log("INFO", "Successfully confirmed and saved leaves import.")
         except Exception as e:
             self._log("ERROR", f"Failed to confirm leaves import: {e}")
@@ -400,7 +400,7 @@ class AhgoraBrowser(BaseBrowser):
                 }}
             """
             self.driver.execute_script(script)
-            time.sleep(1)
+            self.wait(1)
         except Exception as e:
             self._log(
                 "WARNING", f"Failed to set autocomplete select '{element_id}': {e}"
@@ -425,18 +425,18 @@ class AhgoraBrowser(BaseBrowser):
     #             self._log("WARNING", f"Could not find multiselect button: {e}")
     #             return
     #
-    #     time.sleep(1)
+    #     self.wait(1)
     #
     #     # 2. Clear previous selections if 'Todas localizações selecionadas' is active or checked
     #     try:
     #         self.click_element("//li[contains(@class, 'multiselect-all')]//label", max_tries=1)
-    #         time.sleep(0.5)
+    #         self.wait(0.5)
     #     except Exception:
     #         pass
     #
     #     try:
     #         self.click_element("//button[contains(@class, 'multiselect-clear-filter')]", max_tries=1)
-    #         time.sleep(0.5)
+    #         self.wait(0.5)
     #     except Exception:
     #         pass
     #
@@ -451,7 +451,7 @@ class AhgoraBrowser(BaseBrowser):
     #         except Exception:
     #             pass
     #
-    #     time.sleep(1)
+    #     self.wait(1)
     #
     #     # 4. Use JS for tokenized substring match to find the actual checkbox
     #     script = f"""

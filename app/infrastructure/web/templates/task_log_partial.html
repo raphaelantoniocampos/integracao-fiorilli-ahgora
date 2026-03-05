@@ -15,7 +15,8 @@
             </div>
         </div>
         <div class="flex items-center space-x-3">
-            {% if task.status == 'running' %}
+            {% if (task.status|string == 'running' or task.status|string == 'RUNNING' or task.status|string ==
+            'AutomationTaskStatus.RUNNING') or (task.status.name == 'RUNNING') %}
             <div class="flex items-center text-xs text-slate-400">
                 <span class="flex h-2 w-2 rounded-full bg-emerald-500 mr-2 animate-pulse"></span>
                 Executando

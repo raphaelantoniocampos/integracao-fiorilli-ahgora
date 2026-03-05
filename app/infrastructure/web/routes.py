@@ -208,6 +208,22 @@ async def get_task_details_partial(
             )
 
 
+def group_logs_chronologically(logs):
+    grouped = []
+    current_group = None
+    for log in logs:
+        if not log.task_id:
+            grouped.append({"task_id": None, "is_job_log": True, "logs": [log]})
+            current_group = None
+        else:
+            if current_group and current_group["task_id"] == log.task_id:
+                current_group["logs"].append(log)
+            else:
+                current_group = {"task_id": log.task_id, "is_job_log": False, "logs": [log]}
+                grouped.append(current_group)
+    return grouped
+
+
 @router.get("/partials/task-log")
 async def get_task_log_partial(
     request: Request, task_id: UUID, service: SyncService = Depends(get_service)
@@ -216,7 +232,14 @@ async def get_task_log_partial(
     logs = await service.repo.get_task_logs(task_id)
     return templates.TemplateResponse(
         "task_log_partial.html",
-        {"request": request, "task": task, "logs": logs, "task_id": str(task_id)},
+        {
+            "request": request, 
+            "task": task, 
+            "logs": logs, 
+            "grouped_logs": group_logs_chronologically(logs),
+            "task_id": str(task_id),
+            "job_status": task.status
+        },
     )
 
 
@@ -242,6 +265,7 @@ async def get_logs_partial(
         {
             "request": request,
             "logs": logs,
+            "grouped_logs": group_logs_chronologically(logs),
             "job_id": str(job_id),
             "job_status": job_status,
             "task_type": task_type,
@@ -261,10 +285,11 @@ async def get_log_entries_partial(
         logs = await service.repo.get_task_logs(task_id)
         return templates.TemplateResponse(
             "log_entries_partial.html",
-            {"request": request, "logs": logs, "task_id": str(task_id)},
+            {"request": request, "grouped_logs": group_logs_chronologically(logs), "task_id": str(task_id)},
         )
     if job_id:
         logs = await service.get_job_logs(job_id)
+        job_status = await service.get_job_status(job_id)
         if task_type:
             tasks = await service.get_automation_tasks(job_id)
             valid_task_ids = {
@@ -275,11 +300,12 @@ async def get_log_entries_partial(
                 log for log in logs 
                 if (log.task_id and str(log.task_id) in valid_task_ids) or not log.task_id
             ]
+        
         return templates.TemplateResponse(
             "log_entries_partial.html",
-            {"request": request, "logs": logs, "job_id": str(job_id), "task_type": task_type},
+            {"request": request, "grouped_logs": group_logs_chronologically(logs), "job_id": str(job_id), "task_type": task_type, "job_status": job_status},
         )
 
     return templates.TemplateResponse(
-        "log_entries_partial.html", {"request": request, "logs": []}
+        "log_entries_partial.html", {"request": request, "grouped_logs": []}
     )
