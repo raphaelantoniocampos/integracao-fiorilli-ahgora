@@ -4,7 +4,7 @@
                     <div>
                         {% set t_status_class = "indigo-100 text-indigo-700" %}
                         {% if (task.status|string == 'SUCCESS' or task.status|string == 'AutomationTaskStatus.SUCCESS') or (task.status.name == 'SUCCESS') %}{% set t_status_class = "emerald-100 text-emerald-700" %}
-                        {% elif (task.status|string == 'FAILED' or task.status|string == 'AutomationTaskStatus.FAILED') or (task.status.name == 'FAILED') %}{% set t_status_class = "red-100 text-red-700" %}
+                        {% elif (task.status|string == 'FAILED' or task.status|string == 'AutomationTaskStatus.FAILED') or (task.status.name == 'FAILED') %}{% set t_status_class = "rose-100 text-rose-700" %}
                         {% endif %}
                         <p class="text-[11px] {{ t_status_class }} font-mono uppercase tracking-wider">
                             {{ task.status }}

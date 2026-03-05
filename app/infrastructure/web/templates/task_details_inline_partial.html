@@ -32,7 +32,7 @@
                             {% elif (task.status|string == 'FAILED' or task.status|string == 'AutomationTaskStatus.FAILED') or (task.status.name == 'FAILED') %} bg-rose-50 text-rose-700 border border-rose-200
                             {% elif (task.status|string == 'CANCELLED' or task.status|string == 'AutomationTaskStatus.CANCELLED') or (task.status.name == 'CANCELLED') %} bg-slate-50 text-slate-700 border border-slate-200
                             {% elif (task.status|string == 'RUNNING' or task.status|string == 'AutomationTaskStatus.RUNNING') or (task.status.name == 'RUNNING') %} bg-blue-50 text-blue-700 border border-blue-200 animate-pulse
-                            {% else %} bg-slate-100 text-slate-700 border-slate-200 {% endif %}">
+                            {% else %} bg-indigo-100 text-indigo-700 border-slate-200 {% endif %}">
 
                             {% if (task.status|string == 'SUCCESS' or task.status|string ==
                             'AutomationTaskStatus.SUCCESS') or (task.status.name == 'SUCCESS') %}
