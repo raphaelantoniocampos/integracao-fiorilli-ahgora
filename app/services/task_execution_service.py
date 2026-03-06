@@ -46,10 +46,10 @@ class TaskExecutionService:
         success = False
         error_msg = None
 
-        cancel_event = task_registry.get_cancel_event(task.job_id)
+        cancel_event = task_registry.get_cancel_event(task_id)
         if not cancel_event:
             cancel_event = threading.Event()
-            task_registry.register_cancel_event(task.job_id, cancel_event)
+            task_registry.register_cancel_event(task_id, cancel_event)
 
         try:
             # We run the browser automation in a separate thread so we don't block the async loop
@@ -153,7 +153,7 @@ class TaskExecutionService:
             TaskStatus.FAILED,
         ]:
             if task.status == TaskStatus.RUNNING:
-                cancel_event = task_registry.get_cancel_event(task.job_id)
+                cancel_event = task_registry.get_cancel_event(task_id)
                 if cancel_event:
                     cancel_event.set()
                     
@@ -213,9 +213,16 @@ class TaskExecutionService:
         """
 
         def log_cb(level: str, msg: str):
-            asyncio.run_coroutine_threadsafe(
-                self.repo.add_log(job_id, level, msg, task_id=task_id), loop
-            )
+            async def _do_log():
+                from app.core.database import async_session_factory
+                try:
+                    async with async_session_factory() as session:
+                        repo = SqlAlchemyRepo(session)
+                        await repo.add_log(job_id, level, msg, task_id=task_id)
+                except Exception as ex:
+                    logger.error(f"Background log failed for task {task_id}: {ex}")
+
+            asyncio.run_coroutine_threadsafe(_do_log(), loop)
 
         from app.core.settings import settings
 

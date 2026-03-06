@@ -31,10 +31,14 @@ async def test_execute_leaves_batch_success():
         type="ADD_LEAVE",
         status=AutomationTaskStatus.PENDING,
         payload={
-            "id": "000001",
-            "cod": "001",
-            "start_date": "01/01/2026",
-            "end_date": "10/01/2026",
+            "leaves": [
+                {
+                    "id": "000001",
+                    "cod": "001",
+                    "start_date": "01/01/2026",
+                    "end_date": "10/01/2026",
+                }
+            ]
         },
     )
 
@@ -58,7 +62,9 @@ async def test_execute_leaves_batch_success():
     # Assert repo methods were called to update status
     # First to RUNNING, then to SUCCESS
     repo.update_task_status.assert_any_call(task_id, AutomationTaskStatus.RUNNING)
-    repo.update_task_status.assert_any_call(task_id, AutomationTaskStatus.SUCCESS, message="")
+    repo.update_task_status.assert_any_call(
+        task_id, AutomationTaskStatus.SUCCESS, message=""
+    )
 
 
 @pytest.mark.asyncio
@@ -118,7 +124,9 @@ async def test_execute_leaves_batch_with_validation_errors():
     repo.update_task_status.assert_any_call(
         task_id_1, AutomationTaskStatus.FAILED, message="Interseccao"
     )
-    repo.update_task_status.assert_any_call(task_id_2, AutomationTaskStatus.SUCCESS, message="")
+    repo.update_task_status.assert_any_call(
+        task_id_2, AutomationTaskStatus.SUCCESS, message=""
+    )
 
 
 @pytest.mark.asyncio

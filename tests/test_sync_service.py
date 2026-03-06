@@ -26,6 +26,7 @@ async def test_run_sync_background_success():
     job = SyncJob(id=job_id)
     repo.get_job = AsyncMock(return_value=job)
     repo.update_job_status = AsyncMock()
+    repo.evaluate_and_update_job_status = AsyncMock()
     repo.add_log = AsyncMock()
 
     service = SyncService(repo=repo)
@@ -134,7 +135,7 @@ async def test_validate_ahgora_state(mock_exists):
     )
     service._read_csv = MagicMock(return_value=csv_df)
 
-    await service._validate_ahgora_state(uuid4())
+    await service._validate_ahgora_state(uuid4(), csv_df)
 
     log_calls = [call.args[2] for call in service._log.call_args_list]
     log_text = " ".join(log_calls)

@@ -73,6 +73,8 @@ class LeaveSyncService:
             for result in results:
                 name = result['payload'].get('name', 'N/A')
                 start = result['payload'].get('start_date', 'N/A')
+                end = result['payload'].get('start_date', 'N/A')
+                cod_name = result['payload'].get('cod_name', 'N/A')
                 
                 if result["status"] == "success":
                     if "Intersecção" in result["message"]:
@@ -81,7 +83,7 @@ class LeaveSyncService:
                     else:
                         imported_count += 1
                         await self.repo.add_log(
-                            job_id, "INFO", f"Afastamento importado: {name} - {start}", task_id=batch_task.id
+                            job_id, "INFO", f"Afastamento importado: {name} - {cod_name} - {start} / {end}", task_id=batch_task.id
                         )
                 else:
                     error_count += 1
