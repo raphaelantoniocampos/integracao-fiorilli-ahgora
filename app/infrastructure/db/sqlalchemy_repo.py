@@ -107,7 +107,8 @@ class SqlAlchemyRepo:
         if db_job:
             db_job.status = status
             if status == SyncStatus.RUNNING:
-                db_job.started_at = datetime.now()
+                if not db_job.started_at:
+                    db_job.started_at = datetime.now()
                 # Clear next_retry_at when starting
                 db_job.next_retry_at = None  # type: ignore
             elif status in [
@@ -250,11 +251,19 @@ class SqlAlchemyRepo:
         )
 
     async def update_task_status(
-        self, task_id: UUID, status: AutomationTaskStatus, message: Optional[str] = None
+        self,
+        task_id: UUID,
+        status: AutomationTaskStatus,
+        message: Optional[str] = None,
+        payload: Optional[dict] = None,
     ):
         db_task = await self.session.get(AutomationTaskModel, task_id)
         if db_task:
             db_task.status = status
+
+            if payload is not None:
+                db_task.payload_info = payload
+
             if status == AutomationTaskStatus.RUNNING:
                 db_task.started_at = datetime.now()
             elif status in [
@@ -269,7 +278,9 @@ class SqlAlchemyRepo:
 
             await self.session.commit()
 
-    async def evaluate_and_update_job_status(self, job_id: UUID, message: Optional[str] = None) -> None:
+    async def evaluate_and_update_job_status(
+        self, job_id: UUID, message: Optional[str] = None
+    ) -> None:
         """
         Evaluates and updates the job status based on its associated tasks.
         Rules:
@@ -325,10 +336,10 @@ class SqlAlchemyRepo:
                 SyncStatus.CANCELLED,
             ]:
                 db_job.finished_at = datetime.now()
-            
+
             if message:
                 db_job.error_message = message
-            
+
             await self.session.commit()
 
     async def save_automation_tasks_batch(self, tasks: List[AutomationTask]) -> None:
@@ -461,7 +472,7 @@ class SqlAlchemyRepo:
         This handles cases where the system crashed or process was killed abruptly.
         """
         from sqlalchemy import update
-        
+
         # 1. Update jobs
         await self.session.execute(
             update(SyncJobModel)
@@ -469,10 +480,10 @@ class SqlAlchemyRepo:
             .values(
                 status=SyncStatus.FAILED,
                 error_message="Sistema reiniciado/crash. Job interrompido.",
-                finished_at=datetime.now()
+                finished_at=datetime.now(),
             )
         )
-        
+
         # 2. Update tasks
         await self.session.execute(
             update(AutomationTaskModel)
@@ -480,7 +491,7 @@ class SqlAlchemyRepo:
             .values(
                 status=AutomationTaskStatus.FAILED,
                 error_message="Sistema reiniciado/crash. Tarefa interrompida.",
-                finished_at=datetime.now()
+                finished_at=datetime.now(),
             )
         )
         await self.session.commit()

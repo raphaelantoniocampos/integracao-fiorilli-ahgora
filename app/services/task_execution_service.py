@@ -4,12 +4,15 @@ import threading
 from uuid import UUID
 
 from app.core.task_registry import task_registry
-
 from app.domain.enums import (
     AutomationTaskStatus as TaskStatus,
 )
 from app.domain.enums import (
     AutomationTaskType as TaskType,
+)
+
+from app.domain.enums import (
+    SyncStatus as JobStatus,
 )
 from app.infrastructure.automation.web.ahgora_browser import AhgoraBrowser
 from app.infrastructure.db.sqlalchemy_repo import SqlAlchemyRepo
@@ -102,12 +105,14 @@ class TaskExecutionService:
 
     async def execute_batch(self, job_id: UUID, task_type: str) -> None:
         """
-        Executes all pending or failed tasks of a certain type for a given job.
+        Executes all pending, failed or cancelled tasks of a certain type for a given job.
         Runs sequentially to respect browser limitations.
         """
         from app.domain.enums import AutomationTaskStatus
 
         logger.info(f"Starting batch execution for job {job_id}, type {task_type}")
+
+        await self.repo.update_job_status(job_id=job_id, status=JobStatus.RUNNING)
 
         if "ADD_LEAVE" in str(task_type).upper():
             logger.info("Delegating ADD_LEAVE batch to LeaveSyncService")
@@ -128,7 +133,7 @@ class TaskExecutionService:
                 or t.type.name == task_type
                 or str(t.type) == task_type
             )
-            and t.status in [AutomationTaskStatus.PENDING, AutomationTaskStatus.FAILED]
+            and t.status in [AutomationTaskStatus.PENDING, AutomationTaskStatus.FAILED, AutomationTaskStatus.CANCELLED]
         ]
 
         for t in batch:
