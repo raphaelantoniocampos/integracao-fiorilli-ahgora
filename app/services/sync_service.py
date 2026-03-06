@@ -1040,6 +1040,12 @@ class SyncService:
             async with self._db_lock:
                 await self.repo.save_automation_tasks_batch(tasks_to_create)
 
+        job = await self.get_job(job_id)
+        if job:
+            job.metadata["tasks_generated"] = len(tasks_to_create)
+            async with self._db_lock:
+                await self.repo.save_job(job)
+
         await self._log(
             job_id, "INFO", f"Created {len(tasks_to_create)} automation tasks"
         )
