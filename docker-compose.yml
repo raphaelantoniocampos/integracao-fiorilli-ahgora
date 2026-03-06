@@ -36,6 +36,7 @@ services:
       - MOZ_HEADLESS=1
       - MOZ_DISABLE_CONTENT_SANDBOX=1
       - HEADLESS_MODE=True
+      - IS_DOCKER=True
     env_file:
       - .env
     volumes:

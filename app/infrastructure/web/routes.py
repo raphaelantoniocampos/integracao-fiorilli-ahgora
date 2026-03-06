@@ -157,6 +157,7 @@ async def get_task_groups_page(
             "task_groups": list(groups.values()),
             "job_id": str(job_id),
             "headless_mode_tasks": settings.HEADLESS_MODE_TASKS,
+            "is_docker": settings.IS_DOCKER,
         },
     )
 

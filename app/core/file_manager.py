@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import shutil
 import pandas as pd
 
 from app.core.settings import settings
@@ -45,7 +46,7 @@ class FileManager:
         destination.parent.mkdir(parents=True, exist_ok=True)
         if destination.exists():
             destination.unlink()
-        source.replace(destination)
+        shutil.move(str(source), str(destination))
 
     @staticmethod
     def save_df(df: pd.DataFrame, path: Path, header=True, columns=None):
