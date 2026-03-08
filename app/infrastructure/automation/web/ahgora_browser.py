@@ -62,8 +62,6 @@ class AhgoraBrowser(BaseBrowser):
 
     def _close_banner(self) -> None:
         try:
-            # max_tries is handled by BaseBrowser's wait or click_element if specified,
-            # but BaseBrowser usually has its own retry logic.
             self.click_element("buttonAdjustPunch", selector_type=By.ID)
         except Exception:
             self.wait(self.DELAY)
