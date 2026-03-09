@@ -215,7 +215,7 @@ class DataManager:
                     columns=FIORILLI_EMPLOYEES_COLUMNS,
                 )
 
-            case "ahgora_employees.txt":
+            case "ahgora_employees.csv":
                 return self.prepare_dataframe(
                     df=pd.read_csv(
                         path,
@@ -663,7 +663,7 @@ class DataManager:
         console.log("Recuperando dados de funcionários")
         time.sleep(0.5)
         raw_fiorilli_employees_path = FIORILLI_DIR / "fiorilli_employees.txt"
-        raw_ahgora_employees_path = AHGORA_DIR / "ahgora_employees.txt"
+        raw_ahgora_employees_path = AHGORA_DIR / "ahgora_employees.csv"
 
         raw_fiorilli_employees = self.read_csv(raw_fiorilli_employees_path)
         raw_ahgora_employees = self.read_csv(raw_ahgora_employees_path)

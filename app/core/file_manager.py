@@ -34,7 +34,7 @@ class FileManager:
             if "trabalhador" in file_name_lower:
                 cls.move_file(file, settings.DATA_DIR / "fiorilli_employees.txt")
             elif "funcionarios" in file_name_lower:
-                cls.move_file(file, settings.DATA_DIR / "ahgora_employees.txt")
+                cls.move_file(file, settings.DATA_DIR / "ahgora_employees.csv")
             elif "pontoafastamentos" in file_name_lower:
                 cls.move_file(file, settings.DATA_DIR / "raw_leaves.txt")
             elif "pontoferias" in file_name_lower:

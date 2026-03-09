@@ -526,7 +526,7 @@ class SyncService:
 
             # 2. Fallback to legacy CSV if Database is empty (initial seed)
             if ahgora_employees.empty:
-                raw_ahgora_path = settings.DATA_DIR / "ahgora_employees.txt"
+                raw_ahgora_path = settings.DATA_DIR / "ahgora_employees.csv"
                 if raw_ahgora_path.exists():
                     await self._log(
                         job_id,
@@ -635,7 +635,7 @@ class SyncService:
                     )
                     df = self._prepare_dataframe(df, columns=FIORILLI_EMPLOYEES_COLUMNS)
 
-                case "ahgora_employees.txt":
+                case "ahgora_employees.csv":
                     df = pd.read_csv(path, index_col=False, header=None)
                     df = self._prepare_dataframe(df, columns=AHGORA_EMPLOYEES_COLUMNS)
 
