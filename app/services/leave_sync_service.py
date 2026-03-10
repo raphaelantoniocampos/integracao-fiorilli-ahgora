@@ -30,8 +30,18 @@ class LeaveSyncService:
         # 1. Fetch pending batch task
         tasks = await self.repo.get_automation_tasks_by_job(job_id)
         batch_task = next(
-            (t for t in tasks if str(t.type).upper().endswith("ADD_LEAVE") and t.status in [AutomationTaskStatus.PENDING, AutomationTaskStatus.FAILED, AutomationTaskStatus.CANCELLED]),
-            None
+            (
+                t
+                for t in tasks
+                if str(t.type).upper().endswith("ADD_LEAVE")
+                and t.status
+                in [
+                    AutomationTaskStatus.PENDING,
+                    AutomationTaskStatus.FAILED,
+                    AutomationTaskStatus.CANCELLED,
+                ]
+            ),
+            None,
         )
 
         if not batch_task:
@@ -41,11 +51,20 @@ class LeaveSyncService:
         batch_payloads = batch_task.payload.get("leaves", [])
         if not batch_payloads:
             logger.info("ADD_LEAVE batch task has an empty payload array.")
-            await self.repo.update_task_status(batch_task.id, AutomationTaskStatus.SUCCESS, message="There are no leaves to import.")
+            await self.repo.update_task_status(
+                batch_task.id,
+                AutomationTaskStatus.SUCCESS,
+                message="There are no leaves to import.",
+            )
             return
 
         await self.repo.update_task_status(batch_task.id, AutomationTaskStatus.RUNNING)
-        await self.repo.add_log(job_id, "INFO", f"Starting integration of {len(batch_payloads)} leaves.", task_id=batch_task.id)
+        await self.repo.add_log(
+            job_id,
+            "INFO",
+            f"Starting integration of {len(batch_payloads)} leaves.",
+            task_id=batch_task.id,
+        )
 
         # Build DataFrame from task payload array
         df = pd.DataFrame(batch_payloads)
@@ -65,7 +84,7 @@ class LeaveSyncService:
 
             # Analyze results and update task statuses
             # results is a list of dicts: [{'payload': {...}, 'status': 'success' or 'error', 'message': '...', 'index': 0}]
-            
+
             imported_count = 0
             ignored_count = 0
             error_count = 0
@@ -73,26 +92,32 @@ class LeaveSyncService:
             successful_payloads = []
 
             for result in results:
-                name = result['payload'].get('name', 'N/A')
-                start = result['payload'].get('start_date', 'N/A')
-                end = result['payload'].get('end_date', 'N/A')
-                cod_name = result['payload'].get('cod_name', 'N/A')
-                
+                name = result["payload"].get("name", "N/A")
+                start = result["payload"].get("start_date", "N/A")
+                end = result["payload"].get("end_date", "N/A")
+                cod_name = result["payload"].get("cod_name", "N/A")
+
                 if result["status"] == "success":
                     if "Intersecção" in result["message"]:
                         ignored_count += 1
                         # Silent ignore, do not log individually
                     else:
                         imported_count += 1
-                        successful_payloads.append(result['payload'])
+                        successful_payloads.append(result["payload"])
                         await self.repo.add_log(
-                            job_id, "INFO", f"Leave imported: {name} - {cod_name} - {start} / {end}.", task_id=batch_task.id
+                            job_id,
+                            "INFO",
+                            f"Leave imported: {name} - {cod_name} - {start} / {end}.",
+                            task_id=batch_task.id,
                         )
                 else:
                     error_count += 1
                     err_msg = result["message"]
                     await self.repo.add_log(
-                        job_id, "ERROR", f"Failed to import {name}: {err_msg}.", task_id=batch_task.id
+                        job_id,
+                        "ERROR",
+                        f"Failed to import {name}: {err_msg}.",
+                        task_id=batch_task.id,
                     )
 
             final_msg = f"Batch completed: {imported_count} imported, {ignored_count} existing ignored, {error_count} errors."
@@ -101,14 +126,31 @@ class LeaveSyncService:
             batch_task.payload["leaves"] = successful_payloads
 
             if error_count == len(batch_payloads) and len(batch_payloads) > 0:
-                await self.repo.update_task_status(batch_task.id, AutomationTaskStatus.FAILED, message="All rows failed", payload=batch_task.payload)
+                await self.repo.update_task_status(
+                    batch_task.id,
+                    AutomationTaskStatus.FAILED,
+                    message="All rows failed",
+                    payload=batch_task.payload,
+                )
             else:
-                await self.repo.update_task_status(batch_task.id, AutomationTaskStatus.SUCCESS, message=final_msg, payload=batch_task.payload)
+                await self.repo.update_task_status(
+                    batch_task.id,
+                    AutomationTaskStatus.SUCCESS,
+                    message=final_msg,
+                    payload=batch_task.payload,
+                )
 
         except Exception as e:
             logger.exception(f"Batched leaf sync failed catastrophically: {e}.")
-            await self.repo.update_task_status(batch_task.id, AutomationTaskStatus.FAILED, message=str(e))
-            await self.repo.add_log(job_id, "ERROR", f"Critical batch failure: {str(e)}.", task_id=batch_task.id)
+            await self.repo.update_task_status(
+                batch_task.id, AutomationTaskStatus.FAILED, message=str(e)
+            )
+            await self.repo.add_log(
+                job_id,
+                "ERROR",
+                f"Critical batch failure: {str(e)}.",
+                task_id=batch_task.id,
+            )
 
         await self.repo.evaluate_and_update_job_status(job_id)
 
@@ -143,7 +185,9 @@ class LeaveSyncService:
             )
 
         browser = AhgoraBrowser(
-            log_callback=log_cb, headless=settings.HEADLESS_MODE_TASKS, cancel_event=cancel_event
+            log_callback=log_cb,
+            headless=settings.HEADLESS_MODE_TASKS,
+            cancel_event=cancel_event,
         )
 
         with tempfile.TemporaryDirectory() as temp_dir:

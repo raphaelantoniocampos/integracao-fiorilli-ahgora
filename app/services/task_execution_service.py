@@ -133,7 +133,12 @@ class TaskExecutionService:
                 or t.type.name == task_type
                 or str(t.type) == task_type
             )
-            and t.status in [AutomationTaskStatus.PENDING, AutomationTaskStatus.FAILED, AutomationTaskStatus.CANCELLED]
+            and t.status
+            in [
+                AutomationTaskStatus.PENDING,
+                AutomationTaskStatus.FAILED,
+                AutomationTaskStatus.CANCELLED,
+            ]
         ]
 
         for t in batch:
@@ -161,7 +166,7 @@ class TaskExecutionService:
                 cancel_event = task_registry.get_cancel_event(task_id)
                 if cancel_event:
                     cancel_event.set()
-                    
+
             await self.repo.update_task_status(
                 task_id, TaskStatus.CANCELLED, "Cancelled by user via API"
             )
@@ -195,7 +200,12 @@ class TaskExecutionService:
                 or t.type.name == task_type
                 or str(t.type) == task_type
             )
-            and t.status in [AutomationTaskStatus.PENDING, AutomationTaskStatus.RUNNING, AutomationTaskStatus.FAILED]
+            and t.status
+            in [
+                AutomationTaskStatus.PENDING,
+                AutomationTaskStatus.RUNNING,
+                AutomationTaskStatus.FAILED,
+            ]
         ]
 
         for t in batch:
@@ -220,6 +230,7 @@ class TaskExecutionService:
         def log_cb(level: str, msg: str):
             async def _do_log():
                 from app.core.database import async_session_factory
+
                 try:
                     async with async_session_factory() as session:
                         repo = SqlAlchemyRepo(session)
@@ -234,7 +245,9 @@ class TaskExecutionService:
         browser = None
         try:
             browser = AhgoraBrowser(
-                log_callback=log_cb, headless=settings.HEADLESS_MODE_TASKS, cancel_event=cancel_event
+                log_callback=log_cb,
+                headless=settings.HEADLESS_MODE_TASKS,
+                cancel_event=cancel_event,
             )
             match task_type:
                 case TaskType.ADD_EMPLOYEE:

@@ -12,10 +12,16 @@ logger = logging.getLogger(__name__)
 
 class AhgoraBrowser(BaseBrowser):
     def __init__(
-        self, log_callback: Callable[[str, str], None] = None, headless: bool = None, cancel_event=None
+        self,
+        log_callback: Callable[[str, str], None] = None,
+        headless: bool = None,
+        cancel_event=None,
     ):
         super().__init__(
-            url=settings.AHGORA_URL, log_callback=log_callback, headless=headless, cancel_event=cancel_event
+            url=settings.AHGORA_URL,
+            log_callback=log_callback,
+            headless=headless,
+            cancel_event=cancel_event,
         )
         self._login()
 
@@ -110,16 +116,16 @@ class AhgoraBrowser(BaseBrowser):
             self.send_keys("dados-dt_nascimento", birth_date, By.ID)
 
         # Sex
-        sexo = str(payload.get("sex", ""))
-        if sexo:
-            self.send_keys("dados-sexo", sexo, By.ID)
+        sex = str(payload.get("sex", ""))
+        if sex:
+            self.send_keys("dados-sexo", sex, By.ID)
 
         # RegimeTrab
         self.send_keys("dados-regimetrab", "Estatutário", By.ID)
 
         # Company Relation
-        matricula = str(payload.get("id", ""))
-        self.send_keys("dados.matricula", matricula, By.ID)
+        employee_id = str(payload.get("id", ""))
+        self.send_keys("dados.matricula", employee_id, By.ID)
 
         admission_date = str(payload.get("admission_date", ""))
         if admission_date:
@@ -128,20 +134,20 @@ class AhgoraBrowser(BaseBrowser):
         # Password
         self.send_keys("dados-cod_cracha", "12345", By.ID)
 
-        cargo = str(payload.get("position", ""))
-        if cargo:
-            self.send_keys("dados.cargo", cargo, By.ID)
+        position = str(payload.get("position", ""))
+        if position:
+            self.send_keys("dados.cargo", position, By.ID)
 
-        departamento = str(payload.get("department", ""))
-        if departamento:
-            self._set_autocomplete_select("dados-departamento", departamento)
+        department = str(payload.get("department", ""))
+        if department:
+            self._set_autocomplete_select("dados-departamento", department)
 
         # Click Save
         self.click_element("(//button[contains(text(), 'Salvar')])[last()]")
 
         # Small wait for the request to process
         self.wait(self.DELAY * 4)
-        self._log("INFO", f"Finished adding employee: {name}")
+        self._log("INFO", f"Finished adding employee: {name} ({employee_id})")
 
     def update_employee(self, payload: dict) -> None:
         """
@@ -164,6 +170,7 @@ class AhgoraBrowser(BaseBrowser):
             # Only update if the normalized value has changed
 
             has_changes = False
+            change_logs = []
 
             if payload.get("name_fiorilli_norm") != payload.get("name_ahgora_norm"):
                 if payload.get("name_fiorilli"):
@@ -171,6 +178,9 @@ class AhgoraBrowser(BaseBrowser):
                         "dados-nome", payload["name_fiorilli"], By.ID, clear_first=True
                     )
                     has_changes = True
+                    change_logs.append(
+                        f"Updated name: {payload.get('name_ahgora')} -> {payload.get('name_fiorilli')}"
+                    )
 
             if payload.get("position_fiorilli_norm") != payload.get(
                 "position_ahgora_norm"
@@ -183,6 +193,9 @@ class AhgoraBrowser(BaseBrowser):
                         clear_first=True,
                     )
                     has_changes = True
+                    change_logs.append(
+                        f"Updated position: {payload.get('position_ahgora')} -> {payload.get('position_fiorilli')}"
+                    )
 
             if payload.get("admission_date_fiorilli_norm") != payload.get(
                 "admission_date_ahgora_norm"
@@ -195,6 +208,9 @@ class AhgoraBrowser(BaseBrowser):
                         clear_first=True,
                     )
                     has_changes = True
+                    change_logs.append(
+                        f"Updated admission_date: {payload.get('admission_date_ahgora')} -> {payload.get('admission_date_fiorilli')}"
+                    )
 
             if payload.get("department_fiorilli_norm") != payload.get(
                 "department_ahgora_norm"
@@ -204,6 +220,9 @@ class AhgoraBrowser(BaseBrowser):
                         "dados-departamento", payload["department_fiorilli"]
                     )
                     has_changes = True
+                    change_logs.append(
+                        f"Updated department: {payload.get('department_ahgora')} -> {payload.get('department_fiorilli')}"
+                    )
                     try:
                         pass
                         # self._update_location_multiselect(payload["department_fiorilli"])
@@ -217,6 +236,8 @@ class AhgoraBrowser(BaseBrowser):
                 # Click Save
                 self.click_element("(//button[contains(text(), 'Salvar')])[last()]")
                 self.wait(self.DELAY * 4)
+                for change in change_logs:
+                    self._log("INFO", change)
                 self._log("INFO", f"Finished updating employee: {name} ({employee_id})")
             else:
                 self._log(
@@ -236,8 +257,10 @@ class AhgoraBrowser(BaseBrowser):
         name = payload.get("name", "")
         employee_id = str(payload.get("id", ""))
         dismissal_date = str(payload.get("dismissal_date", ""))
+        department = str(payload.get("department", ""))
+        position = str(payload.get("position", ""))
 
-        self._log("INFO", f"Removing employee in Ahgora: {name}")
+        self._log("INFO", f"Removing employee in Ahgora: {name} - {position} - {department}")
 
         self.driver.get(self.driver.current_url.replace("home", "funcionarios"))
         self.wait(self.DELAY)
@@ -269,7 +292,7 @@ class AhgoraBrowser(BaseBrowser):
                     "No specific dismissal date field found, assumed standard removal",
                 )
 
-            self._log("INFO", f"Finished removing employee: {name}")
+            self._log("INFO", f"Finished removing employee: {name} ({employee_id}) - {dismissal_date}")
         except Exception as e:
             self._log("ERROR", f"Failed to remove employee {name} ({employee_id}): {e}")
             raise e
@@ -322,7 +345,9 @@ class AhgoraBrowser(BaseBrowser):
         try:
             # The validation screen displays a log of processing, usually inside the DOM.
             # A robust way is to pull all body text and search line by line.
-            self.click_element(selector="obterErro", selector_type=By.ID,delay=1,max_tries=240)
+            self.click_element(
+                selector="obterErro", selector_type=By.ID, delay=1, max_tries=240
+            )
             body_text = self.driver.find_element(By.ID, "obterErro").text
 
             # Match logs like "Intersecção com afastamento... [15]"
