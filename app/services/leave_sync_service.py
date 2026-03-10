@@ -41,11 +41,11 @@ class LeaveSyncService:
         batch_payloads = batch_task.payload.get("leaves", [])
         if not batch_payloads:
             logger.info("ADD_LEAVE batch task has an empty payload array.")
-            await self.repo.update_task_status(batch_task.id, AutomationTaskStatus.SUCCESS, message="Sem afastamentos para importar")
+            await self.repo.update_task_status(batch_task.id, AutomationTaskStatus.SUCCESS, message="There are no leaves to import.")
             return
 
         await self.repo.update_task_status(batch_task.id, AutomationTaskStatus.RUNNING)
-        await self.repo.add_log(job_id, "INFO", f"Iniciando integração de {len(batch_payloads)} afastamentos", task_id=batch_task.id)
+        await self.repo.add_log(job_id, "INFO", f"Starting integration of {len(batch_payloads)} leaves.", task_id=batch_task.id)
 
         # Build DataFrame from task payload array
         df = pd.DataFrame(batch_payloads)
@@ -86,16 +86,16 @@ class LeaveSyncService:
                         imported_count += 1
                         successful_payloads.append(result['payload'])
                         await self.repo.add_log(
-                            job_id, "INFO", f"Afastamento importado: {name} - {cod_name} - {start} / {end}", task_id=batch_task.id
+                            job_id, "INFO", f"Leave imported: {name} - {cod_name} - {start} / {end}.", task_id=batch_task.id
                         )
                 else:
                     error_count += 1
                     err_msg = result["message"]
                     await self.repo.add_log(
-                        job_id, "ERROR", f"Falha na importação de {name}: {err_msg}", task_id=batch_task.id
+                        job_id, "ERROR", f"Failed to import {name}: {err_msg}.", task_id=batch_task.id
                     )
 
-            final_msg = f"Lote finalizado: {imported_count} importados, {ignored_count} existentes ignorados, {error_count} erros."
+            final_msg = f"Batch completed: {imported_count} imported, {ignored_count} existing ignored, {error_count} errors."
             await self.repo.add_log(job_id, "INFO", final_msg, task_id=batch_task.id)
 
             batch_task.payload["leaves"] = successful_payloads
@@ -108,7 +108,7 @@ class LeaveSyncService:
         except Exception as e:
             logger.exception(f"Batched leaf sync failed catastrophically: {e}.")
             await self.repo.update_task_status(batch_task.id, AutomationTaskStatus.FAILED, message=str(e))
-            await self.repo.add_log(job_id, "ERROR", f"Falha crítica no lote: {str(e)}", task_id=batch_task.id)
+            await self.repo.add_log(job_id, "ERROR", f"Critical batch failure: {str(e)}.", task_id=batch_task.id)
 
         await self.repo.evaluate_and_update_job_status(job_id)
 

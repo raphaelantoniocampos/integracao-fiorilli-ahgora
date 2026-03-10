@@ -147,7 +147,7 @@ class AhgoraBrowser(BaseBrowser):
         """
         Updates an existing employee.
         """
-        name = payload.get("name", "")
+        name = payload.get("name_fiorilli", "")
         employee_id = str(payload.get("id", ""))
         self._log("INFO", f"Updating employee in Ahgora: {name}")
 

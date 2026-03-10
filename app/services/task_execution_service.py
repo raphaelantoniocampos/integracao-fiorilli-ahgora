@@ -42,7 +42,7 @@ class TaskExecutionService:
         await self.repo.add_log(
             task.job_id,
             "INFO",
-            f"Iniciando automação web (Selenium) para tarefa {task.type}",
+            f"Starting web automation (Selenium) for task {task.type}.",
             task_id=task_id,
         )
 
@@ -72,7 +72,7 @@ class TaskExecutionService:
             await self.repo.add_log(
                 task.job_id,
                 "ERROR",
-                f"Falha na automação: {error_msg}",
+                f"Automation failure: {error_msg}.",
                 task_id=task_id,
             )
 
@@ -81,7 +81,7 @@ class TaskExecutionService:
             await self.repo.add_log(
                 task.job_id,
                 "INFO",
-                "Automação concluída com sucesso.",
+                "Automation completed successfully.",
                 task_id=task_id,
             )
             # Update Ahgora model state based on task success
@@ -92,7 +92,7 @@ class TaskExecutionService:
                 await self.repo.add_log(
                     task.job_id,
                     "WARNING",
-                    "Automação finalizou sem sucesso, mas sem lançar exceção.",
+                    "Automation finished unsuccessfully, but without raising an exception.",
                     task_id=task_id,
                 )
 
@@ -225,7 +225,7 @@ class TaskExecutionService:
                         repo = SqlAlchemyRepo(session)
                         await repo.add_log(job_id, level, msg, task_id=task_id)
                 except Exception as ex:
-                    logger.error(f"Background log failed for task {task_id}: {ex}")
+                    logger.error(f"Background log failed for task {task_id}: {ex}.")
 
             asyncio.run_coroutine_threadsafe(_do_log(), loop)
 
