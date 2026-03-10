@@ -1,8 +1,7 @@
 <div id="use-cached-files-toggle-container"
     class="flex items-center space-x-2 mr-4">
     <button hx-post="/api/settings/toggle-cached" hx-target="#use-cached-files-toggle-container" hx-swap="outerHTML"
-        class="text-xs px-3 py-1.5 rounded-md border font-medium transition-colors {% if use_cached_files %}bg-indigo-50 text-indigo-700 border-indigo-200{% else %}bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100{% endif %}"
-        {% if is_docker %}disabled title="Não permitido em Docker" {% endif %}>
+        class="text-xs px-3 py-1.5 rounded-md border font-medium transition-colors {% if use_cached_files %}bg-indigo-50 text-indigo-700 border-indigo-200{% else %}bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100{% endif %}">
         <span class="flex items-center">
             <span class="w-1.5 h-1.5 rounded-full mr-1.5 {% if use_cached_files %}bg-indigo-500{% else %}bg-slate-400{% endif %}"></span>
             Usar Cache

@@ -8,8 +8,8 @@
             <p class="text-slate-500 mt-1">Gerencie e monitore as sincronizações de dados entre Fiorilli e Ahgora.</p>
         </div>
         <div class="flex items-center space-x-3">
-            {% include 'partials/headless_sync_toggle.html' %}
             {% include 'partials/use_cached_files_toggle.html' %}
+            {% include 'partials/headless_sync_toggle.html' %}
             <button hx-post="/api/sync/run" hx-swap="none"
                 class="btn-primary flex items-center px-6 py-2 rounded-lg text-sm font-semibold shadow-sm"
                 onclick="setTimeout(() => htmx.trigger('#jobs-list', 'refresh'), 500)">

@@ -82,9 +82,6 @@ async def toggle_headless(request: Request, target: str = Form(...)):
 
 @router.post("/api/settings/toggle-cached")
 async def toggle_cached_files(request: Request):
-    if settings.IS_DOCKER:
-        return {"error": "Ação não permitida em produção"}
-
     env_path = str(settings.BASE_DIR / ".env")
     settings.USE_CACHED_FILES = not settings.USE_CACHED_FILES
     dotenv.set_key(env_path, "USE_CACHED_FILES", str(settings.USE_CACHED_FILES))

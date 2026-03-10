@@ -295,6 +295,16 @@ class TaskExecutionService:
                 if task_type == TaskType.REMOVE_EMPLOYEE:
                     emp_data["dismissal_date"] = payload.get("dismissal_date")
 
+                if task_type == TaskType.UPDATE_EMPLOYEE:
+                    emp_data["name"] = payload.get("name_fiorilli")
+                    emp_data["position"] = payload.get("position_fiorilli")
+                    emp_data["department"] = payload.get("department_fiorilli")
+                    from datetime import datetime
+
+                    emp_data["admission_date"] = datetime.strptime(
+                        payload.get("admission_date_fiorilli"), "%d/%m/%Y"
+                    )
+
                 await self.repo.save_ahgora_employees_batch([emp_data])
                 logger.info(
                     f"Updated Ahgora DB state for employee ID: {emp_data['id']}"

@@ -51,7 +51,7 @@ class AhgoraBrowser(BaseBrowser):
         self._enter_password("password", psw)
         self._click_enter_button()
         self._select_company(company)
-        self._close_banner()
+        # self._close_banner() # TODO: Remove this
         self.wait(self.DELAY)
 
     def _enter_username(self, selector: str, user: str) -> None:
