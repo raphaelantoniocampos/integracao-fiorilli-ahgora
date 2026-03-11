@@ -12,8 +12,11 @@ from app.domain.entities import AutomationTask, AutomationTaskType
 def mock_repo():
     repo = MagicMock()
     repo.save_automation_tasks_batch = AsyncMock()
+    repo.save_ahgora_employees_batch = AsyncMock()
     repo.add_log = AsyncMock()
     repo.update_job_status = AsyncMock()
+    repo.get_job = AsyncMock(return_value=None)
+    repo.save_job = AsyncMock()
     return repo
 
 
@@ -59,6 +62,7 @@ async def test_create_automation_tasks(sync_service, mock_repo):
     await sync_service._create_automation_tasks(
         job_id,
         new_employees_df=new_employees,
+        seed_employees_df=pd.DataFrame(),
         dismissed_employees_df=pd.DataFrame(),
         changed_employees_df=pd.DataFrame(),
         new_leaves_df=pd.DataFrame(),
@@ -79,13 +83,15 @@ async def test_generate_tasks_dfs_new_employee(sync_service):
         [{"id": "000001", "name": "NEW USER", "dismissal_date": None, "binding": "CLT"}]
     )
     ahgora_df = pd.DataFrame(columns=["id", "name", "dismissal_date"])
+    ahgora_csv_df = pd.DataFrame(columns=["id", "name", "dismissal_date"])
 
-    new_emp, dismissed, changed, leaves = await sync_service._generate_tasks_dfs(
-        fiorilli_df, ahgora_df, pd.DataFrame(), pd.DataFrame()
+    new_emp, seed_emp, dismissed, changed, leaves = await sync_service._generate_tasks_dfs(
+        fiorilli_df, ahgora_df, ahgora_csv_df, pd.DataFrame(), pd.DataFrame()
     )
 
     assert len(new_emp) == 1
     assert new_emp.iloc[0]["id"] == "000001"
+    assert seed_emp.empty
     assert dismissed.empty
     assert changed.empty
 
@@ -104,10 +110,11 @@ async def test_generate_tasks_dfs_dismissed(sync_service):
     )
     ahgora_df = pd.DataFrame([{"id": "000001", "name": "USER", "dismissal_date": None}])
 
-    new_emp, dismissed, changed, leaves = await sync_service._generate_tasks_dfs(
-        fiorilli_df, ahgora_df, pd.DataFrame(), pd.DataFrame()
+    new_emp, seed_emp, dismissed, changed, leaves = await sync_service._generate_tasks_dfs(
+        fiorilli_df, ahgora_df, pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
     )
 
     assert new_emp.empty
+    assert seed_emp.empty
     assert len(dismissed) == 1
     assert dismissed.iloc[0]["id"] == "000001"

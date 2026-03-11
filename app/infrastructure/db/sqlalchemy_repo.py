@@ -458,6 +458,21 @@ class SqlAlchemyRepo:
         ]
         return pd.DataFrame(data)
 
+    @staticmethod
+    def _parse_date(value) -> datetime | None:
+        """Convert date string or datetime to datetime object for DB storage."""
+        if value is None or (isinstance(value, str) and not value.strip()):
+            return None
+        if isinstance(value, datetime):
+            return value
+        if isinstance(value, str):
+            for fmt in ("%d/%m/%Y", "%Y-%m-%d", "%Y-%m-%d %H:%M:%S"):
+                try:
+                    return datetime.strptime(value, fmt)
+                except ValueError:
+                    continue
+        return None
+
     async def save_ahgora_employees_batch(self, employees: List[dict]) -> None:
         """Performs a merge (upsert) for a batch of Ahgora employees"""
         for emp_dict in employees:
@@ -468,8 +483,8 @@ class SqlAlchemyRepo:
                 scale=emp_dict.get("scale"),
                 department=emp_dict.get("department"),
                 location=emp_dict.get("location"),
-                admission_date=emp_dict.get("admission_date"),
-                dismissal_date=emp_dict.get("dismissal_date"),
+                admission_date=self._parse_date(emp_dict.get("admission_date")),
+                dismissal_date=self._parse_date(emp_dict.get("dismissal_date")),
                 last_synced_at=datetime.now(),
             )
             await self.session.merge(db_emp)
@@ -514,8 +529,8 @@ class SqlAlchemyRepo:
                 ),  # DataFrame uses 'id' for the employee id
                 cod=leave_dict.get("cod"),
                 cod_name=leave_dict.get("cod_name"),
-                start_date=leave_dict.get("start_date"),
-                end_date=leave_dict.get("end_date"),
+                start_date=self._parse_date(leave_dict.get("start_date")),
+                end_date=self._parse_date(leave_dict.get("end_date")),
                 start_time=leave_dict.get("start_time"),
                 end_time=leave_dict.get("end_time"),
                 duration=leave_dict.get("duration"),

@@ -125,6 +125,16 @@ class LeaveSyncService:
 
             batch_task.payload["leaves"] = successful_payloads
 
+            # Save successfully imported leaves to DB state
+            if successful_payloads:
+                await self.repo.save_ahgora_leaves_batch(successful_payloads)
+                await self.repo.add_log(
+                    job_id,
+                    "INFO",
+                    f"Saved {len(successful_payloads)} leaves to DB state.",
+                    task_id=batch_task.id,
+                )
+
             if error_count == len(batch_payloads) and len(batch_payloads) > 0:
                 await self.repo.update_task_status(
                     batch_task.id,

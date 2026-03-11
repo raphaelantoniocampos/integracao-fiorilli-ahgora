@@ -450,6 +450,19 @@ class SyncService:
                 job_id
             )
 
+            # Load Ahgora CSV independently for cross-referencing
+            ahgora_csv_employees = pd.DataFrame()
+            raw_ahgora_path = settings.DATA_DIR / "ahgora_employees.csv"
+            if raw_ahgora_path.exists():
+                ahgora_csv_employees = await asyncio.to_thread(
+                    self._read_csv, raw_ahgora_path
+                )
+                await self._log(
+                    job_id,
+                    "INFO",
+                    f"Loaded {len(ahgora_csv_employees)} employees from Ahgora CSV for cross-reference.",
+                )
+
             await self._log(job_id, "INFO", "Loading leave data from files...")
             last_leaves, all_leaves = await self._get_leaves_data(job_id)
 
@@ -471,12 +484,14 @@ class SyncService:
             )
             (
                 new_employees_df,
+                seed_employees_df,
                 dismissed_employees_df,
                 changed_employees_df,
                 new_leaves_df,
             ) = await self._generate_tasks_dfs(
                 fiorilli_employees=fiorilli_employees,
                 ahgora_employees=ahgora_employees,
+                ahgora_csv_employees=ahgora_csv_employees,
                 last_leaves=last_leaves,
                 all_leaves=all_leaves,
             )
@@ -488,6 +503,7 @@ class SyncService:
             await self._create_automation_tasks(
                 job_id,
                 new_employees_df,
+                seed_employees_df,
                 dismissed_employees_df,
                 changed_employees_df,
                 new_leaves_df,
@@ -741,11 +757,12 @@ class SyncService:
         self,
         fiorilli_employees: pd.DataFrame,
         ahgora_employees: pd.DataFrame,
+        ahgora_csv_employees: pd.DataFrame,
         last_leaves: pd.DataFrame,
         all_leaves: pd.DataFrame,
-    ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         if fiorilli_employees.empty:
-            return pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+            return pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
 
         # Dismissed logic
         fiorilli_dismissed_df = fiorilli_employees[
@@ -764,13 +781,30 @@ class SyncService:
             ~fiorilli_employees["id"].isin(dismissed_ids)
         ]
 
-        # New employees
-        ahgora_ids = set(ahgora_employees["id"])
-        new_employees_df = fiorilli_active_employees[
-            ~fiorilli_active_employees["id"].isin(ahgora_ids)
+        # New employees: not in DB
+        ahgora_db_ids = set(ahgora_employees["id"])
+        missing_from_db = fiorilli_active_employees[
+            ~fiorilli_active_employees["id"].isin(ahgora_db_ids)
         ]
-        new_employees_df = new_employees_df[
-            new_employees_df["binding"] != "AUXILIO RECLUSAO"
+        missing_from_db = missing_from_db[
+            missing_from_db["binding"] != "AUXILIO RECLUSAO"
+        ]
+
+        # Split: already in Ahgora CSV (seed DB only) vs truly new (need Selenium)
+        ahgora_csv_ids = (
+            set(ahgora_csv_employees["id"])
+            if not ahgora_csv_employees.empty
+            else set()
+        )
+
+        # Truly new — not in DB AND not in Ahgora CSV → need Selenium automation
+        new_employees_df = missing_from_db[
+            ~missing_from_db["id"].isin(ahgora_csv_ids)
+        ]
+
+        # DB-only seed — in Ahgora CSV but not in DB → just insert into DB
+        seed_employees_df = missing_from_db[
+            missing_from_db["id"].isin(ahgora_csv_ids)
         ]
 
         # Dismissed employees
@@ -809,6 +843,7 @@ class SyncService:
 
         return (
             new_employees_df,
+            seed_employees_df,
             dismissed_employees_df,
             changed_employees_df,
             new_leaves_df,
@@ -974,6 +1009,7 @@ class SyncService:
         self,
         job_id: UUID,
         new_employees_df: pd.DataFrame,
+        seed_employees_df: pd.DataFrame,
         dismissed_employees_df: pd.DataFrame,
         changed_employees_df: pd.DataFrame,
         new_leaves_df: pd.DataFrame,
@@ -1004,6 +1040,17 @@ class SyncService:
                 {str(k): _sanitize_value(v) for k, v in row.to_dict().items()}
                 for _, row in df.iterrows()
             ]
+
+        # Seed employees that already exist in Ahgora but are missing from DB
+        if not seed_employees_df.empty:
+            seed_payloads = df_to_payloads(seed_employees_df)
+            async with self._db_lock:
+                await self.repo.save_ahgora_employees_batch(seed_payloads)
+            await self._log(
+                job_id,
+                "INFO",
+                f"Seeded {len(seed_payloads)} employees directly to DB (already in Ahgora).",
+            )
 
         if not new_employees_df.empty:
             for payload in df_to_payloads(new_employees_df):
