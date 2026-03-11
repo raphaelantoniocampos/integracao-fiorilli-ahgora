@@ -286,7 +286,8 @@ class SqlAlchemyRepo:
         Rules:
         - If ANY task is PENDING or RUNNING -> Job is PENDING (or RUNNING)
         - Else If ANY task is FAILED -> Job is FAILED
-        - Else (All SUCCESS or CANCELLED) -> Job is SUCCESS
+        - Else If there are MORE CANCELLED tasks than SUCCESS -> Job is CANCELLED
+        - Else (All SUCCESS) -> Job is SUCCESS
         """
         db_job = await self.session.get(SyncJobModel, job_id)
         if not db_job:
@@ -307,24 +308,32 @@ class SqlAlchemyRepo:
                 await self.session.commit()
             return
 
-        has_running = False
-        has_pending = False
-        has_failed = False
+        is_running = 0
+        is_pending = 0
+        is_failed = 0
+        is_cancelled = 0
+        completed = 0
 
         for t in tasks:
             if t.status == AutomationTaskStatus.RUNNING:
-                has_running = True
+                is_running += 1
             elif t.status == AutomationTaskStatus.PENDING:
-                has_pending = True
+                is_pending += 1
             elif t.status == AutomationTaskStatus.FAILED:
-                has_failed = True
+                is_failed += 1
+            elif t.status == AutomationTaskStatus.CANCELLED:
+                is_cancelled += 1
+            elif t.status == AutomationTaskStatus.SUCCESS:
+                completed += 1
 
-        if has_running:
+        if is_running:
             new_status = SyncStatus.RUNNING
-        elif has_pending:
+        elif is_pending:
             new_status = SyncStatus.PENDING
-        elif has_failed:
+        elif is_failed:
             new_status = SyncStatus.FAILED
+        elif is_cancelled > completed:
+            new_status = SyncStatus.CANCELLED
         else:
             new_status = SyncStatus.SUCCESS
 

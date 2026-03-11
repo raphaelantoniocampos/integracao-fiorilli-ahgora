@@ -33,6 +33,7 @@ services:
       - "8000:8000"
     shm_size: '2gb'
     environment:
+      - TZ=America/Sao_Paulo
       - MOZ_HEADLESS=1
       - MOZ_DISABLE_CONTENT_SANDBOX=1
       - HEADLESS_MODE=True

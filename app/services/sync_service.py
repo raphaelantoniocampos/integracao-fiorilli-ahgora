@@ -826,6 +826,17 @@ class SyncService:
             how="inner",
         )
 
+        # Normalize date columns to dd/mm/yyyy so DB format (yyyy-mm-dd HH:MM:SS)
+        # and CSV format (dd/mm/yyyy) are comparable
+        for col in COLUMNS_TO_VERIFY_CHANGE:
+            if "date" in col:
+                for suffix in ("_fiorilli", "_ahgora"):
+                    col_name = f"{col}{suffix}"
+                    if col_name in merged:
+                        merged[col_name] = pd.to_datetime(
+                            merged[col_name], dayfirst=True, errors="coerce"
+                        ).dt.strftime("%d/%m/%Y")
+
         for col in COLUMNS_TO_VERIFY_CHANGE:
             if f"{col}_fiorilli" in merged:
                 merged[f"{col}_fiorilli_norm"] = merged[f"{col}_fiorilli"].apply(
@@ -1015,8 +1026,11 @@ class SyncService:
                 )
 
         if not changed_employees_df.empty:
-            # We might want to filter only some columns for payload or keep all
             for payload in df_to_payloads(changed_employees_df):
+                payload["name"] = payload.get("name_fiorilli")
+                payload["position"] = payload.get("position_fiorilli")
+                payload["department"] = payload.get("department_fiorilli")
+                payload["admission_date"] = payload.get("admission_date_fiorilli")
                 tasks_to_create.append(
                     AutomationTask(
                         job_id=job_id,
