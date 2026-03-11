@@ -802,10 +802,13 @@ class SyncService:
             ~missing_from_db["id"].isin(ahgora_csv_ids)
         ]
 
-        # DB-only seed — in Ahgora CSV but not in DB → just insert into DB
-        seed_employees_df = missing_from_db[
-            missing_from_db["id"].isin(ahgora_csv_ids)
-        ]
+        # DB-only seed — in Ahgora CSV but not in DB → seed Ahgora CSV data to DB
+        seed_ids = set(missing_from_db[missing_from_db["id"].isin(ahgora_csv_ids)]["id"])
+        seed_employees_df = (
+            ahgora_csv_employees[ahgora_csv_employees["id"].isin(seed_ids)]
+            if not ahgora_csv_employees.empty and seed_ids
+            else pd.DataFrame()
+        )
 
         # Dismissed employees
         dismissed_employees_df = ahgora_employees[
@@ -833,9 +836,23 @@ class SyncService:
                 columns=["dismissal_date_dt"]
             )
 
-        # Changed employees
+        # Changed employees: compare Fiorilli vs combined Ahgora state (DB + CSV)
+        # This ensures changes are detected even for employees just seeded from CSV
+        if not ahgora_csv_employees.empty:
+            csv_not_in_db = ahgora_csv_employees[
+                ~ahgora_csv_employees["id"].isin(ahgora_db_ids)
+            ]
+            # Align columns before concat
+            common_cols = list(set(ahgora_employees.columns) & set(csv_not_in_db.columns))
+            combined_ahgora = pd.concat(
+                [ahgora_employees[common_cols], csv_not_in_db[common_cols]],
+                ignore_index=True,
+            )
+        else:
+            combined_ahgora = ahgora_employees
+
         changed_employees_df = await self._get_changed_employees_df(
-            fiorilli_active_employees, ahgora_employees
+            fiorilli_active_employees, combined_ahgora
         )
 
         # New leaves
