@@ -33,6 +33,7 @@ build:
     
     @echo "Copiando arquivos adicionais..."
     @{{ python_cmd }} -c "import shutil; shutil.copy2('pyproject.toml', r'{{ dist_path }}')"
+    @{{ python_cmd }} -c "import os, shutil; os.makedirs(r'{{ dist_path }}\data', exist_ok=True); shutil.copy2(r'{{ project_root }}\data\leave_codes.csv', r'{{ dist_path }}\data\leave_codes.csv')"
     
     @echo "Criando arquivo comprimido dentro da pasta dist..."
     @{{ python_cmd }} -c "import shutil, os; \
