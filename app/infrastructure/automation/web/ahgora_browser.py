@@ -1,5 +1,4 @@
 import logging
-import time
 from typing import Callable
 
 from selenium.webdriver.common.by import By
@@ -105,11 +104,13 @@ class AhgoraBrowser(BaseBrowser):
         pis = str(payload.get("pis_pasep", ""))
         if pis == "0" or not pis:
             pis = "00000000000"
-        self.send_keys("dados-pis", pis, By.ID)
+        self.send_keys("dados-pis", pis, By.ID, typing_delay=0.1)
+
+        self.wait(self.DELAY)
 
         cpf = str(payload.get("cpf", ""))
         if cpf:
-            self.send_keys("dados-cpf", cpf, By.ID)
+            self.send_keys("dados-cpf", cpf, By.ID, clear_first=True, typing_delay=0.1)
 
         birth_date = str(payload.get("birth_date", ""))
         if birth_date:
@@ -260,7 +261,9 @@ class AhgoraBrowser(BaseBrowser):
         department = str(payload.get("department", ""))
         position = str(payload.get("position", ""))
 
-        self._log("INFO", f"Removing employee in Ahgora: {name} - {position} - {department}")
+        self._log(
+            "INFO", f"Removing employee in Ahgora: {name} - {position} - {department}"
+        )
 
         self.driver.get(self.driver.current_url.replace("home", "funcionarios"))
         self.wait(self.DELAY)
@@ -292,7 +295,10 @@ class AhgoraBrowser(BaseBrowser):
                     "No specific dismissal date field found, assumed standard removal",
                 )
 
-            self._log("INFO", f"Finished removing employee: {name} ({employee_id}) - {dismissal_date}")
+            self._log(
+                "INFO",
+                f"Finished removing employee: {name} ({employee_id}) - {dismissal_date}",
+            )
         except Exception as e:
             self._log("ERROR", f"Failed to remove employee {name} ({employee_id}): {e}")
             raise e

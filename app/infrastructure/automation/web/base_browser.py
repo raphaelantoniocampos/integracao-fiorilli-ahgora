@@ -164,10 +164,17 @@ class BaseBrowser(ABC):
         ignored_exceptions=IGNORED_EXCEPTIONS,
         max_tries=MAX_TRIES,
         clear_first=False,
+        typing_delay=0,
     ):
         self.retry_func(
             lambda: self._send_keys_helper(
-                selector, keys, selector_type, delay, ignored_exceptions, clear_first
+                selector,
+                keys,
+                selector_type,
+                delay,
+                ignored_exceptions,
+                clear_first,
+                typing_delay,
             ),
             max_tries,
         )
@@ -180,13 +187,16 @@ class BaseBrowser(ABC):
         delay,
         ignored_exceptions,
         clear_first=False,
+        typing_delay=0,
     ):
         element = WebDriverWait(
             self.driver, delay, ignored_exceptions=ignored_exceptions
         ).until(EC.presence_of_element_located((selector_type, selector)))
         if clear_first:
             element.clear()
-        element.send_keys(keys)
+        for char in keys:
+            element.send_keys(char)
+            time.sleep(typing_delay)
 
     def right_click_element(
         self,
@@ -270,13 +280,13 @@ class BaseBrowser(ABC):
         self,
         selector: str,
         selector_type=By.XPATH,
-        delay=30,
+        delay=10,
         ignored_exceptions=IGNORED_EXCEPTIONS,
-        max_tries=30,
+        max_tries=50,
     ):
         return self.retry_func(
             lambda: self._wait_desappear_helper(
-                selector, selector_type, delay, ignored_exceptions
+                selector, selector_type, (delay * 1.1), ignored_exceptions
             ),
             max_tries,
         )
