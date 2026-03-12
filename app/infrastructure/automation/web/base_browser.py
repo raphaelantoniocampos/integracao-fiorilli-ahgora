@@ -272,7 +272,7 @@ class BaseBrowser(ABC):
         selector_type=By.XPATH,
         delay=30,
         ignored_exceptions=IGNORED_EXCEPTIONS,
-        max_tries=10,
+        max_tries=30,
     ):
         return self.retry_func(
             lambda: self._wait_desappear_helper(
