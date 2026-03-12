@@ -147,7 +147,7 @@ class AhgoraBrowser(BaseBrowser):
         self.click_element("(//button[contains(text(), 'Salvar')])[last()]")
 
         # Small wait for the request to process
-        self.wait(self.DELAY * 4)
+        self.wait(self.DELAY * 8)
         self._log("INFO", f"Finished adding employee: {name} ({employee_id})")
 
     def update_employee(self, payload: dict) -> None:
@@ -236,7 +236,7 @@ class AhgoraBrowser(BaseBrowser):
             if has_changes:
                 # Click Save
                 self.click_element("(//button[contains(text(), 'Salvar')])[last()]")
-                self.wait(self.DELAY * 4)
+                self.wait(self.DELAY * 8)
                 for change in change_logs:
                     self._log("INFO", change)
                 self._log("INFO", f"Finished updating employee: {name} ({employee_id})")
