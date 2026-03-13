@@ -125,10 +125,12 @@ def get_execution_service(db: AsyncSession = Depends(get_db)):
 async def _run_batch_standalone(job_id: UUID, task_type: str):
     from app.core.database import async_session_factory
     from app.infrastructure.db.sqlalchemy_repo import SqlAlchemyRepo
+
     async with async_session_factory() as session:
         repo = SqlAlchemyRepo(session)
         service = TaskExecutionService(repo=repo)
         await service.execute_batch(job_id, task_type)
+
 
 @router.post(
     "/tasks/batch/execute",
@@ -164,10 +166,12 @@ async def cancel_batch_tasks(
 async def _run_task_standalone(task_id: UUID):
     from app.core.database import async_session_factory
     from app.infrastructure.db.sqlalchemy_repo import SqlAlchemyRepo
+
     async with async_session_factory() as session:
         repo = SqlAlchemyRepo(session)
         service = TaskExecutionService(repo=repo)
         await service.execute_task(task_id)
+
 
 @router.post(
     "/tasks/{task_id}/execute",

@@ -85,7 +85,13 @@ async def test_generate_tasks_dfs_new_employee(sync_service):
     ahgora_df = pd.DataFrame(columns=["id", "name", "dismissal_date"])
     ahgora_csv_df = pd.DataFrame(columns=["id", "name", "dismissal_date"])
 
-    new_emp, seed_emp, dismissed, changed, leaves = await sync_service._generate_tasks_dfs(
+    (
+        new_emp,
+        seed_emp,
+        dismissed,
+        changed,
+        leaves,
+    ) = await sync_service._generate_tasks_dfs(
         fiorilli_df, ahgora_df, ahgora_csv_df, pd.DataFrame(), pd.DataFrame()
     )
 
@@ -110,7 +116,13 @@ async def test_generate_tasks_dfs_dismissed(sync_service):
     )
     ahgora_df = pd.DataFrame([{"id": "000001", "name": "USER", "dismissal_date": None}])
 
-    new_emp, seed_emp, dismissed, changed, leaves = await sync_service._generate_tasks_dfs(
+    (
+        new_emp,
+        seed_emp,
+        dismissed,
+        changed,
+        leaves,
+    ) = await sync_service._generate_tasks_dfs(
         fiorilli_df, ahgora_df, pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
     )
 

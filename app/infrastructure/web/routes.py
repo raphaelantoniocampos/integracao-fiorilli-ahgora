@@ -217,7 +217,11 @@ def group_logs_chronologically(logs):
             if current_group and current_group["task_id"] == log.task_id:
                 current_group["logs"].append(log)
             else:
-                current_group = {"task_id": log.task_id, "is_job_log": False, "logs": [log]}
+                current_group = {
+                    "task_id": log.task_id,
+                    "is_job_log": False,
+                    "logs": [log],
+                }
                 grouped.append(current_group)
     return grouped
 
@@ -231,32 +235,38 @@ async def get_task_log_partial(
     return templates.TemplateResponse(
         "task_log_partial.html",
         {
-            "request": request, 
-            "task": task, 
-            "logs": logs, 
+            "request": request,
+            "task": task,
+            "logs": logs,
             "grouped_logs": group_logs_chronologically(logs),
             "task_id": str(task_id),
-            "job_status": task.status
+            "job_status": task.status,
         },
     )
 
 
 @router.get("/partials/logs")
 async def get_logs_partial(
-    request: Request, job_id: UUID, task_type: Optional[str] = None, service: SyncService = Depends(get_service)
+    request: Request,
+    job_id: UUID,
+    task_type: Optional[str] = None,
+    service: SyncService = Depends(get_service),
 ):
     logs = await service.get_job_logs(job_id)
     if task_type:
         tasks = await service.get_automation_tasks(job_id)
         valid_task_ids = {
-            str(t.id) for t in tasks 
-            if str(t.type).upper() == task_type.upper() or getattr(t.type, "name", str(t.type)).upper() == task_type.upper()
+            str(t.id)
+            for t in tasks
+            if str(t.type).upper() == task_type.upper()
+            or getattr(t.type, "name", str(t.type)).upper() == task_type.upper()
         }
         logs = [
-            log for log in logs 
+            log
+            for log in logs
             if (log.task_id and str(log.task_id) in valid_task_ids) or not log.task_id
         ]
-        
+
     job_status = await service.get_job_status(job_id)
     return templates.TemplateResponse(
         "logs_partial.html",
@@ -283,7 +293,11 @@ async def get_log_entries_partial(
         logs = await service.repo.get_task_logs(task_id)
         return templates.TemplateResponse(
             "log_entries_partial.html",
-            {"request": request, "grouped_logs": group_logs_chronologically(logs), "task_id": str(task_id)},
+            {
+                "request": request,
+                "grouped_logs": group_logs_chronologically(logs),
+                "task_id": str(task_id),
+            },
         )
     if job_id:
         logs = await service.get_job_logs(job_id)
@@ -291,17 +305,27 @@ async def get_log_entries_partial(
         if task_type:
             tasks = await service.get_automation_tasks(job_id)
             valid_task_ids = {
-                str(t.id) for t in tasks 
-                if str(t.type).upper() == task_type.upper() or getattr(t.type, "name", str(t.type)).upper() == task_type.upper()
+                str(t.id)
+                for t in tasks
+                if str(t.type).upper() == task_type.upper()
+                or getattr(t.type, "name", str(t.type)).upper() == task_type.upper()
             }
             logs = [
-                log for log in logs 
-                if (log.task_id and str(log.task_id) in valid_task_ids) or not log.task_id
+                log
+                for log in logs
+                if (log.task_id and str(log.task_id) in valid_task_ids)
+                or not log.task_id
             ]
-        
+
         return templates.TemplateResponse(
             "log_entries_partial.html",
-            {"request": request, "grouped_logs": group_logs_chronologically(logs), "job_id": str(job_id), "task_type": task_type, "job_status": job_status},
+            {
+                "request": request,
+                "grouped_logs": group_logs_chronologically(logs),
+                "job_id": str(job_id),
+                "task_type": task_type,
+                "job_status": job_status,
+            },
         )
 
     return templates.TemplateResponse(

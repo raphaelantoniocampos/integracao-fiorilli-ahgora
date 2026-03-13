@@ -109,7 +109,9 @@ class SyncService:
 
             if result.success:
                 async with self._db_lock:
-                    await self.repo.evaluate_and_update_job_status(job_id, result.message)
+                    await self.repo.evaluate_and_update_job_status(
+                        job_id, result.message
+                    )
                 await self._log(
                     job_id,
                     "INFO",
@@ -252,7 +254,8 @@ class SyncService:
         jobs = await self.repo.list_jobs()
         for job in jobs:
             if (
-                job.status in (SyncStatus.RUNNING, SyncStatus.RETRYING, SyncStatus.PENDING)
+                job.status
+                in (SyncStatus.RUNNING, SyncStatus.RETRYING, SyncStatus.PENDING)
             ) and job.id not in registry_job_ids:
                 logger.info(
                     f"Cleaning up untracked RUNNING/RETRYING job {job.id} from database"
@@ -297,14 +300,14 @@ class SyncService:
         for pattern_set in patterns:
             pattern_found = False
             alternatives = [p.strip().lower() for p in pattern_set.split("|")]
-            
+
             for directory in search_dirs:
                 if pattern_found:
                     break
                 for file_path in directory.iterdir():
                     if not file_path.is_file():
                         continue
-                    
+
                     filename = file_path.name.lower()
                     if any(alt in filename for alt in alternatives):
                         mtime = datetime.fromtimestamp(file_path.stat().st_mtime)
@@ -382,7 +385,10 @@ class SyncService:
                         FiorilliBrowser,
                         "download_leaves",
                         "Fiorilli leaves download",
-                        patterns=["pontoafastamentos|raw_leaves", "pontoferias|raw_vacations"],
+                        patterns=[
+                            "pontoafastamentos|raw_leaves",
+                            "pontoferias|raw_vacations",
+                        ],
                     ),
                     run_download_task_with_retries(
                         AhgoraBrowser,
@@ -403,7 +409,10 @@ class SyncService:
                     FiorilliBrowser,
                     "download_leaves",
                     "Fiorilli leaves download",
-                    patterns=["pontoafastamentos|raw_leaves", "pontoferias|raw_vacations"],
+                    patterns=[
+                        "pontoafastamentos|raw_leaves",
+                        "pontoferias|raw_vacations",
+                    ],
                 )
                 await run_download_task_with_retries(
                     AhgoraBrowser,
@@ -424,7 +433,7 @@ class SyncService:
             return SyncResult(
                 success=True,
                 status=SyncStatus.SUCCESS,
-                message="Sync completed (Fiorilli & Ahgora)",
+                message="Sync completed",
             )
         except Exception as e:
             logger.error(f"Sync failed after retries: {e}")
@@ -743,7 +752,7 @@ class SyncService:
     def _normalize_text(self, text):
         if pd.isna(text):
             return np.nan
-        text = str(text) # Ensure it's a string for regex
+        text = str(text)  # Ensure it's a string for regex
         text = str(" ".join(re.split(r"\s+", text, flags=re.UNICODE)))
         normalized = (
             unicodedata.normalize("NFKD", text)
@@ -762,7 +771,13 @@ class SyncService:
         all_leaves: pd.DataFrame,
     ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         if fiorilli_employees.empty:
-            return pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+            return (
+                pd.DataFrame(),
+                pd.DataFrame(),
+                pd.DataFrame(),
+                pd.DataFrame(),
+                pd.DataFrame(),
+            )
 
         # Dismissed logic
         fiorilli_dismissed_df = fiorilli_employees[
@@ -792,18 +807,16 @@ class SyncService:
 
         # Split: already in Ahgora CSV (seed DB only) vs truly new (need Selenium)
         ahgora_csv_ids = (
-            set(ahgora_csv_employees["id"])
-            if not ahgora_csv_employees.empty
-            else set()
+            set(ahgora_csv_employees["id"]) if not ahgora_csv_employees.empty else set()
         )
 
         # Truly new — not in DB AND not in Ahgora CSV → need Selenium automation
-        new_employees_df = missing_from_db[
-            ~missing_from_db["id"].isin(ahgora_csv_ids)
-        ]
+        new_employees_df = missing_from_db[~missing_from_db["id"].isin(ahgora_csv_ids)]
 
         # DB-only seed — in Ahgora CSV but not in DB → seed Ahgora CSV data to DB
-        seed_ids = set(missing_from_db[missing_from_db["id"].isin(ahgora_csv_ids)]["id"])
+        seed_ids = set(
+            missing_from_db[missing_from_db["id"].isin(ahgora_csv_ids)]["id"]
+        )
         seed_employees_df = (
             ahgora_csv_employees[ahgora_csv_employees["id"].isin(seed_ids)]
             if not ahgora_csv_employees.empty and seed_ids
@@ -843,7 +856,9 @@ class SyncService:
                 ~ahgora_csv_employees["id"].isin(ahgora_db_ids)
             ]
             # Align columns before concat
-            common_cols = list(set(ahgora_employees.columns) & set(csv_not_in_db.columns))
+            common_cols = list(
+                set(ahgora_employees.columns) & set(csv_not_in_db.columns)
+            )
             combined_ahgora = pd.concat(
                 [ahgora_employees[common_cols], csv_not_in_db[common_cols]],
                 ignore_index=True,
@@ -945,7 +960,9 @@ class SyncService:
             all_leaves_copy = all_leaves.copy()
             for col in ["start_date", "end_date"]:
                 if col in all_leaves_copy.columns:
-                    all_leaves_copy[col] = all_leaves_copy[col].dt.strftime("%d/%m/%Y").fillna("")
+                    all_leaves_copy[col] = (
+                        all_leaves_copy[col].dt.strftime("%d/%m/%Y").fillna("")
+                    )
             return all_leaves_copy
 
         # Filter using composite key (employee id + cod + start_date + end_date)
@@ -958,33 +975,43 @@ class SyncService:
                 df["_id_str"] = df["id"].astype(str).str.zfill(6)
             else:
                 df["_id_str"] = ""
-                
+
             if "cod" in df.columns:
                 df["_cod_str"] = df["cod"].astype(str).str.zfill(3)
             else:
                 df["_cod_str"] = ""
-                
+
             if "start_date" in df.columns:
                 df["_start_str"] = df["start_date"].dt.strftime("%d/%m/%Y").fillna("")
             else:
                 df["_start_str"] = ""
-                
+
             if "end_date" in df.columns:
                 df["_end_str"] = df["end_date"].dt.strftime("%d/%m/%Y").fillna("")
             else:
                 df["_end_str"] = ""
-                
-            df["_composite"] = df["_id_str"] + "_" + df["_cod_str"] + "_" + df["_start_str"] + "_" + df["_end_str"]
 
-        already_existing = all_leaves_match["_composite"].isin(last_leaves_match["_composite"])
-        
+            df["_composite"] = (
+                df["_id_str"]
+                + "_"
+                + df["_cod_str"]
+                + "_"
+                + df["_start_str"]
+                + "_"
+                + df["_end_str"]
+            )
+
+        already_existing = all_leaves_match["_composite"].isin(
+            last_leaves_match["_composite"]
+        )
+
         # Return only the items from all_leaves that don't match the composite key
         new_leaves = all_leaves[~already_existing].copy()
-        
+
         for col in ["start_date", "end_date"]:
             if col in new_leaves.columns:
                 new_leaves[col] = new_leaves[col].dt.strftime("%d/%m/%Y").fillna("")
-        
+
         return new_leaves
 
     async def _get_view_leaves(

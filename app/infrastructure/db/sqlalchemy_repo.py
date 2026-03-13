@@ -503,7 +503,7 @@ class SqlAlchemyRepo:
             .where(SyncJobModel.status == SyncStatus.RUNNING)
             .values(
                 status=SyncStatus.FAILED,
-                error_message="Sistema reiniciado/crash. Job interrompido.",
+                error_message="System restarted/crashed. Job interrupted.",
                 finished_at=datetime.now(),
             )
         )
@@ -514,7 +514,7 @@ class SqlAlchemyRepo:
             .where(AutomationTaskModel.status == AutomationTaskStatus.RUNNING)
             .values(
                 status=AutomationTaskStatus.FAILED,
-                error_message="Sistema reiniciado/crash. Tarefa interrompida.",
+                error_message="System restarted/crashed. Task interrupted.",
                 finished_at=datetime.now(),
             )
         )
