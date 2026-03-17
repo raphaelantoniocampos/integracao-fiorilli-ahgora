@@ -37,9 +37,7 @@ class Settings:
 
     # Credentials
     FIORILLI_USER: str = os.getenv("FIORILLI_USER", "")
-    FIORILLI_PASSWORD: str = os.getenv("FIORILLI_PASSWORD", "")
     AHGORA_USER: str = os.getenv("AHGORA_USER", "")
-    AHGORA_PASSWORD: str = os.getenv("AHGORA_PASSWORD", "")
     AHGORA_COMPANY: str = os.getenv("AHGORA_COMPANY", "")
 
     # Database

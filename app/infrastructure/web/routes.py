@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.settings import settings
+from typing import Any, Dict
 from app.domain.enums import SyncStatus
 from app.infrastructure.db.sqlalchemy_repo import SqlAlchemyRepo
 from app.services.sync_service import SyncService
@@ -46,6 +47,16 @@ async def dashboard(request: Request, service: SyncService = Depends(get_service
             "headless_mode": settings.HEADLESS_MODE,
             "use_cached_files": settings.USE_CACHED_FILES,
             "is_docker": settings.IS_DOCKER,
+        },
+    )
+
+
+@router.get("/config")
+async def config_page(request: Request):
+    return templates.TemplateResponse(
+        "config.html",
+        {
+            "request": request,
         },
     )
 
@@ -113,14 +124,13 @@ async def get_task_groups_page(
     request: Request, job_id: UUID, service: SyncService = Depends(get_service)
 ):
     from collections import defaultdict
-    from typing import Any, Dict
 
     from app.domain.enums import AutomationTaskStatus
 
     tasks = await service.get_automation_tasks(job_id)
 
-    groups: Dict[Any, Dict[str, Any]] = defaultdict(
-        lambda: {
+    def _default_group() -> Dict[str, Any]:
+        return {
             "type": "",
             "total": 0,
             "pending": 0,
@@ -129,7 +139,8 @@ async def get_task_groups_page(
             "failed": 0,
             "cancelled": 0,
         }
-    )
+
+    groups: Dict[Any, Dict[str, Any]] = defaultdict(_default_group)
 
     for t in tasks:
         group = groups[t.type]
@@ -207,15 +218,17 @@ async def get_task_details_partial(
 
 
 def group_logs_chronologically(logs):
-    grouped = []
-    current_group = None
+    grouped: list[dict[str, Any]] = []
+    current_group: dict[str, Any] | None = None
     for log in logs:
         if not log.task_id:
             grouped.append({"task_id": None, "is_job_log": True, "logs": [log]})
             current_group = None
         else:
             if current_group and current_group["task_id"] == log.task_id:
-                current_group["logs"].append(log)
+                logs_list = current_group["logs"]
+                if isinstance(logs_list, list):
+                    logs_list.append(log)
             else:
                 current_group = {
                     "task_id": log.task_id,
@@ -240,7 +253,7 @@ async def get_task_log_partial(
             "logs": logs,
             "grouped_logs": group_logs_chronologically(logs),
             "task_id": str(task_id),
-            "job_status": task.status,
+            "job_status": task.status if task else None,
         },
     )
 

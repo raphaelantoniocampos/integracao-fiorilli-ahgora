@@ -29,8 +29,10 @@ def test_health_check(client):
     assert response.json()["status"] == "ok"
 
 
+@patch("app.api.endpoints.crypto_service.decrypt")
 @patch("app.api.endpoints.SyncService")
-def test_run_sync_job(mock_service_class, client):
+def test_run_sync_job(mock_service_class, mock_decrypt, client):
+    mock_decrypt.side_effect = lambda x: x
     mock_service = mock_service_class.return_value
     job_id = uuid4()
     mock_service.create_job = AsyncMock(
@@ -42,7 +44,7 @@ def test_run_sync_job(mock_service_class, client):
     # Override get_service dependency specially to inject the mock instance
     app.dependency_overrides[get_service] = lambda: mock_service
 
-    response = client.post("/api/sync/run")
+    response = client.post("/api/sync/run", json={"fiorilli_password": "enc", "ahgora_password": "enc"})
     assert response.status_code == 200
     assert response.json()["id"] == str(job_id)
     mock_service.create_job.assert_called_once()
@@ -283,9 +285,9 @@ def test_get_task_details_partial_group_tasks(mock_service_class, client):
     class MockGroupTask:
         id = uuid4()
         type = task_type.name
-        status = "FAILED"
+        status = AutomationTaskStatus.FAILED
         error_message = None
-        payload = {"employee_id": "123"}
+        payload = {"name": "123"}
 
     mock_service.get_automation_tasks = AsyncMock(return_value=[MockGroupTask()])
 
@@ -298,7 +300,7 @@ def test_get_task_details_partial_group_tasks(mock_service_class, client):
     )  # Use .name not .value for FastAPI query match
     assert response.status_code == 200
     assert "123" in response.text
-    assert "FAILED" in response.text
+    assert "failed" in response.text.lower()
 
     app.dependency_overrides.pop(api_get_service, None)
 

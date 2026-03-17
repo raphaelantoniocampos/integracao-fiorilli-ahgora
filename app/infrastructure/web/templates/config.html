@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="sm:flex sm:items-center sm:justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Configurações Base</h1>
+            <p class="mt-2 text-sm text-gray-700">Gerencie as credenciais da sessão atual. As credenciais são armazenadas apenas localmente pelo tempo em que a aba do navegador estiver aberta.</p>
+        </div>
+    </div>
+
+    <!-- Configuration Form -->
+    <div class="bg-white px-4 py-5 sm:rounded-lg sm:p-6 sm:shadow">
+        <div class="md:grid md:grid-cols-3 md:gap-6">
+            <div class="md:col-span-1">
+                <h3 class="text-lg font-medium leading-6 text-gray-900">Credenciais de Automação</h3>
+                <p class="mt-1 text-sm text-gray-500">
+                    Senhas necessárias para as integrações Ahgora e Fiorilli.
+                </p>
+            </div>
+            <div class="mt-5 md:col-span-2 md:mt-0">
+                <form id="configForm" class="space-y-6" onsubmit="saveCredentials(event)">
+                        <div class="col-span-6 sm:col-span-4">
+                            <label for="fiorilli-url" class="block text-sm font-medium text-gray-700">URL Fiorilli (Opcional - Usará .env se vazio)</label>
+                            <input type="text" name="fiorilli_url" id="fiorilli-url" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        </div>
+
+                        <div class="col-span-6 sm:col-span-4">
+                            <label for="fiorilli-user" class="block text-sm font-medium text-gray-700">Usuário Fiorilli</label>
+                            <input type="text" name="fiorilli_user" id="fiorilli-user" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        </div>
+
+                        <div class="col-span-6 sm:col-span-4">
+                            <label for="fiorilli-password" class="block text-sm font-medium text-gray-700">Senha Fiorilli</label>
+                            <input type="password" name="fiorilli_password" id="fiorilli-password" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        </div>
+
+                        <div class="col-span-6 sm:col-span-4">
+                            <label for="ahgora-url" class="block text-sm font-medium text-gray-700">URL Ahgora (Opcional - Usará .env se vazio)</label>
+                            <input type="text" name="ahgora_url" id="ahgora-url" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        </div>
+
+                        <div class="col-span-6 sm:col-span-4">
+                            <label for="ahgora-company" class="block text-sm font-medium text-gray-700">Empresa Ahgora</label>
+                            <input type="text" name="ahgora_company" id="ahgora-company" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        </div>
+
+                        <div class="col-span-6 sm:col-span-4">
+                            <label for="ahgora-user" class="block text-sm font-medium text-gray-700">Usuário Ahgora</label>
+                            <input type="text" name="ahgora_user" id="ahgora-user" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        </div>
+
+                        <div class="col-span-6 sm:col-span-4">
+                            <label for="ahgora-password" class="block text-sm font-medium text-gray-700">Senha Ahgora</label>
+                            <input type="password" name="ahgora_password" id="ahgora-password" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end gap-x-3">
+                        <div id="save-msg" class="text-sm text-green-600 hidden my-auto font-medium">Credenciais salvas na sessão!</div>
+                        <button type="submit" class="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                            Salvar na Sessão
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <script>
+        // Carregar do sessionStorage ao iniciar
+        document.addEventListener("DOMContentLoaded", function () {
+            const fields = [
+                "fiorilli_url", "fiorilli_user", "fiorilli_password",
+                "ahgora_url", "ahgora_company", "ahgora_user", "ahgora_password"
+            ];
+            fields.forEach(f => {
+                const stored = sessionStorage.getItem(f);
+                if (stored) {
+                    const elId = f.replace('_', '-');
+                    const element = document.getElementById(elId);
+                    if(element) element.value = stored;
+                }
+            });
+        });
+
+        function saveCredentials(event) {
+            event.preventDefault();
+            
+            const fields = [
+                "fiorilli_url", "fiorilli_user", "fiorilli_password",
+                "ahgora_url", "ahgora_company", "ahgora_user", "ahgora_password"
+            ];
+
+            fields.forEach(f => {
+                const elId = f.replace('_', '-');
+                const val = document.getElementById(elId).value;
+                sessionStorage.setItem(f, val);
+            });
+        
+
+        const msg = document.getElementById("save-msg");
+        msg.classList.remove("hidden");
+        setTimeout(() => msg.classList.add("hidden"), 3000);
+    }
+</script>
+{% endblock %}

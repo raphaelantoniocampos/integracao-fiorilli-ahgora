@@ -3,6 +3,7 @@ import logging
 import tempfile
 import threading
 from pathlib import Path
+from typing import Optional
 from uuid import UUID
 
 from app.core.task_registry import task_registry
@@ -170,7 +171,7 @@ class LeaveSyncService:
         job_id: UUID,
         loop: asyncio.AbstractEventLoop,
         log_lock: asyncio.Lock,
-        cancel_event: threading.Event = None,
+        cancel_event: Optional[threading.Event] = None,
     ) -> list[dict]:
         """
         Sync execution of the browser automation for leaves batch.

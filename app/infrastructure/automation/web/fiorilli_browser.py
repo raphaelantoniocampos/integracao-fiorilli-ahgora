@@ -1,5 +1,6 @@
 import logging
 from datetime import date, datetime
+from typing import Optional
 from time import sleep
 
 from dateutil.relativedelta import relativedelta
@@ -12,8 +13,24 @@ logger = logging.getLogger(__name__)
 
 
 class FiorilliBrowser(BaseBrowser):
-    def __init__(self):
-        super().__init__(url=settings.FIORILLI_URL)
+    def __init__(
+        self,
+        fiorilli_password: Optional[str] = None,
+        fiorilli_user: Optional[str] = None,
+        fiorilli_url: Optional[str] = None,
+        log_callback=None,
+        headless=None,
+        cancel_event=None,
+    ):
+        url = fiorilli_url if fiorilli_url else getattr(settings, "FIORILLI_URL", "")
+        super().__init__(
+            url=url,
+            fiorilli_password=fiorilli_password,
+            fiorilli_user=fiorilli_user,
+            log_callback=log_callback,
+            headless=headless,
+            cancel_event=cancel_event,
+        )
 
     def download_employees(self):
         logger.info("Starting employees download from Fiorilli")
@@ -53,12 +70,12 @@ class FiorilliBrowser(BaseBrowser):
             self.close_driver()
 
     def _login(self) -> None:
-        user = settings.FIORILLI_USER
-        psw = settings.FIORILLI_PASSWORD
+        user = self.fiorilli_user
+        psw = self.fiorilli_password
 
         if not user or not psw:
             raise ValueError(
-                "Fiorilli credentials not set in environment variables (FIORILLI_USER, FIORILLI_PASSWORD)"
+                "Fiorilli credentials not set (FIORILLI_USER, password from frontend)"
             )
 
         self._enter_username("//input[@placeholder='(Usuário)']", user)

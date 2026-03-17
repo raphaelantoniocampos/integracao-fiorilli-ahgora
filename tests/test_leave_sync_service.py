@@ -1,5 +1,5 @@
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 from uuid import uuid4
 
 import pandas as pd
@@ -43,27 +43,27 @@ async def test_execute_leaves_batch_success():
     )
 
     repo.get_automation_tasks_by_job = AsyncMock(return_value=[task])
-    repo.get_ahgora_leaves_df = AsyncMock(return_value=pd.DataFrame())
+    repo.get_ahgora_leaves_df = AsyncMock(return_value=pd.DataFrame([{"id": "000001"}]))
     repo.update_task_status = AsyncMock()
+    repo.save_ahgora_leaves_batch = AsyncMock()
+    repo.evaluate_and_update_job_status = AsyncMock()
     repo.add_log = AsyncMock()
 
     service = LeaveSyncService(repo=repo)
 
     # Mock _run_browser_batch_import to return success
-    with patch.object(
-        service,
-        "_run_browser_batch_import",
+    service._run_browser_batch_import = MagicMock(
         return_value=[
             {"payload": task.payload, "status": "success", "message": "", "index": 0}
-        ],
-    ):
-        await service.execute_leaves_batch(job_id)
+        ]
+    )
+    await service.execute_leaves_batch(job_id)
 
     # Assert repo methods were called to update status
     # First to RUNNING, then to SUCCESS
     repo.update_task_status.assert_any_call(task_id, AutomationTaskStatus.RUNNING)
     repo.update_task_status.assert_any_call(
-        task_id, AutomationTaskStatus.SUCCESS, message=""
+        task_id, AutomationTaskStatus.SUCCESS, message="Batch completed: 1 imported, 0 existing ignored, 0 errors.", payload=task.payload
     )
 
 
@@ -74,8 +74,7 @@ async def test_execute_leaves_batch_with_validation_errors():
     """
     repo = MagicMock()
     job_id = uuid4()
-    task_id_1 = uuid4()
-    task_id_2 = uuid4()
+    task_id = uuid4()
 
     class MockTask:
         def __init__(self, id, type, status, payload):
@@ -84,48 +83,37 @@ async def test_execute_leaves_batch_with_validation_errors():
             self.status = status
             self.payload = payload
 
-    # Task 1: Will fail
-    task1 = MockTask(
-        id=task_id_1,
+    task = MockTask(
+        id=task_id,
         type="ADD_LEAVE",
         status=AutomationTaskStatus.PENDING,
-        payload={"id": "000001"},
-    )
-    # Task 2: Will succeed
-    task2 = MockTask(
-        id=task_id_2,
-        type="ADD_LEAVE",
-        status=AutomationTaskStatus.PENDING,
-        payload={"id": "000002"},
+        payload={"leaves": [{"id": "000001"}, {"id": "000002"}]},
     )
 
-    repo.get_automation_tasks_by_job = AsyncMock(return_value=[task1, task2])
-    repo.get_ahgora_leaves_df = AsyncMock(return_value=pd.DataFrame())
+    repo.get_automation_tasks_by_job = AsyncMock(return_value=[task])
+    repo.get_ahgora_leaves_df = AsyncMock(return_value=pd.DataFrame([{"id": "000001"}, {"id": "000002"}]))
     repo.update_task_status = AsyncMock()
+    repo.save_ahgora_leaves_batch = AsyncMock()
+    repo.evaluate_and_update_job_status = AsyncMock()
     repo.add_log = AsyncMock()
 
     service = LeaveSyncService(repo=repo)
 
-    with patch.object(
-        service,
-        "_run_browser_batch_import",
+    service._run_browser_batch_import = MagicMock(
         return_value=[
             {
-                "payload": task1.payload,
+                "payload": {"id": "000001"},
                 "status": "error",
                 "message": "Interseccao",
                 "index": 0,
             },
-            {"payload": task2.payload, "status": "success", "message": "", "index": 1},
-        ],
-    ):
-        await service.execute_leaves_batch(job_id)
+            {"payload": {"id": "000002"}, "status": "success", "message": "", "index": 1},
+        ]
+    )
+    await service.execute_leaves_batch(job_id)
 
     repo.update_task_status.assert_any_call(
-        task_id_1, AutomationTaskStatus.FAILED, message="Interseccao"
-    )
-    repo.update_task_status.assert_any_call(
-        task_id_2, AutomationTaskStatus.SUCCESS, message=""
+        task_id, AutomationTaskStatus.SUCCESS, message="Batch completed: 1 imported, 0 existing ignored, 1 errors.", payload=task.payload
     )
 
 
@@ -149,19 +137,19 @@ async def test_execute_leaves_batch_catastrophic_failure():
         id=task_id,
         type="ADD_LEAVE",
         status=AutomationTaskStatus.PENDING,
-        payload={"id": "000001"},
+        payload={"leaves": [{"id": "000001"}]},
     )
     repo.get_automation_tasks_by_job = AsyncMock(return_value=[task])
-    repo.get_ahgora_leaves_df = AsyncMock(return_value=pd.DataFrame())
+    repo.get_ahgora_leaves_df = AsyncMock(return_value=pd.DataFrame([{"id": "000001"}]))
     repo.update_task_status = AsyncMock()
+    repo.save_ahgora_leaves_batch = AsyncMock()
+    repo.evaluate_and_update_job_status = AsyncMock()
     repo.add_log = AsyncMock()
 
     service = LeaveSyncService(repo=repo)
 
-    with patch.object(
-        service, "_run_browser_batch_import", side_effect=Exception("Browser crashed")
-    ):
-        await service.execute_leaves_batch(job_id)
+    service._run_browser_batch_import = MagicMock(side_effect=Exception("Browser crashed"))
+    await service.execute_leaves_batch(job_id)
 
     repo.update_task_status.assert_any_call(
         task_id, AutomationTaskStatus.FAILED, message="Browser crashed"

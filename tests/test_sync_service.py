@@ -38,10 +38,12 @@ async def test_run_sync_background_success():
         new_callable=AsyncMock,
         return_value=SyncResult(success=True, status=SyncStatus.SUCCESS, message="OK"),
     ):
-        await service.run_sync_background(job_id)
+        await service.run_sync_background(
+            job_id, "http://fiorilli", "user1", "pass1", "http://ahgora", "user2", "company", "pass2"
+        )
 
     repo.update_job_status.assert_any_call(job_id, SyncStatus.RUNNING)
-    repo.update_job_status.assert_any_call(job_id, SyncStatus.SUCCESS, "OK")
+    repo.evaluate_and_update_job_status.assert_called_once_with(job_id, "OK")
     assert repo.add_log.call_count >= 2
 
 
@@ -63,7 +65,9 @@ async def test_run_sync_background_failure_permanent():
         new_callable=AsyncMock,
         side_effect=Exception("Browser Error"),
     ):
-        await service.run_sync_background(job_id)
+        await service.run_sync_background(
+            job_id, "http://fiorilli", "user1", "pass1", "http://ahgora", "user2", "company", "pass2"
+        )
 
     repo.update_job_status.assert_any_call(job_id, SyncStatus.FAILED, "Browser Error")
 
@@ -89,7 +93,9 @@ async def test_run_sync_background_retry_scheduled():
             success=False, status=SyncStatus.FAILED, message="Transient Error"
         ),
     ):
-        await service.run_sync_background(job_id)
+        await service.run_sync_background(
+            job_id, "http://fiorilli", "user1", "pass1", "http://ahgora", "user2", "company", "pass2"
+        )
 
     # Should have called increment_job_retry, not update_job_status(FAILED)
     repo.increment_job_retry.assert_called_once()

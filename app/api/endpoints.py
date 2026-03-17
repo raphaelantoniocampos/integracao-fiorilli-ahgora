@@ -1,16 +1,30 @@
 from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Body
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.settings import settings
 from app.core.task_registry import task_registry
 from app.domain.entities import AutomationTask, SyncJob, SyncLog
 from app.domain.enums import AutomationTaskStatus
 from app.infrastructure.db.sqlalchemy_repo import SqlAlchemyRepo
 from app.services.sync_service import SyncService
 from app.services.task_execution_service import TaskExecutionService
+from app.services.crypto_service import crypto_service
+
+
+class SyncCredentials(BaseModel):
+    fiorilli_user: str
+    fiorilli_password: str
+    fiorilli_url: Optional[str] = None
+    ahgora_user: str
+    ahgora_password: str
+    ahgora_company: str
+    ahgora_url: Optional[str] = None
+
 
 router = APIRouter()
 
@@ -20,6 +34,15 @@ def get_service(db: AsyncSession = Depends(get_db)):
     return SyncService(repo=repo)
 
 
+@router.get(
+    "/public-key",
+    summary="Get Public Key",
+    description="Returns the RSA public key in PEM format for frontend encryption.",
+)
+async def get_public_key():
+    return {"public_key": crypto_service.get_public_key_pem()}
+
+
 @router.post(
     "/run",
     response_model=SyncJob,
@@ -27,10 +50,33 @@ def get_service(db: AsyncSession = Depends(get_db)):
     description="Starts a background job to download data from Fiorilli and Ahgora and perform analysis.",
 )
 async def run_sync_job(
-    background_tasks: BackgroundTasks, service: SyncService = Depends(get_service)
+    background_tasks: BackgroundTasks,
+    credentials: SyncCredentials = Body(...),
+    service: SyncService = Depends(get_service),
 ):
+    try:
+        decrypted_fiorilli = crypto_service.decrypt(credentials.fiorilli_password)
+        decrypted_ahgora = crypto_service.decrypt(credentials.ahgora_password)
+    except Exception:
+        raise HTTPException(
+            status_code=400, detail="Invalid credential encryption payload"
+        )
+
+    fiorilli_url = credentials.fiorilli_url or settings.FIORILLI_URL
+    ahgora_url = credentials.ahgora_url or settings.AHGORA_URL
+
     job = await service.create_job(triggered_by="api")
-    background_tasks.add_task(SyncService.run_sync_task_standalone, job.id)
+    background_tasks.add_task(
+        SyncService.run_sync_task_standalone,
+        job.id,
+        fiorilli_url,
+        credentials.fiorilli_user,
+        decrypted_fiorilli,
+        ahgora_url,
+        credentials.ahgora_user,
+        credentials.ahgora_company,
+        decrypted_ahgora,
+    )
     return job
 
 

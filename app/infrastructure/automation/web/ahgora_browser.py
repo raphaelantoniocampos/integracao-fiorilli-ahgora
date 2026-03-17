@@ -1,5 +1,5 @@
 import logging
-from typing import Callable
+from typing import Callable, Optional
 
 from selenium.webdriver.common.by import By
 
@@ -12,12 +12,20 @@ logger = logging.getLogger(__name__)
 class AhgoraBrowser(BaseBrowser):
     def __init__(
         self,
-        log_callback: Callable[[str, str], None] = None,
-        headless: bool = None,
+        ahgora_password: Optional[str] = None,
+        ahgora_user: Optional[str] = None,
+        ahgora_company: Optional[str] = None,
+        ahgora_url: Optional[str] = None,
+        log_callback: Optional[Callable[[str, str], None]] = None,
+        headless: Optional[bool] = None,
         cancel_event=None,
     ):
+        url = ahgora_url if ahgora_url else getattr(settings, "AHGORA_URL", "")
         super().__init__(
-            url=settings.AHGORA_URL,
+            url=url,
+            ahgora_password=ahgora_password,
+            ahgora_user=ahgora_user,
+            ahgora_company=ahgora_company,
             log_callback=log_callback,
             headless=headless,
             cancel_event=cancel_event,
@@ -36,13 +44,13 @@ class AhgoraBrowser(BaseBrowser):
             self.close_driver()
 
     def _login(self) -> None:
-        user = settings.AHGORA_USER
-        psw = settings.AHGORA_PASSWORD
-        company = settings.AHGORA_COMPANY
+        user = self.ahgora_user
+        psw = self.ahgora_password or ""
+        company = self.ahgora_company
 
         if not all([user, psw, company]):
             raise ValueError(
-                "Ahgora credentials not set in environment variables (AHGORA_USER, AHGORA_PASSWORD, AHGORA_COMPANY)"
+                "Ahgora credentials not set (AHGORA_USER, password from frontend, AHGORA_COMPANY)"
             )
 
         self._enter_username("email", user)

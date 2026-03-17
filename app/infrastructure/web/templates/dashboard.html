@@ -10,9 +10,8 @@
         <div class="flex items-center space-x-3">
             {% include 'partials/use_cached_files_toggle.html' %}
             {% include 'partials/headless_sync_toggle.html' %}
-            <button hx-post="/api/sync/run" hx-swap="none"
-                class="btn-primary flex items-center px-6 py-2 rounded-lg text-sm font-semibold shadow-sm"
-                onclick="setTimeout(() => htmx.trigger('#jobs-list', 'refresh'), 500)">
+            <button onclick="startSync(event)"
+                class="btn-primary flex items-center px-6 py-2 rounded-lg text-sm font-semibold shadow-sm">
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z">
@@ -20,7 +19,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
-                Iniciar Sincronização
+                <span id="syncBtnText">Iniciar Sincronização</span>
             </button>
         </div>
     </div>
@@ -175,5 +174,130 @@
     </div>
 </div>
 
+<script>
+    // Helper function to convert a standard PEM string to an ArrayBuffer
+    function str2ab(str) {
+        const buf = new ArrayBuffer(str.length);
+        const bufView = new Uint8Array(buf);
+        for (let i = 0, strLen = str.length; i < strLen; i++) {
+            bufView[i] = str.charCodeAt(i);
+        }
+        return buf;
+    }
+
+    async function importPublicKey(pemString) {
+        // Remove headers, footers and newlines
+        const pemHeader = "-----BEGIN PUBLIC KEY-----";
+        const pemFooter = "-----END PUBLIC KEY-----";
+        let pemContent = pemString.substring(pemString.indexOf(pemHeader) + pemHeader.length, pemString.indexOf(pemFooter));
+        pemContent = pemContent.replace(/\s/g, '');
+
+        const binaryDerString = window.atob(pemContent);
+        const binaryDer = str2ab(binaryDerString);
+
+        return await window.crypto.subtle.importKey(
+            "spki",
+            binaryDer,
+            {
+                name: "RSA-OAEP",
+                hash: "SHA-256"
+            },
+            true,
+            ["encrypt"]
+        );
+    }
+
+    async function encryptString(text, publicKey) {
+        const enc = new TextEncoder();
+        const encoded = enc.encode(text);
+        const encrypted = await window.crypto.subtle.encrypt(
+            {
+                name: "RSA-OAEP"
+            },
+            publicKey,
+            encoded
+        );
+
+        // Convert ArrayBuffer to base64
+        let binary = '';
+        const bytes = new Uint8Array(encrypted);
+        const len = bytes.byteLength;
+        for (let i = 0; i < len; i++) {
+            binary += String.fromCharCode(bytes[i]);
+        }
+        return window.btoa(binary);
+    }
+
+    async function startSync(event) {
+        const btn = event.currentTarget;
+        const btnText = document.getElementById("syncBtnText");
+
+        // 1. Get credentials from sessionStorage
+        const fiorilliPwd = sessionStorage.getItem('fiorilli_password');
+        const ahgoraPwd = sessionStorage.getItem('ahgora_password');
+        const fiorilliUser = sessionStorage.getItem('fiorilli_user');
+        const ahgoraUser = sessionStorage.getItem('ahgora_user');
+        const ahgoraCompany = sessionStorage.getItem('ahgora_company');
+        const fiorilliUrl = sessionStorage.getItem('fiorilli_url') || '';
+        const ahgoraUrl = sessionStorage.getItem('ahgora_url') || '';
+
+        if (!fiorilliPwd || !ahgoraPwd || !fiorilliUser || !ahgoraUser || !ahgoraCompany) {
+            alert('Please configure your credentials first.');
+            window.location.href = '/config';
+            return;
+        }
+
+        // Disable button while processing
+        btn.disabled = true;
+        btnText.innerText = "Iniciando...";
+
+        try {
+            // We encrypt only the passwords
+            const keysResponse = await fetch('/api/sync/public-key');
+            if (!keysResponse.ok) {
+                throw new Error("Falha ao obter chave pública");
+            }
+            const pkData = await keysResponse.json();
+            
+            // 3. Import key and Encrypt
+            const publicKey = await importPublicKey(pkData.public_key);
+            const encryptedFiorilli = await encryptString(fiorilliPwd, publicKey);
+            const encryptedAhgora = await encryptString(ahgoraPwd, publicKey);
+
+            // 4. Send encrypted payload
+            const response = await fetch('/api/sync/run', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    fiorilli_user: fiorilliUser,
+                    ahgora_user: ahgoraUser,
+                    ahgora_company: ahgoraCompany,
+                    fiorilli_password: encryptedFiorilli,
+                    ahgora_password: encryptedAhgora,
+                    fiorilli_url: fiorilliUrl || null,
+                    ahgora_url: ahgoraUrl || null
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.detail || "Falha ao iniciar sincronização");
+            }
+
+            // 5. Trigger update in jobs list via HTMX
+            setTimeout(() => htmx.trigger('#jobs-list', 'refresh'), 500);
+
+        } catch (error) {
+            alert(error.message || "Ocorreu um erro ao iniciar a sincronização.");
+            console.error(error);
+        } finally {
+            // Restore button state
+            btn.disabled = false;
+            btnText.innerText = "Iniciar Sincronização";
+        }
+    }
+</script>
 
 {% endblock %}

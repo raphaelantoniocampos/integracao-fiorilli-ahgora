@@ -48,7 +48,16 @@ class SyncService:
         self._db_lock = asyncio.Lock()
 
     @staticmethod
-    async def run_sync_task_standalone(job_id: UUID):
+    async def run_sync_task_standalone(
+        job_id: UUID,
+        fiorilli_url: str,
+        fiorilli_user: str,
+        fiorilli_password: str,
+        ahgora_url: str,
+        ahgora_user: str,
+        ahgora_company: str,
+        ahgora_password: str,
+    ):
         """
         Static method to run a sync task with its own database session.
         This is used for background tasks to avoid session closure issues.
@@ -58,7 +67,16 @@ class SyncService:
         async with async_session_factory() as session:
             repo = SqlAlchemyRepo(session)
             service = SyncService(repo)
-            await service.run_sync_background(job_id)
+            await service.run_sync_background(
+                job_id,
+                fiorilli_url,
+                fiorilli_user,
+                fiorilli_password,
+                ahgora_url,
+                ahgora_user,
+                ahgora_company,
+                ahgora_password,
+            )
 
     async def create_job(self, triggered_by: str = "api") -> SyncJob:
         job = SyncJob(triggered_by=triggered_by)
@@ -86,7 +104,17 @@ class SyncService:
     ) -> list[AutomationTask]:
         return await self.repo.get_all_automation_tasks(status)
 
-    async def run_sync_background(self, job_id: UUID):
+    async def run_sync_background(
+        self,
+        job_id: UUID,
+        fiorilli_url: str,
+        fiorilli_user: str,
+        fiorilli_password: str,
+        ahgora_url: str,
+        ahgora_user: str,
+        ahgora_company: str,
+        ahgora_password: str,
+    ):
         job = await self.repo.get_job(job_id)
         if not job:
             logger.error(f"Job {job_id} not found for execution")
@@ -104,7 +132,17 @@ class SyncService:
         try:
             # Execute sync logic with a 15-minute timeout (prevents permanent hangs)
             result = await asyncio.wait_for(
-                self._execute_sync_logic(job_id), timeout=15 * 60
+                self._execute_sync_logic(
+                    job_id,
+                    fiorilli_url,
+                    fiorilli_user,
+                    fiorilli_password,
+                    ahgora_url,
+                    ahgora_user,
+                    ahgora_company,
+                    ahgora_password,
+                ),
+                timeout=15 * 60,
             )
 
             if result.success:
@@ -319,9 +357,27 @@ class SyncService:
 
         return found_patterns == len(patterns)
 
-    async def _execute_sync_logic(self, job_id: UUID) -> SyncResult:
+    async def _execute_sync_logic(
+        self,
+        job_id: UUID,
+        fiorilli_url: str,
+        fiorilli_user: str,
+        fiorilli_password: str,
+        ahgora_url: str,
+        ahgora_user: str,
+        ahgora_company: str,
+        ahgora_password: str,
+    ) -> SyncResult:
         async def run_download_task_with_retries(
-            browser_class, method_name, description, patterns=None, max_retries=3
+            browser_class,
+            method_name,
+            description,
+            url,
+            user,
+            password,
+            company=None,
+            patterns=None,
+            max_retries=3,
         ):
             if patterns and self._is_download_cached(patterns):
                 await self._log(
@@ -340,7 +396,23 @@ class SyncService:
                 )
 
                 def blocking_wrapper():
-                    browser = browser_class()
+                    # Pass the respective credentials to the browser
+                    if browser_class == FiorilliBrowser:
+                        browser = browser_class(
+                            fiorilli_url=url,
+                            fiorilli_user=user,
+                            fiorilli_password=password,
+                        )
+                    elif browser_class == AhgoraBrowser:
+                        browser = browser_class(
+                            ahgora_url=url,
+                            ahgora_user=user,
+                            ahgora_company=company,
+                            ahgora_password=password,
+                        )
+                    else:
+                        browser = browser_class()
+
                     try:
                         getattr(browser, method_name)()
                     finally:
@@ -379,12 +451,18 @@ class SyncService:
                         FiorilliBrowser,
                         "download_employees",
                         "Fiorilli employees download",
+                        fiorilli_url,
+                        fiorilli_user,
+                        fiorilli_password,
                         patterns=["trabalhador|fiorilli_employees"],
                     ),
                     run_download_task_with_retries(
                         FiorilliBrowser,
                         "download_leaves",
                         "Fiorilli leaves download",
+                        fiorilli_url,
+                        fiorilli_user,
+                        fiorilli_password,
                         patterns=[
                             "pontoafastamentos|raw_leaves",
                             "pontoferias|raw_vacations",
@@ -394,6 +472,10 @@ class SyncService:
                         AhgoraBrowser,
                         "download_employees",
                         "Ahgora employees download",
+                        ahgora_url,
+                        ahgora_user,
+                        ahgora_password,
+                        ahgora_company,
                         patterns=["funcionarios|ahgora_employees"],
                     ),
                 )
@@ -403,12 +485,18 @@ class SyncService:
                     FiorilliBrowser,
                     "download_employees",
                     "Fiorilli employees download",
+                    fiorilli_url,
+                    fiorilli_user,
+                    fiorilli_password,
                     patterns=["trabalhador|fiorilli_employees"],
                 )
                 await run_download_task_with_retries(
                     FiorilliBrowser,
                     "download_leaves",
                     "Fiorilli leaves download",
+                    fiorilli_url,
+                    fiorilli_user,
+                    fiorilli_password,
                     patterns=[
                         "pontoafastamentos|raw_leaves",
                         "pontoferias|raw_vacations",
@@ -418,6 +506,10 @@ class SyncService:
                     AhgoraBrowser,
                     "download_employees",
                     "Ahgora employees download",
+                    ahgora_url,
+                    ahgora_user,
+                    ahgora_password,
+                    ahgora_company,
                     patterns=["funcionarios|ahgora_employees"],
                 )
 

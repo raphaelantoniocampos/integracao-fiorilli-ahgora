@@ -2,7 +2,7 @@ import logging
 import time
 import threading
 from abc import ABC
-from typing import Any, Callable, List, Union
+from typing import Any, Callable, List, Union, Optional
 
 from selenium import webdriver
 from selenium.common.exceptions import (
@@ -41,10 +41,32 @@ class BaseBrowser(ABC):
     def __init__(
         self,
         url: str,
-        log_callback: Callable[[str, str], None] = None,
-        headless: bool = None,
-        cancel_event: threading.Event = None,
+        fiorilli_password: Optional[str] = None,
+        ahgora_password: Optional[str] = None,
+        fiorilli_user: Optional[str] = None,
+        ahgora_user: Optional[str] = None,
+        ahgora_company: Optional[str] = None,
+        log_callback: Optional[Callable[[str, str], None]] = None,
+        headless: Optional[bool] = None,
+        cancel_event: Optional[threading.Event] = None,
     ):
+        self.fiorilli_password = fiorilli_password
+        self.ahgora_password = ahgora_password
+        self.fiorilli_user = (
+            fiorilli_user
+            if fiorilli_user is not None
+            else getattr(settings, "FIORILLI_USER", "")
+        )
+        self.ahgora_user = (
+            ahgora_user
+            if ahgora_user is not None
+            else getattr(settings, "AHGORA_USER", "")
+        )
+        self.ahgora_company = (
+            ahgora_company
+            if ahgora_company is not None
+            else getattr(settings, "AHGORA_COMPANY", "")
+        )
         self.log_callback = log_callback
         self.headless = headless if headless is not None else settings.HEADLESS_MODE
         self.cancel_event = cancel_event
