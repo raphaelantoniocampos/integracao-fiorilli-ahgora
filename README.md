@@ -35,12 +35,7 @@ Crie um arquivo `.env` a partir do exemplo (`cp .env.example .env`) e preencha a
 
 | Variável            | Descrição                                          | Padrão |
 | ------------------- | -------------------------------------------------- | ------ |
-| `FIORILLI_USER`     | Usuário de acesso ao sistema Fiorilli              | -      |
-| `FIORILLI_PASSWORD` | Senha de acesso ao sistema Fiorilli                | -      |
 | `FIORILLI_URL`      | URL base do sistema Fiorilli                       | -      |
-| `AHGORA_USER`       | Usuário de acesso à plataforma Ahgora              | -      |
-| `AHGORA_PASSWORD`   | Senha de acesso à plataforma Ahgora                | -      |
-| `AHGORA_COMPANY`    | Código da empresa na plataforma Ahgora             | -      |
 | `AHGORA_URL`        | URL de login da plataforma Ahgora                  | -      |
 | `HEADLESS_MODE`     | Executar navegador de forma invisível (True/False) | `True` |
 

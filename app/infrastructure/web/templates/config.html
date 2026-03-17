@@ -18,12 +18,27 @@
                 <p class="mt-1 text-sm text-gray-500">
                     Senhas necessárias para as integrações Ahgora e Fiorilli.
                 </p>
+                <p class="mt-2 text-sm text-gray-700">Configure as colunas da tabela no painel <b>Fiorilli 2.1 - Cadastro de Trabalhadores</b> e defina como padrão para seu usuário:</p>
+                <ul class="mt-3 divide-y divide-gray-200 rounded-md border border-gray-200 text-sm text-gray-700">
+                    <li class="py-1 px-2">Registro</li>
+                    <li class="py-1 px-2">Nome</li>
+                    <li class="py-1 px-2">CPF</li>
+                    <li class="py-1 px-2">Sexo</li>
+                    <li class="py-1 px-2">Dt. Nascimento</li>
+                    <li class="py-1 px-2">PIS/PASEP/NIT</li>
+                    <li class="py-1 px-2">Nome Cargo Atual</li>
+                    <li class="py-1 px-2">Nome Local Trabalho</li>
+                    <li class="py-1 px-2">Nome Unidade Orçamentária</li>
+                    <li class="py-1 px-2">Nome Vinculo</li>
+                    <li class="py-1 px-2">Dt. Admissão</li>
+                    <li class="py-1 px-2">Dt. Desligamento</li>
+                </ul>
             </div>
             <div class="mt-5 md:col-span-2 md:mt-0">
                 <form id="configForm" class="space-y-6" onsubmit="saveCredentials(event)">
                         <div class="col-span-6 sm:col-span-4">
-                            <label for="fiorilli-url" class="block text-sm font-medium text-gray-700">URL Fiorilli (Opcional - Usará .env se vazio)</label>
-                            <input type="text" name="fiorilli_url" id="fiorilli-url" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            <label for="fiorilli-url" class="block text-sm font-medium text-gray-700">URL Fiorilli</label>
+                        <input type="text" name="fiorilli_url" id="fiorilli-url" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" value={{ fiorilli_url }}>
                         </div>
 
                         <div class="col-span-6 sm:col-span-4">
@@ -37,8 +52,8 @@
                         </div>
 
                         <div class="col-span-6 sm:col-span-4">
-                            <label for="ahgora-url" class="block text-sm font-medium text-gray-700">URL Ahgora (Opcional - Usará .env se vazio)</label>
-                            <input type="text" name="ahgora_url" id="ahgora-url" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            <label for="ahgora-url" class="block text-sm font-medium text-gray-700">URL Ahgora</label>
+                            <input type="text" name="ahgora_url" id="ahgora-url" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" value={{ ahgora_url }}>
                         </div>
 
                         <div class="col-span-6 sm:col-span-4">
@@ -59,7 +74,9 @@
 
                     <div class="flex justify-end gap-x-3">
                         <div id="save-msg" class="text-sm text-green-600 hidden my-auto font-medium">Credenciais salvas na sessão!</div>
-                        <button type="submit" class="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                        <button type="submit" 
+                        onclick="window.location.href='/'"
+                        class="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
                             Salvar na Sessão
                         </button>
                     </div>

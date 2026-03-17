@@ -57,6 +57,8 @@ async def config_page(request: Request):
         "config.html",
         {
             "request": request,
+            "fiorilli_url": settings.FIORILLI_URL,
+            "ahgora_url": settings.AHGORA_URL,
         },
     )
 
