@@ -1,7 +1,7 @@
 from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Body
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -11,9 +11,9 @@ from app.core.task_registry import task_registry
 from app.domain.entities import AutomationTask, SyncJob, SyncLog
 from app.domain.enums import AutomationTaskStatus
 from app.infrastructure.db.sqlalchemy_repo import SqlAlchemyRepo
+from app.services.crypto_service import crypto_service
 from app.services.sync_service import SyncService
 from app.services.task_execution_service import TaskExecutionService
-from app.services.crypto_service import crypto_service
 
 
 class SyncCredentials(BaseModel):
@@ -168,14 +168,34 @@ def get_execution_service(db: AsyncSession = Depends(get_db)):
     return TaskExecutionService(repo=repo)
 
 
-async def _run_batch_standalone(job_id: UUID, task_type: str):
+async def _run_batch_standalone(
+    job_id: UUID,
+    task_type: str,
+    fiorilli_url: Optional[str] = None,
+    fiorilli_user: Optional[str] = None,
+    fiorilli_password: Optional[str] = None,
+    ahgora_url: Optional[str] = None,
+    ahgora_user: Optional[str] = None,
+    ahgora_company: Optional[str] = None,
+    ahgora_password: Optional[str] = None,
+):
     from app.core.database import async_session_factory
     from app.infrastructure.db.sqlalchemy_repo import SqlAlchemyRepo
 
     async with async_session_factory() as session:
         repo = SqlAlchemyRepo(session)
         service = TaskExecutionService(repo=repo)
-        await service.execute_batch(job_id, task_type)
+        await service.execute_batch(
+            job_id,
+            task_type,
+            fiorilli_url=fiorilli_url,
+            fiorilli_user=fiorilli_user,
+            fiorilli_password=fiorilli_password,
+            ahgora_url=ahgora_url,
+            ahgora_user=ahgora_user,
+            ahgora_company=ahgora_company,
+            ahgora_password=ahgora_password,
+        )
 
 
 @router.post(
@@ -188,9 +208,32 @@ async def execute_batch_tasks(
     job_id: UUID,
     task_type: str,
     background_tasks: BackgroundTasks,
+    credentials: SyncCredentials = Body(...),
 ):
+    try:
+        decrypted_fiorilli = crypto_service.decrypt(credentials.fiorilli_password)
+        decrypted_ahgora = crypto_service.decrypt(credentials.ahgora_password)
+    except Exception:
+        raise HTTPException(
+            status_code=400, detail="Invalid credential encryption payload"
+        )
+
+    fiorilli_url = credentials.fiorilli_url or settings.FIORILLI_URL
+    ahgora_url = credentials.ahgora_url or settings.AHGORA_URL
+
     # Execute batch in background with a new db session
-    background_tasks.add_task(_run_batch_standalone, job_id, task_type)
+    background_tasks.add_task(
+        _run_batch_standalone,
+        job_id,
+        task_type,
+        fiorilli_url,
+        credentials.fiorilli_user,
+        decrypted_fiorilli,
+        ahgora_url,
+        credentials.ahgora_user,
+        credentials.ahgora_company,
+        decrypted_ahgora,
+    )
     return {"message": f"Batch task execution triggered for {task_type}"}
 
 
@@ -209,14 +252,32 @@ async def cancel_batch_tasks(
     return {"message": f"Batch tasks cancelled for {task_type}"}
 
 
-async def _run_task_standalone(task_id: UUID):
+async def _run_task_standalone(
+    task_id: UUID,
+    fiorilli_url: Optional[str] = None,
+    fiorilli_user: Optional[str] = None,
+    fiorilli_password: Optional[str] = None,
+    ahgora_url: Optional[str] = None,
+    ahgora_user: Optional[str] = None,
+    ahgora_company: Optional[str] = None,
+    ahgora_password: Optional[str] = None,
+):
     from app.core.database import async_session_factory
     from app.infrastructure.db.sqlalchemy_repo import SqlAlchemyRepo
 
     async with async_session_factory() as session:
         repo = SqlAlchemyRepo(session)
         service = TaskExecutionService(repo=repo)
-        await service.execute_task(task_id)
+        await service.execute_task(
+            task_id,
+            fiorilli_url=fiorilli_url,
+            fiorilli_user=fiorilli_user,
+            fiorilli_password=fiorilli_password,
+            ahgora_url=ahgora_url,
+            ahgora_user=ahgora_user,
+            ahgora_company=ahgora_company,
+            ahgora_password=ahgora_password,
+        )
 
 
 @router.post(
@@ -228,9 +289,31 @@ async def _run_task_standalone(task_id: UUID):
 async def execute_task(
     task_id: UUID,
     background_tasks: BackgroundTasks,
+    credentials: SyncCredentials = Body(...),
 ):
+    try:
+        decrypted_fiorilli = crypto_service.decrypt(credentials.fiorilli_password)
+        decrypted_ahgora = crypto_service.decrypt(credentials.ahgora_password)
+    except Exception:
+        raise HTTPException(
+            status_code=400, detail="Invalid credential encryption payload"
+        )
+
+    fiorilli_url = credentials.fiorilli_url or settings.FIORILLI_URL
+    ahgora_url = credentials.ahgora_url or settings.AHGORA_URL
+
     # Execute in background with a new db session
-    background_tasks.add_task(_run_task_standalone, task_id)
+    background_tasks.add_task(
+        _run_task_standalone,
+        task_id,
+        fiorilli_url,
+        credentials.fiorilli_user,
+        decrypted_fiorilli,
+        ahgora_url,
+        credentials.ahgora_user,
+        credentials.ahgora_company,
+        decrypted_ahgora,
+    )
     return {"message": "Task execution triggered", "task_id": str(task_id)}
 
 

@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import threading
+from typing import Optional
 from uuid import UUID
 
 from app.core.task_registry import task_registry
@@ -10,7 +11,6 @@ from app.domain.enums import (
 from app.domain.enums import (
     AutomationTaskType as TaskType,
 )
-
 from app.domain.enums import (
     SyncStatus as JobStatus,
 )
@@ -24,7 +24,17 @@ class TaskExecutionService:
     def __init__(self, repo: SqlAlchemyRepo):
         self.repo = repo
 
-    async def execute_task(self, task_id: UUID) -> bool:
+    async def execute_task(
+        self,
+        task_id: UUID,
+        fiorilli_url: Optional[str] = None,
+        fiorilli_user: Optional[str] = None,
+        fiorilli_password: Optional[str] = None,
+        ahgora_url: Optional[str] = None,
+        ahgora_user: Optional[str] = None,
+        ahgora_company: Optional[str] = None,
+        ahgora_password: Optional[str] = None,
+    ) -> bool:
         """
         Executes a single automation task.
         Returns True if successful, False otherwise.
@@ -65,6 +75,10 @@ class TaskExecutionService:
                 task_id,
                 loop,
                 cancel_event,
+                ahgora_user=ahgora_user,
+                ahgora_password=ahgora_password,
+                ahgora_company=ahgora_company,
+                ahgora_url=ahgora_url,
             )
         except Exception as e:
             logger.exception(f"Error executing task {task_id}")
@@ -103,7 +117,18 @@ class TaskExecutionService:
         await self.repo.evaluate_and_update_job_status(task.job_id)
         return success
 
-    async def execute_batch(self, job_id: UUID, task_type: str) -> None:
+    async def execute_batch(
+        self,
+        job_id: UUID,
+        task_type: str,
+        fiorilli_url: Optional[str] = None,
+        fiorilli_user: Optional[str] = None,
+        fiorilli_password: Optional[str] = None,
+        ahgora_url: Optional[str] = None,
+        ahgora_user: Optional[str] = None,
+        ahgora_company: Optional[str] = None,
+        ahgora_password: Optional[str] = None,
+    ) -> None:
         """
         Executes all pending, failed or cancelled tasks of a certain type for a given job.
         Runs sequentially to respect browser limitations.
@@ -119,7 +144,13 @@ class TaskExecutionService:
             from app.services.leave_sync_service import LeaveSyncService
 
             leave_service = LeaveSyncService(self.repo)
-            await leave_service.execute_leaves_batch(job_id)
+            await leave_service.execute_leaves_batch(
+                job_id,
+                ahgora_user=ahgora_user,
+                ahgora_password=ahgora_password,
+                ahgora_company=ahgora_company,
+                ahgora_url=ahgora_url,
+            )
             await self.repo.evaluate_and_update_job_status(job_id)
             return
 
@@ -142,7 +173,16 @@ class TaskExecutionService:
         ]
 
         for t in batch:
-            await self.execute_task(t.id)
+            await self.execute_task(
+                t.id,
+                fiorilli_url=fiorilli_url,
+                fiorilli_user=fiorilli_user,
+                fiorilli_password=fiorilli_password,
+                ahgora_url=ahgora_url,
+                ahgora_user=ahgora_user,
+                ahgora_company=ahgora_company,
+                ahgora_password=ahgora_password,
+            )
 
         await self.repo.evaluate_and_update_job_status(job_id)
 
@@ -221,6 +261,10 @@ class TaskExecutionService:
         task_id: UUID,
         loop: asyncio.AbstractEventLoop,
         cancel_event: threading.Event = None,
+        ahgora_user: Optional[str] = None,
+        ahgora_password: Optional[str] = None,
+        ahgora_company: Optional[str] = None,
+        ahgora_url: Optional[str] = None,
     ) -> bool:
         """
         Runs the actual Selenium browser automation based on task type.
@@ -245,6 +289,10 @@ class TaskExecutionService:
         browser = None
         try:
             browser = AhgoraBrowser(
+                ahgora_user=ahgora_user,
+                ahgora_password=ahgora_password,
+                ahgora_company=ahgora_company,
+                ahgora_url=ahgora_url,
                 log_callback=log_cb,
                 headless=settings.HEADLESS_MODE_TASKS,
                 cancel_event=cancel_event,

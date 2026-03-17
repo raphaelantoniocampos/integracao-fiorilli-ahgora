@@ -109,7 +109,7 @@
                             <div class="flex justify-end items-center space-x-1">
                                 {% if group.pending > 0 or group.failed > 0 or group.cancelled > 0 %}
                                 <button
-                                    onclick="event.stopPropagation(); fetch('/api/sync/tasks/batch/execute?job_id={{ job_id }}&task_type={{ group.type }}', {method: 'POST'}).then(() => { this.classList.add('opacity-50', 'cursor-not-allowed'); this.disabled = true; window.location.reload(); })"
+                                    onclick="event.stopPropagation(); window.executeBatch('{{ job_id }}', '{{ group.type.value if group.type.value is defined else group.type }}', this)"
                                     class="text-emerald-400 hover:text-emerald-700 p-3 hover:bg-emerald-50 rounded-full transition-all"
                                     title="Executar Lote de Tarefas">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -124,7 +124,7 @@
 
                                 {% if group.running > 0 or group.pending > 0 %}
                                 <button
-                                    onclick="event.stopPropagation(); fetch('/api/sync/tasks/batch/cancel?job_id={{ job_id }}&task_type={{ group.type }}', {method: 'POST'}).then(() => { this.classList.add('opacity-50', 'cursor-not-allowed'); this.disabled = true; window.location.reload(); })"
+                                    onclick="event.stopPropagation(); window.cancelBatch('{{ job_id }}', '{{ group.type.value if group.type.value is defined else group.type }}', this)"
                                     class="text-red-400 hover:text-red-700 p-3 hover:bg-red-50 rounded-full transition-all"
                                     title="Cancelar Lote de Tarefas">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

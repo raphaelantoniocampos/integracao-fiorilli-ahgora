@@ -6,11 +6,10 @@ from pathlib import Path
 from typing import Optional
 from uuid import UUID
 
-from app.core.task_registry import task_registry
-
 import pandas as pd
 
 from app.core.settings import settings
+from app.core.task_registry import task_registry
 from app.domain.enums import AutomationTaskStatus
 from app.infrastructure.automation.web.ahgora_browser import AhgoraBrowser
 from app.infrastructure.db.sqlalchemy_repo import SqlAlchemyRepo
@@ -22,7 +21,14 @@ class LeaveSyncService:
     def __init__(self, repo: SqlAlchemyRepo):
         self.repo = repo
 
-    async def execute_leaves_batch(self, job_id: UUID) -> None:
+    async def execute_leaves_batch(
+        self,
+        job_id: UUID,
+        ahgora_user: Optional[str] = None,
+        ahgora_password: Optional[str] = None,
+        ahgora_company: Optional[str] = None,
+        ahgora_url: Optional[str] = None,
+    ) -> None:
         """
         Executes all pending ADD_LEAVE tasks as a single batch using the Ahgora file importer.
         """
@@ -80,7 +86,16 @@ class LeaveSyncService:
         log_lock = asyncio.Lock()
         try:
             results = await asyncio.to_thread(
-                self._run_browser_batch_import, df, job_id, loop, log_lock, cancel_event
+                self._run_browser_batch_import,
+                df,
+                job_id,
+                loop,
+                log_lock,
+                cancel_event,
+                ahgora_user=ahgora_user,
+                ahgora_password=ahgora_password,
+                ahgora_company=ahgora_company,
+                ahgora_url=ahgora_url,
             )
 
             # Analyze results and update task statuses
@@ -172,6 +187,10 @@ class LeaveSyncService:
         loop: asyncio.AbstractEventLoop,
         log_lock: asyncio.Lock,
         cancel_event: Optional[threading.Event] = None,
+        ahgora_user: Optional[str] = None,
+        ahgora_password: Optional[str] = None,
+        ahgora_company: Optional[str] = None,
+        ahgora_url: Optional[str] = None,
     ) -> list[dict]:
         """
         Sync execution of the browser automation for leaves batch.
@@ -196,6 +215,10 @@ class LeaveSyncService:
             )
 
         browser = AhgoraBrowser(
+            ahgora_user=ahgora_user,
+            ahgora_password=ahgora_password,
+            ahgora_company=ahgora_company,
+            ahgora_url=ahgora_url,
             log_callback=log_cb,
             headless=settings.HEADLESS_MODE_TASKS,
             cancel_event=cancel_event,

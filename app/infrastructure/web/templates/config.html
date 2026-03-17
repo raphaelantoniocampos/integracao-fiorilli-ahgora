@@ -75,7 +75,6 @@
                     <div class="flex justify-end gap-x-3">
                         <div id="save-msg" class="text-sm text-green-600 hidden my-auto font-medium">Credenciais salvas na sessão!</div>
                         <button type="submit" 
-                        onclick="window.location.href='/'"
                         class="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
                             Salvar na Sessão
                         </button>
@@ -120,7 +119,10 @@
 
         const msg = document.getElementById("save-msg");
         msg.classList.remove("hidden");
-        setTimeout(() => msg.classList.add("hidden"), 3000);
+        setTimeout(() => {
+            msg.classList.add("hidden");
+            window.location.href = '/';
+        }, 1500);
     }
 </script>
 {% endblock %}

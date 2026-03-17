@@ -1,0 +1,244 @@
+console.log("Dashboard JS loaded");
+// Helper functions for encryption
+function str2ab(str) {
+    const buf = new ArrayBuffer(str.length);
+    const bufView = new Uint8Array(buf);
+    for (let i = 0, strLen = str.length; i < strLen; i++) {
+        bufView[i] = str.charCodeAt(i);
+    }
+    return buf;
+}
+
+async function importPublicKey(pemString) {
+    const pemHeader = "-----BEGIN PUBLIC KEY-----";
+    const pemFooter = "-----END PUBLIC KEY-----";
+    let pemContent = pemString.substring(pemString.indexOf(pemHeader) + pemHeader.length, pemString.indexOf(pemFooter));
+    pemContent = pemContent.replace(/\s/g, '');
+
+    const binaryDerString = window.atob(pemContent);
+    const binaryDer = str2ab(binaryDerString);
+
+    return await window.crypto.subtle.importKey(
+        "spki",
+        binaryDer,
+        {
+            name: "RSA-OAEP",
+            hash: "SHA-256"
+        },
+        true,
+        ["encrypt"]
+    );
+}
+
+async function encryptString(text, publicKey) {
+    const enc = new TextEncoder();
+    const encoded = enc.encode(text);
+    const encrypted = await window.crypto.subtle.encrypt(
+        {
+            name: "RSA-OAEP"
+        },
+        publicKey,
+        encoded
+    );
+
+    let binary = '';
+    const bytes = new Uint8Array(encrypted);
+    const len = bytes.byteLength;
+    for (let i = 0; i < len; i++) {
+        binary += String.fromCharCode(bytes[i]);
+    }
+    return window.btoa(binary);
+}
+
+// Credential retrieval and encryption logic
+async function getEncryptedCredentials() {
+    const fiorilliPwd = sessionStorage.getItem('fiorilli_password');
+    const ahgoraPwd = sessionStorage.getItem('ahgora_password');
+    const fiorilliUser = sessionStorage.getItem('fiorilli_user');
+    const ahgoraUser = sessionStorage.getItem('ahgora_user');
+    const ahgoraCompany = sessionStorage.getItem('ahgora_company');
+    const fiorilliUrl = sessionStorage.getItem('fiorilli_url') || '';
+    const ahgoraUrl = sessionStorage.getItem('ahgora_url') || '';
+
+    if (!fiorilliPwd || !ahgoraPwd || !fiorilliUser || !ahgoraUser || !ahgoraCompany) {
+        alert('Please configure your credentials first.');
+        window.location.href = '/config';
+        return null;
+    }
+
+    const keysResponse = await fetch('/api/sync/public-key');
+    if (!keysResponse.ok) {
+        throw new Error("Falha ao obter chave pública");
+    }
+    const pkData = await keysResponse.json();
+    const publicKey = await importPublicKey(pkData.public_key);
+
+    const encryptedFiorilli = await encryptString(fiorilliPwd, publicKey);
+    const encryptedAhgora = await encryptString(ahgoraPwd, publicKey);
+
+    return {
+        fiorilli_user: fiorilliUser,
+        ahgora_user: ahgoraUser,
+        ahgora_company: ahgoraCompany,
+        fiorilli_password: encryptedFiorilli,
+        ahgora_password: encryptedAhgora,
+        fiorilli_url: fiorilliUrl || null,
+        ahgora_url: ahgoraUrl || null
+    };
+}
+
+// Action functions
+async function startSync(event) {
+    console.log("Starting sync...");
+    const btn = event.currentTarget;
+    const btnText = document.getElementById("syncBtnText");
+
+    btn.disabled = true;
+    if (btnText) btnText.innerText = "Iniciando...";
+
+    try {
+        const credentials = await getEncryptedCredentials();
+        if (!credentials) return;
+
+        const response = await fetch('/api/sync/run', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(credentials)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || "Falha ao iniciar sincronização");
+        }
+
+        setTimeout(() => typeof htmx !== 'undefined' && htmx.trigger('#jobs-list', 'refresh'), 500);
+    } catch (error) {
+        alert(error.message || "Ocorreu um erro ao iniciar a sincronização.");
+        console.error(error);
+    } finally {
+        btn.disabled = false;
+        if (btnText) btnText.innerText = "Iniciar Sincronização";
+    }
+}
+
+async function executeBatch(jobId, taskType, btn) {
+    console.log("Executing batch:", jobId, taskType);
+    // alert("DEBUG: executeBatch called for " + taskType);
+    if (btn) {
+        btn.disabled = true;
+        btn.classList.add('opacity-50', 'cursor-not-allowed');
+    }
+
+    try {
+        const credentials = await getEncryptedCredentials();
+        if (!credentials) {
+            console.warn("No credentials found");
+            // alert("DEBUG: No credentials found");
+            if (btn) {
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+            return;
+        }
+
+        const url = `/api/sync/tasks/batch/execute?job_id=${jobId}&task_type=${encodeURIComponent(taskType)}`;
+        console.log("Fetching URL:", url);
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(credentials)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || "Falha ao executar lote");
+        }
+
+        console.log("Batch triggered successfully, reloading...");
+        window.location.reload();
+    } catch (error) {
+        alert(error.message || "Erro ao executar lote.");
+        console.error(error);
+        if (btn) {
+            btn.disabled = false;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+    }
+}
+
+async function executeTask(taskId, btn) {
+    console.log("Executing task:", taskId);
+    if (btn) {
+        btn.disabled = true;
+        btn.classList.add('opacity-50', 'cursor-not-allowed');
+    }
+
+    try {
+        const credentials = await getEncryptedCredentials();
+        if (!credentials) {
+            console.warn("No credentials found");
+            if (btn) {
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+            return;
+        }
+
+        const response = await fetch(`/api/sync/tasks/${taskId}/execute`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(credentials)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || "Falha ao executar tarefa");
+        }
+
+        console.log("Task triggered successfully, reloading...");
+        window.location.reload();
+    } catch (error) {
+        alert(error.message || "Erro ao executar tarefa.");
+        console.error(error);
+        if (btn) {
+            btn.disabled = false;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+    }
+}
+
+async function cancelBatch(jobId, taskType, btn) {
+    console.log("Cancelling batch:", jobId, taskType);
+    if (btn) {
+        btn.disabled = true;
+        btn.classList.add('opacity-50', 'cursor-not-allowed');
+    }
+
+    try {
+        const response = await fetch(`/api/sync/tasks/batch/cancel?job_id=${jobId}&task_type=${encodeURIComponent(taskType)}`, {
+            method: 'POST'
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || "Falha ao cancelar lote");
+        }
+
+        console.log("Batch cancelled successfully, reloading...");
+        window.location.reload();
+    } catch (error) {
+        alert(error.message || "Erro ao cancelar lote.");
+        console.error(error);
+        if (btn) {
+            btn.disabled = false;
+            btn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+    }
+}
+
+// Global exposure
+window.startSync = startSync;
+window.executeBatch = executeBatch;
+window.executeTask = executeTask;
+window.cancelBatch = cancelBatch;
