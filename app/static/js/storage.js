@@ -1,4 +1,3 @@
-console.log("Dashboard JS loaded");
 // Helper functions for encryption
 function str2ab(str) {
     const buf = new ArrayBuffer(str.length);
@@ -52,16 +51,16 @@ async function encryptString(text, publicKey) {
 
 // Credential retrieval and encryption logic
 async function getEncryptedCredentials() {
-    const fiorilliPwd = sessionStorage.getItem('fiorilli_password');
-    const ahgoraPwd = sessionStorage.getItem('ahgora_password');
-    const fiorilliUser = sessionStorage.getItem('fiorilli_user');
-    const ahgoraUser = sessionStorage.getItem('ahgora_user');
-    const ahgoraCompany = sessionStorage.getItem('ahgora_company');
-    const fiorilliUrl = sessionStorage.getItem('fiorilli_url') || '';
-    const ahgoraUrl = sessionStorage.getItem('ahgora_url') || '';
+    const fiorilliPwd = localStorage.getItem('fiorilli_password');
+    const ahgoraPwd = localStorage.getItem('ahgora_password');
+    const fiorilliUser = localStorage.getItem('fiorilli_user');
+    const ahgoraUser = localStorage.getItem('ahgora_user');
+    const ahgoraCompany = localStorage.getItem('ahgora_company');
+    const fiorilliUrl = localStorage.getItem('fiorilli_url') || '';
+    const ahgoraUrl = localStorage.getItem('ahgora_url') || '';
 
     if (!fiorilliPwd || !ahgoraPwd || !fiorilliUser || !ahgoraUser || !ahgoraCompany) {
-        alert('Please configure your credentials first.');
+        alert('Configure suas credenciais.');
         window.location.href = '/config';
         return null;
     }
@@ -89,7 +88,6 @@ async function getEncryptedCredentials() {
 
 // Action functions
 async function startSync(event) {
-    console.log("Starting sync...");
     const btn = event.currentTarget;
     const btnText = document.getElementById("syncBtnText");
 
@@ -122,8 +120,6 @@ async function startSync(event) {
 }
 
 async function executeBatch(jobId, taskType, btn) {
-    console.log("Executing batch:", jobId, taskType);
-    // alert("DEBUG: executeBatch called for " + taskType);
     if (btn) {
         btn.disabled = true;
         btn.classList.add('opacity-50', 'cursor-not-allowed');
@@ -142,7 +138,6 @@ async function executeBatch(jobId, taskType, btn) {
         }
 
         const url = `/api/sync/tasks/batch/execute?job_id=${jobId}&task_type=${encodeURIComponent(taskType)}`;
-        console.log("Fetching URL:", url);
 
         const response = await fetch(url, {
             method: 'POST',
@@ -155,7 +150,6 @@ async function executeBatch(jobId, taskType, btn) {
             throw new Error(errorData.detail || "Falha ao executar lote");
         }
 
-        console.log("Batch triggered successfully, reloading...");
         window.location.reload();
     } catch (error) {
         alert(error.message || "Erro ao executar lote.");
@@ -168,7 +162,6 @@ async function executeBatch(jobId, taskType, btn) {
 }
 
 async function executeTask(taskId, btn) {
-    console.log("Executing task:", taskId);
     if (btn) {
         btn.disabled = true;
         btn.classList.add('opacity-50', 'cursor-not-allowed');
@@ -196,7 +189,6 @@ async function executeTask(taskId, btn) {
             throw new Error(errorData.detail || "Falha ao executar tarefa");
         }
 
-        console.log("Task triggered successfully, reloading...");
         window.location.reload();
     } catch (error) {
         alert(error.message || "Erro ao executar tarefa.");
@@ -209,7 +201,6 @@ async function executeTask(taskId, btn) {
 }
 
 async function cancelBatch(jobId, taskType, btn) {
-    console.log("Cancelling batch:", jobId, taskType);
     if (btn) {
         btn.disabled = true;
         btn.classList.add('opacity-50', 'cursor-not-allowed');
@@ -225,7 +216,6 @@ async function cancelBatch(jobId, taskType, btn) {
             throw new Error(errorData.detail || "Falha ao cancelar lote");
         }
 
-        console.log("Batch cancelled successfully, reloading...");
         window.location.reload();
     } catch (error) {
         alert(error.message || "Erro ao cancelar lote.");
