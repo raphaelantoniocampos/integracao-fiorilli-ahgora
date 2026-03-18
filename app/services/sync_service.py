@@ -1222,7 +1222,7 @@ class SyncService:
                 AutomationTask(
                     job_id=job_id,
                     type=AutomationTaskType.ADD_LEAVE,
-                    payload={"name": "Afastamentos", "leaves": leaves_payloads},
+                    payload={"name": "AFASTAMENTOS", "leaves": leaves_payloads},
                 )
             )
 
