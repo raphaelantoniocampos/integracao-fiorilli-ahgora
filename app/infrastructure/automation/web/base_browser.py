@@ -145,7 +145,7 @@ class BaseBrowser(ABC):
             except Exception as e:
                 error = e
                 if i >= max_tries - 1:
-                    self._log("ERROR", f"Failed after {max_tries} attempts: {e}")
+                    logger.error(f"Failed after {max_tries} attempts: {e}")
                     raise e
                 self.wait(self.DELAY)
         if error:

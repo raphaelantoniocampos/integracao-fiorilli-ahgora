@@ -73,8 +73,7 @@ class LeaveSyncService:
             task_id=batch_task.id,
         )
 
-        # Build DataFrame from task payload array
-        df = pd.DataFrame(batch_payloads)
+
 
         cancel_event = task_registry.get_cancel_event(job_id)
         if not cancel_event:
@@ -87,7 +86,7 @@ class LeaveSyncService:
         try:
             results = await asyncio.to_thread(
                 self._run_browser_batch_import,
-                df,
+                batch_payloads,
                 job_id,
                 loop,
                 log_lock,
@@ -182,7 +181,7 @@ class LeaveSyncService:
 
     def _run_browser_batch_import(
         self,
-        df: pd.DataFrame,
+        batch_payloads: list[dict],
         job_id: UUID,
         loop: asyncio.AbstractEventLoop,
         log_lock: asyncio.Lock,
@@ -203,11 +202,12 @@ class LeaveSyncService:
         def log_cb(level: str, msg: str):
             asyncio.run_coroutine_threadsafe(safe_log(level, msg), loop)
 
+        df = pd.DataFrame(batch_payloads)
         results = []
-        for i, row in df.iterrows():
+        for i, row in enumerate(batch_payloads):
             results.append(
                 {
-                    "payload": row.to_dict(),
+                    "payload": row,
                     "status": "success",
                     "message": "",
                     "index": i,

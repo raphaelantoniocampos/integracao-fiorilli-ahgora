@@ -99,7 +99,7 @@ class AhgoraLeaveModel(Base):
     cod: Mapped[str] = mapped_column(String)
     cod_name: Mapped[str] = mapped_column(String, nullable=True)
     start_date: Mapped[datetime] = mapped_column(DateTime)
-    end_date: Mapped[datetime] = mapped_column(DateTime)
+    end_date: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     start_time: Mapped[str] = mapped_column(String, nullable=True)
     end_time: Mapped[str] = mapped_column(String, nullable=True)
     duration: Mapped[int] = mapped_column(nullable=True)

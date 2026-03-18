@@ -832,7 +832,7 @@ class SyncService:
         for pt, en in PT_MONTHS.items():
             date_str = date_str.replace(f"{pt}/", f"{en}/")
 
-        formats = ["%d/%b/%Y", "%d/%m/%Y", "%d/%b/%Y %H:%M"]
+        formats = ["%d/%b/%Y", "%d/%m/%Y"]
         for fmt in formats:
             try:
                 return pd.to_datetime(date_str, format=fmt, errors="raise")
@@ -871,17 +871,29 @@ class SyncService:
                 pd.DataFrame(),
             )
 
+        # Combine Ahgora state prioritizing CSV over DB
+        ahgora_csv_ids = set()
+        if not ahgora_csv_employees.empty:
+            ahgora_csv_ids = set(ahgora_csv_employees["id"])
+            db_not_in_csv = ahgora_employees[~ahgora_employees["id"].isin(ahgora_csv_ids)]
+            common_cols = list(set(ahgora_employees.columns) & set(ahgora_csv_employees.columns))
+            combined_ahgora = pd.concat(
+                 [ahgora_csv_employees[common_cols], db_not_in_csv[common_cols]],
+                 ignore_index=True,
+            )
+        else:
+            combined_ahgora = ahgora_employees
+
         # Dismissed logic
         fiorilli_dismissed_df = fiorilli_employees[
             fiorilli_employees["dismissal_date"].notna()
         ]
         fiorilli_dismissed_ids = set(fiorilli_dismissed_df["id"])
 
-        ahgora_dismissed_df = ahgora_employees[
-            ahgora_employees["dismissal_date"].notna()
+        ahgora_dismissed_df = combined_ahgora[
+            combined_ahgora["dismissal_date"].notna()
         ]
         ahgora_dismissed_ids = set(ahgora_dismissed_df["id"])
-
         dismissed_ids = ahgora_dismissed_ids | fiorilli_dismissed_ids
 
         fiorilli_active_employees = fiorilli_employees[
@@ -897,10 +909,7 @@ class SyncService:
             missing_from_db["binding"] != "AUXILIO RECLUSAO"
         ]
 
-        # Split: already in Ahgora CSV (seed DB only) vs truly new (need Selenium)
-        ahgora_csv_ids = (
-            set(ahgora_csv_employees["id"]) if not ahgora_csv_employees.empty else set()
-        )
+
 
         # Truly new — not in DB AND not in Ahgora CSV → need Selenium automation
         new_employees_df = missing_from_db[~missing_from_db["id"].isin(ahgora_csv_ids)]
@@ -916,9 +925,9 @@ class SyncService:
         )
 
         # Dismissed employees
-        dismissed_employees_df = ahgora_employees[
-            ahgora_employees["id"].isin(fiorilli_dismissed_ids)
-            & ~ahgora_employees["id"].isin(ahgora_dismissed_ids)
+        dismissed_employees_df = combined_ahgora[
+            combined_ahgora["id"].isin(fiorilli_dismissed_ids)
+            & ~combined_ahgora["id"].isin(ahgora_dismissed_ids)
         ]
         if not dismissed_employees_df.empty:
             dismissed_employees_df = dismissed_employees_df.drop(
@@ -942,21 +951,6 @@ class SyncService:
             )
 
         # Changed employees: compare Fiorilli vs combined Ahgora state (DB + CSV)
-        # This ensures changes are detected even for employees just seeded from CSV
-        if not ahgora_csv_employees.empty:
-            csv_not_in_db = ahgora_csv_employees[
-                ~ahgora_csv_employees["id"].isin(ahgora_db_ids)
-            ]
-            # Align columns before concat
-            common_cols = list(
-                set(ahgora_employees.columns) & set(csv_not_in_db.columns)
-            )
-            combined_ahgora = pd.concat(
-                [ahgora_employees[common_cols], csv_not_in_db[common_cols]],
-                ignore_index=True,
-            )
-        else:
-            combined_ahgora = ahgora_employees
 
         changed_employees_df = await self._get_changed_employees_df(
             fiorilli_active_employees, combined_ahgora
@@ -1160,7 +1154,7 @@ class SyncService:
             import datetime as dt  # Inline import to reach date class safely
 
             if isinstance(val, (pd.Timestamp, datetime, dt.date)):
-                return val.isoformat()
+                return val.strftime("%d/%m/%Y")
             if isinstance(val, (np.integer,)):
                 return int(val)
             if isinstance(val, (np.floating,)):
@@ -1308,8 +1302,8 @@ class SyncService:
 
                 # Check discrepancies using the _get_changed_employees_df logic
                 discrepancies_df = await self._get_changed_employees_df(
-                    fiorilli_active_employees=db_common,  # Treat DB as source of truth for this comparison
-                    ahgora_employees=csv_common,
+                    fiorilli_active_employees=csv_common,  # Treat CSV as source of truth for this comparison
+                    ahgora_employees=db_common,
                 )
 
                 if not discrepancies_df.empty:
