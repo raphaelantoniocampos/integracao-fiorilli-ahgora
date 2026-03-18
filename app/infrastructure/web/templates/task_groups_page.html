@@ -87,22 +87,24 @@
                                 {% set total = group.total %}
                                 {% if total > 0 %}
                                 {% set success_pct = (group.success / total) * 100 %}
-                                {% set failed_pct = (group.failed / total) * 100 %}
                                 {% set running_pct = (group.running / total) * 100 %}
+                                {% set pending_pct = (group.pending / total) * 100 %}
+                                {% set failed_pct = (group.failed / total) * 100 %}
+                                {% set cancelled_pct = (group.cancelled / total) * 100 %}
                                 <div class="bg-emerald-500 h-2.5" style="width: {{ success_pct }}%"></div>
                                 <div class="bg-blue-500 h-2.5 animate-pulse" style="width: {{ running_pct }}%"></div>
+                                <div class="bg-indigo-500 h-2.5" style="width: {{ pending_pct }}%"></div>
                                 <div class="bg-red-500 h-2.5" style="width: {{ failed_pct }}%"></div>
+                                <div class="bg-slate-200 h-2.5" style="width: {{ cancelled_pct }}%"></div>
                                 {% endif %}
                             </div>
                         </td>
                         <td class="px-6 py-4 text-center whitespace-nowrap" onclick="event.stopPropagation()">
                             <div class="flex justify-center gap-2 text-xs font-medium">
-                                <span class="text-emerald-600 bg-emerald-50 px-2 rounded" title="Sucesso">{{
-                                    group.success }}</span>
-                                <span class="text-rose-600 bg-rose-50 px-2 rounded" title="Falha">{{ group.failed
-                                    }}</span>
-                                <span class="text-slate-600 bg-slate-100 px-2 rounded" title="Restantes">{{
-                                    group.pending + group.running + group.cancelled }} / {{ group.total }}</span>
+                                <span class="text-emerald-600 bg-emerald-50 px-2 rounded" title="Sucesso">{{ group.success }}</span>
+                                <span class="text-indigo-600 bg-indigo-50 px-2 rounded" title="Pendente">{{ group.pending }}</span>
+                                <span class="text-rose-600 bg-rose-50 px-2 rounded" title="Falha">{{ group.failed }}</span>
+                                <span class="text-slate-600 bg-slate-50 px-2 rounded" title="Cancelado">{{ group.cancelled }}</span>
                             </div>
                         </td>
                         <td class="px-6 py-4 text-right whitespace-nowrap" onclick="event.stopPropagation()">
