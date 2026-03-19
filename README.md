@@ -76,21 +76,6 @@ uv run uvicorn app.main:app --reload
 
 ---
 
-## 📑 Documentação da API
-
-| Método | Endpoint                   | Descrição                                |
-|:------ |:-------------------------- |:---------------------------------------- |
-| `POST` | `/api/sync/run`            | Inicia uma nova tarefa de sincronização  |
-| `GET`  | `/api/sync/jobs`           | Lista todas as tarefas de sincronização  |
-| `GET`  | `/api/sync/jobs/{id}`      | Obtém detalhes específicos de uma tarefa |
-| `GET`  | `/api/sync/jobs/{id}/logs` | Busca os logs detalhados de uma tarefa   |
-| `POST` | `/api/sync/jobs/{id}/kill` | Interrompe uma tarefa em andamento       |
-| `GET`  | `/health`                  | Status de integridade do serviço         |
-
-Para detalhes completos dos payloads, parâmetros e respostas, acesse a documentação interativa Swagger via `http://localhost:8000/docs` após iniciar o projeto.
-
----
-
 ## 📂 Estrutura do Projeto
 
 ```text
