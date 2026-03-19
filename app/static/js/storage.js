@@ -1,3 +1,6 @@
+const EXPIRATION_TIME_DAYS = 5
+const EXPIRATION_TIME_MS = EXPIRATION_TIME_DAYS * 24 * 60 * 60 * 1000;
+
 // Helper functions for encryption
 function str2ab(str) {
     const buf = new ArrayBuffer(str.length);
@@ -6,6 +9,31 @@ function str2ab(str) {
         bufView[i] = str.charCodeAt(i);
     }
     return buf;
+}
+
+function checkAndHandleExpiration() {
+    const lastSaved = localStorage.getItem('credentials_timestamp');
+
+    if (lastSaved) {
+        const now = new Date().getTime();
+        const timePassed = now - parseInt(lastSaved);
+
+        if (timePassed > EXPIRATION_TIME_MS) {
+            console.log("Credentials expired. Cleaning up...");
+
+            const keysToClear = [
+                'fiorilli_password', 'ahgora_password', 'fiorilli_user',
+                'ahgora_user', 'ahgora_company', 'credentials_timestamp',
+                'fiorilli_url', 'ahgora_url'
+            ];
+
+            keysToClear.forEach(key => localStorage.removeItem(key));
+            return true;
+        }
+    }
+
+    localStorage.setItem('credentials_timestamp', new Date().getTime().toString());
+    return false;
 }
 
 async function importPublicKey(pemString) {
@@ -51,6 +79,8 @@ async function encryptString(text, publicKey) {
 
 // Credential retrieval and encryption logic
 async function getEncryptedCredentials() {
+    const isExpired = checkAndHandleExpiration();
+
     const fiorilliPwd = localStorage.getItem('fiorilli_password');
     const ahgoraPwd = localStorage.getItem('ahgora_password');
     const fiorilliUser = localStorage.getItem('fiorilli_user');
@@ -59,8 +89,8 @@ async function getEncryptedCredentials() {
     const fiorilliUrl = localStorage.getItem('fiorilli_url') || '';
     const ahgoraUrl = localStorage.getItem('ahgora_url') || '';
 
-    if (!fiorilliPwd || !ahgoraPwd || !fiorilliUser || !ahgoraUser || !ahgoraCompany) {
-        alert('Configure suas credenciais.');
+    if (isExpired || !fiorilliPwd || !ahgoraPwd || !fiorilliUser || !ahgoraUser || !ahgoraCompany) {
+        alert(isExpired ? 'Sua sessão expirou. Por favor, configure novamente.' : 'Configure suas credenciais.');
         window.location.href = '/config';
         return null;
     }

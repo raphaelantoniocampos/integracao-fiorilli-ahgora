@@ -114,7 +114,8 @@
                 const val = document.getElementById(elId).value;
                 localStorage.setItem(f, val);
             });
-        
+
+        localStorage.setItem('credentials_timestamp', new Date().getTime().toString());
 
         const msg = document.getElementById("save-msg");
         msg.classList.remove("hidden");
