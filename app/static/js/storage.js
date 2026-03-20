@@ -45,16 +45,21 @@ async function importPublicKey(pemString) {
     const binaryDerString = window.atob(pemContent);
     const binaryDer = str2ab(binaryDerString);
 
-    return await window.crypto.subtle.importKey(
-        "spki",
-        binaryDer,
-        {
-            name: "RSA-OAEP",
-            hash: "SHA-256"
-        },
-        true,
-        ["encrypt"]
-    );
+    try {
+        return await window.crypto.subtle.importKey(
+            "spki",
+            binaryDer,
+            {
+                name: "RSA-OAEP",
+                hash: "SHA-256"
+            },
+            true,
+            ["encrypt"]
+        );
+    }
+    catch (TypeError) {
+        return false;
+    }
 }
 
 async function encryptString(text, publicKey) {
@@ -79,6 +84,7 @@ async function encryptString(text, publicKey) {
 
 // Credential retrieval and encryption logic
 async function getEncryptedCredentials() {
+
     const isExpired = checkAndHandleExpiration();
 
     const fiorilliPwd = localStorage.getItem('fiorilli_password');
@@ -100,7 +106,13 @@ async function getEncryptedCredentials() {
         throw new Error("Falha ao obter chave pública");
     }
     const pkData = await keysResponse.json();
+
     const publicKey = await importPublicKey(pkData.public_key);
+    if (!publicKey) {
+        const currentUrl = window.location.origin;
+        alert(`O seu navegador está bloqueando as APIs de criptografia porque esta conexão não é segura (HTTP).\n\nPara resolver em rede local:\n1. Acesse chrome://flags/#unsafely-treat-insecure-origin-as-secure\n2. Ative a opção e adicione: ${currentUrl}\n3. Reinicie o navegador.`);
+        return null;
+    }
 
     const encryptedFiorilli = await encryptString(fiorilliPwd, publicKey);
     const encryptedAhgora = await encryptString(ahgoraPwd, publicKey);
