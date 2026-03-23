@@ -172,6 +172,52 @@ async def get_task_groups_page(
     )
 
 
+@router.get("/jobs/{job_id}/tasks/summary")
+async def get_task_groups_summary(
+    job_id: UUID, service: SyncService = Depends(get_service)
+):
+    from collections import defaultdict
+    from app.domain.enums import AutomationTaskStatus
+
+    tasks = await service.get_automation_tasks(job_id)
+
+    def _default_group() -> Dict[str, Any]:
+        return {
+            "type": "",
+            "total": 0,
+            "pending": 0,
+            "running": 0,
+            "success": 0,
+            "failed": 0,
+            "cancelled": 0,
+        }
+
+    groups: Dict[Any, Dict[str, Any]] = defaultdict(_default_group)
+
+    for t in tasks:
+        group = groups[t.type]
+        group["type"] = str(t.type) if t.type else "" # ensures JSON serialization
+        if hasattr(t.type, "name"):
+            group["type"] = t.type.name
+        elif hasattr(t.type, "value"):
+            group["type"] = t.type.value
+            
+        group["total"] += 1
+
+        if t.status == AutomationTaskStatus.PENDING:
+            group["pending"] += 1
+        elif t.status == AutomationTaskStatus.RUNNING:
+            group["running"] += 1
+        elif t.status == AutomationTaskStatus.SUCCESS:
+            group["success"] += 1
+        elif t.status == AutomationTaskStatus.FAILED:
+            group["failed"] += 1
+        elif t.status == AutomationTaskStatus.CANCELLED:
+            group["cancelled"] += 1
+
+    return {"groups": list(groups.values())}
+
+
 @router.get("/partials/task-details-inline")
 async def get_task_details_inline_partial(
     request: Request,

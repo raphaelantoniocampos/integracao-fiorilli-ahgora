@@ -975,7 +975,7 @@ class SyncService:
         merged = fiorilli_active_employees.merge(
             ahgora_employees,
             on="id",
-            suffixes=("_fiorilli", "_ahgora"),
+            suffixes=("_expected", "_actual"),
             how="inner",
         )
 
@@ -983,7 +983,7 @@ class SyncService:
         # and CSV format (dd/mm/yyyy) are comparable
         for col in COLUMNS_TO_VERIFY_CHANGE:
             if "date" in col:
-                for suffix in ("_fiorilli", "_ahgora"):
+                for suffix in ("_expected", "_actual"):
                     col_name = f"{col}{suffix}"
                     if col_name in merged:
                         merged[col_name] = pd.to_datetime(
@@ -991,25 +991,73 @@ class SyncService:
                         ).dt.strftime("%d/%m/%Y")
 
         for col in COLUMNS_TO_VERIFY_CHANGE:
-            if f"{col}_fiorilli" in merged:
-                merged[f"{col}_fiorilli_norm"] = merged[f"{col}_fiorilli"].apply(
+            if f"{col}_expected" in merged:
+                merged[f"{col}_expected_norm"] = merged[f"{col}_expected"].apply(
                     self._normalize_text
                 )
-            if f"{col}_ahgora" in merged:
-                merged[f"{col}_ahgora_norm"] = merged[f"{col}_ahgora"].apply(
+            if f"{col}_actual" in merged:
+                merged[f"{col}_actual_norm"] = merged[f"{col}_actual"].apply(
                     self._normalize_text
                 )
 
         change_conditions = []
         placeholder = "___NULL___"
         for col in COLUMNS_TO_VERIFY_CHANGE:
-            f_col = f"{col}_fiorilli_norm"
-            a_col = f"{col}_ahgora_norm"
+            f_col = f"{col}_expected_norm"
+            a_col = f"{col}_actual_norm"
             if f_col in merged and a_col in merged:
                 condition = merged[f_col].fillna(placeholder) != merged[a_col].fillna(
                     placeholder
                 )
                 change_conditions.append(condition)
+
+        # Check location
+        from app.core.settings import settings
+        import csv
+        import ast
+        csv_path = settings.BASE_DIR / "app" / "core" / "department_to_location.csv"
+        dept_to_loc = {}
+        if csv_path.exists():
+            try:
+                with open(csv_path, mode='r', encoding='latin1') as f:
+                    reader = csv.reader(f)
+                    for row in reader:
+                        if len(row) >= 2:
+                            dept = row[0].strip().upper()
+                            val = row[1].strip()
+                            if val.startswith('[') and val.endswith(']'):
+                                try:
+                                    target_locations = [x.strip().upper() for x in ast.literal_eval(val)]
+                                except Exception:
+                                    target_locations = [val.upper()]
+                            else:
+                                target_locations = [x.strip().upper() for x in val.split(';')]
+                            dept_to_loc[dept] = sorted(target_locations)
+            except Exception as e:
+                logger.warning(f"Could not read department_to_location.csv in sync_service: {e}")
+
+        def extract_ahgora_locations(val):
+            if not isinstance(val, str) or pd.isna(val):
+                 return []
+            val = val.strip()
+            if val.startswith('[') and val.endswith(']'):
+                 try:
+                     locs = [x.strip().upper() for x in ast.literal_eval(val)]
+                 except Exception:
+                     locs = [val.upper()]
+            elif val:
+                 locs = [x.strip().upper() for x in val.split(';')]
+            else:
+                 locs = []
+            return sorted(locs)
+
+        if "location" in merged and dept_to_loc:
+            merged["location_expected"] = merged["department_expected"].apply(
+                lambda x: dept_to_loc.get(str(x).strip().upper() if pd.notna(x) else "", [])
+            )
+            merged["location_actual"] = merged["location"].apply(extract_ahgora_locations)
+            location_condition = merged.apply(lambda row: len(row["location_expected"]) > 0 and row["location_expected"] != row["location_actual"], axis=1)
+            change_conditions.append(location_condition)
 
         if not change_conditions:
             return pd.DataFrame()
@@ -1149,8 +1197,17 @@ class SyncService:
         # Helper to create payload with numpy type sanitization
         def _sanitize_value(val):
             """Convert numpy/pandas types to native Python for JSON serialization."""
-            if pd.isna(val):
-                return None
+            if isinstance(val, list):
+                return [_sanitize_value(x) for x in val]
+            if isinstance(val, (np.ndarray,)):
+                return [_sanitize_value(x) for x in val.tolist()]
+                
+            try:
+                if pd.isna(val):
+                    return None
+            except ValueError:
+                pass
+
             import datetime as dt  # Inline import to reach date class safely
 
             if isinstance(val, (pd.Timestamp, datetime, dt.date)):
@@ -1161,8 +1218,6 @@ class SyncService:
                 return float(val)
             if isinstance(val, (np.bool_,)):
                 return bool(val)
-            if isinstance(val, (np.ndarray,)):
-                return val.tolist()
             return val
 
         def df_to_payloads(df: pd.DataFrame) -> List[Dict[str, Any]]:
@@ -1204,10 +1259,7 @@ class SyncService:
 
         if not changed_employees_df.empty:
             for payload in df_to_payloads(changed_employees_df):
-                payload["name"] = payload.get("name_fiorilli")
-                payload["position"] = payload.get("position_fiorilli")
-                payload["department"] = payload.get("department_fiorilli")
-                payload["admission_date"] = payload.get("admission_date_fiorilli")
+                payload["name"] = payload.get("name_expected")
                 tasks_to_create.append(
                     AutomationTask(
                         job_id=job_id,

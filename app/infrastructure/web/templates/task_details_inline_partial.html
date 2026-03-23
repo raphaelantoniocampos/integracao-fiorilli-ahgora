@@ -74,8 +74,6 @@
                                 <span class="font-semibold">
                                     {{ task.payload.get('name') }}
                                 </span>
-                            {% elif task.payload.get('name_fiorilli') %}
-                                <span class="font-semibold">{{ task.payload.get('name_fiorilli') }}</span>
                             {% else %}
                                 {% for key, value in task.payload.items() %}
                                     {% if value is iterable and value is not string and value is not mapping %}

@@ -192,7 +192,15 @@ async function executeBatch(jobId, taskType, btn) {
             throw new Error(errorData.detail || "Falha ao executar lote");
         }
 
-        window.location.reload();
+        if (typeof htmx !== 'undefined') {
+            htmx.trigger(document.body, 'refresh');
+            if (btn) {
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        } else {
+            window.location.reload();
+        }
     } catch (error) {
         alert(error.message || "Erro ao executar lote.");
         console.error(error);
@@ -231,7 +239,15 @@ async function executeTask(taskId, btn) {
             throw new Error(errorData.detail || "Falha ao executar tarefa");
         }
 
-        window.location.reload();
+        if (typeof htmx !== 'undefined') {
+            htmx.trigger(document.body, 'refresh');
+            if (btn) {
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        } else {
+            window.location.reload();
+        }
     } catch (error) {
         alert(error.message || "Erro ao executar tarefa.");
         console.error(error);
@@ -258,7 +274,15 @@ async function cancelBatch(jobId, taskType, btn) {
             throw new Error(errorData.detail || "Falha ao cancelar lote");
         }
 
-        window.location.reload();
+        if (typeof htmx !== 'undefined') {
+            htmx.trigger(document.body, 'refresh');
+            if (btn) {
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        } else {
+            window.location.reload();
+        }
     } catch (error) {
         alert(error.message || "Erro ao cancelar lote.");
         console.error(error);

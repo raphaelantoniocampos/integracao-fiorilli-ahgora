@@ -63,8 +63,13 @@
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     {% for group in task_groups %}
+                    {% set group_id_str = group.type.name if group.type and group.type.name is defined else group.type|string %}
                     <!-- Group Row (Clickable Accordion) -->
                     <tr class="hover:bg-slate-50/50 transition-colors cursor-pointer group-row"
+                        id="row-group-{{ group_id_str }}"
+                        data-group-type="{{ group_id_str }}"
+                        data-pending="{{ group.pending }}"
+                        data-running="{{ group.running }}"
                         hx-get="/partials/task-details-inline?job_id={{ job_id }}&task_type={{ group.type }}"
                         hx-target="#tasks-container-{{ loop.index }}" 
                         hx-trigger="load, refresh, click"
@@ -83,7 +88,8 @@
                         </td>
                         <td class="px-6 py-4">
                             <div
-                                class="w-full bg-slate-100/80 shadow-inner rounded-full h-3 mb-1 flex overflow-hidden ring-1 ring-slate-200">
+                                class="w-full bg-slate-100/80 shadow-inner rounded-full h-3 mb-1 flex overflow-hidden ring-1 ring-slate-200"
+                                id="progress-bar-{{ group_id_str }}">
                                 {% set total = group.total %}
                                 {% if total > 0 %}
                                 {% set success_pct = (group.success / total) * 100 %}
@@ -91,20 +97,20 @@
                                 {% set pending_pct = (group.pending / total) * 100 %}
                                 {% set failed_pct = (group.failed / total) * 100 %}
                                 {% set cancelled_pct = (group.cancelled / total) * 100 %}
-                                <div class="bg-emerald-500 h-2.5" style="width: {{ success_pct }}%"></div>
-                                <div class="bg-blue-500 h-2.5 animate-pulse" style="width: {{ running_pct }}%"></div>
-                                <div class="bg-indigo-500 h-2.5" style="width: {{ pending_pct }}%"></div>
-                                <div class="bg-red-500 h-2.5" style="width: {{ failed_pct }}%"></div>
-                                <div class="bg-slate-200 h-2.5" style="width: {{ cancelled_pct }}%"></div>
+                                <div class="bg-emerald-500 h-2.5 progress-success" style="width: {{ success_pct }}%"></div>
+                                <div class="bg-blue-500 h-2.5 animate-pulse progress-running" style="width: {{ running_pct }}%"></div>
+                                <div class="bg-indigo-500 h-2.5 progress-pending" style="width: {{ pending_pct }}%"></div>
+                                <div class="bg-red-500 h-2.5 progress-failed" style="width: {{ failed_pct }}%"></div>
+                                <div class="bg-slate-200 h-2.5 progress-cancelled" style="width: {{ cancelled_pct }}%"></div>
                                 {% endif %}
                             </div>
                         </td>
                         <td class="px-6 py-4 text-center whitespace-nowrap" onclick="event.stopPropagation()">
-                            <div class="flex justify-center gap-2 text-xs font-medium">
-                                <span class="text-emerald-600 bg-emerald-50 px-2 rounded" title="Sucesso">{{ group.success }}</span>
-                                <span class="text-indigo-600 bg-indigo-50 px-2 rounded" title="Pendente">{{ group.pending }}</span>
-                                <span class="text-rose-600 bg-rose-50 px-2 rounded" title="Falha">{{ group.failed }}</span>
-                                <span class="text-slate-600 bg-slate-50 px-2 rounded" title="Cancelado">{{ group.cancelled }}</span>
+                            <div class="flex justify-center gap-2 text-xs font-medium" id="metrics-{{ group_id_str }}">
+                                <span class="text-emerald-600 bg-emerald-50 px-2 rounded metric-success" title="Sucesso">{{ group.success }}</span>
+                                <span class="text-indigo-600 bg-indigo-50 px-2 rounded metric-pending" title="Pendente">{{ group.pending }}</span>
+                                <span class="text-rose-600 bg-rose-50 px-2 rounded metric-failed" title="Falha">{{ group.failed }}</span>
+                                <span class="text-slate-600 bg-slate-50 px-2 rounded metric-cancelled" title="Cancelado">{{ group.cancelled }}</span>
                             </div>
                         </td>
                         <td class="px-6 py-4 text-right whitespace-nowrap" onclick="event.stopPropagation()">
@@ -186,4 +192,87 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const jobId = "{{ job_id }}";
+        
+        async function fetchGroupSummary() {
+            try {
+                // If there are no pending or running tasks in any group, we can stop polling
+                const rows = document.querySelectorAll('.group-row');
+                let activeTasks = 0;
+                rows.forEach(row => {
+                    activeTasks += parseInt(row.getAttribute('data-pending')) || 0;
+                    activeTasks += parseInt(row.getAttribute('data-running')) || 0;
+                });
+                
+                // Fetch new state regardless because user might have just triggered executeBatch
+                const response = await fetch(`/jobs/${jobId}/tasks/summary`);
+                if (!response.ok) return;
+                
+                const data = await response.json();
+                
+                let activeDataTasks = 0;
+                data.groups.forEach(group => {
+                    const row = document.getElementById(`row-group-${group.type}`);
+                    if (!row) return;
+                    
+                    // Update data attributes
+                    row.setAttribute('data-pending', group.pending);
+                    row.setAttribute('data-running', group.running);
+                    
+                    activeDataTasks += group.pending + group.running;
+                    
+                    const total = group.total;
+                    if (total > 0) {
+                        const successPct = (group.success / total) * 100;
+                        const runningPct = (group.running / total) * 100;
+                        const pendingPct = (group.pending / total) * 100;
+                        const failedPct = (group.failed / total) * 100;
+                        const cancelledPct = (group.cancelled / total) * 100;
+                        
+                        // Update Progress Bar
+                        const progressBar = document.getElementById(`progress-bar-${group.type}`);
+                        if (progressBar) {
+                            const pSuccess = progressBar.querySelector('.progress-success');
+                            const pRunning = progressBar.querySelector('.progress-running');
+                            const pPending = progressBar.querySelector('.progress-pending');
+                            const pFailed = progressBar.querySelector('.progress-failed');
+                            const pCancelled = progressBar.querySelector('.progress-cancelled');
+                            
+                            if (pSuccess) pSuccess.style.width = `${successPct}%`;
+                            if (pRunning) pRunning.style.width = `${runningPct}%`;
+                            if (pPending) pPending.style.width = `${pendingPct}%`;
+                            if (pFailed) pFailed.style.width = `${failedPct}%`;
+                            if (pCancelled) pCancelled.style.width = `${cancelledPct}%`;
+                        }
+                        
+                        // Update metrics numbers
+                        const metrics = document.getElementById(`metrics-${group.type}`);
+                        if (metrics) {
+                            const mSuccess = metrics.querySelector('.metric-success');
+                            const mPending = metrics.querySelector('.metric-pending');
+                            const mFailed = metrics.querySelector('.metric-failed');
+                            const mCancelled = metrics.querySelector('.metric-cancelled');
+                            
+                            if (mSuccess) mSuccess.innerText = group.success;
+                            if (mPending) mPending.innerText = group.pending;
+                            if (mFailed) mFailed.innerText = group.failed;
+                            if (mCancelled) mCancelled.innerText = group.cancelled;
+                        }
+                    }
+                    
+                    // Conditionally refresh open accordions by triggering HTMX 
+                    // if their internal state might have changed (actually, lets just focus on progress bars to avoid flashing)
+                });
+                
+            } catch (error) {
+                console.error("Error polling task summaries:", error);
+            }
+        }
+        
+        setInterval(fetchGroupSummary, 3000);
+    });
+</script>
 {% endblock %}

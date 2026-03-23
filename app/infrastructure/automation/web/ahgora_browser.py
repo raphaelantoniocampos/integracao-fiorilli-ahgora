@@ -150,6 +150,10 @@ class AhgoraBrowser(BaseBrowser):
         department = str(payload.get("department", ""))
         if department:
             self._set_autocomplete_select("dados-departamento", department)
+            try:
+                self._update_location_multiselect(department)
+            except Exception as e:
+                self._log("WARNING", f"Could not update location multiselect automatically: {e}")
 
         # Click Save
         self.click_element("(//button[contains(text(), 'Salvar')])[last()]")
@@ -162,7 +166,7 @@ class AhgoraBrowser(BaseBrowser):
         """
         Updates an existing employee.
         """
-        name = payload.get("name_fiorilli", "")
+        name = payload.get("name_expected", "")
         employee_id = str(payload.get("id", ""))
         self._log("INFO", f"Updating employee in Ahgora: {name}")
 
@@ -181,65 +185,71 @@ class AhgoraBrowser(BaseBrowser):
             has_changes = False
             change_logs = []
 
-            if payload.get("name_fiorilli_norm") != payload.get("name_ahgora_norm"):
-                if payload.get("name_fiorilli"):
+            if payload.get("name_expected_norm") != payload.get("name_actual_norm"):
+                if payload.get("name_expected"):
                     self.send_keys(
-                        "dados-nome", payload["name_fiorilli"], By.ID, clear_first=True
+                        "dados-nome", payload["name_expected"], By.ID, clear_first=True
                     )
                     has_changes = True
                     change_logs.append(
-                        f"Updated name: {payload.get('name_ahgora')} -> {payload.get('name_fiorilli')}"
+                        f"Updated name: {payload.get('name_actual')} -> {payload.get('name_expected')}"
                     )
 
-            if payload.get("position_fiorilli_norm") != payload.get(
-                "position_ahgora_norm"
+            if payload.get("position_expected_norm") != payload.get(
+                "position_actual_norm"
             ):
-                if payload.get("position_fiorilli"):
+                if payload.get("position_expected"):
                     self.send_keys(
                         "dados.cargo",
-                        payload["position_fiorilli"],
+                        payload["position_expected"],
                         By.ID,
                         clear_first=True,
                     )
                     has_changes = True
                     change_logs.append(
-                        f"Updated position: {payload.get('position_ahgora')} -> {payload.get('position_fiorilli')}"
+                        f"Updated position: {payload.get('position_actual')} -> {payload.get('position_expected')}"
                     )
 
-            if payload.get("admission_date_fiorilli_norm") != payload.get(
-                "admission_date_ahgora_norm"
+            if payload.get("admission_date_expected_norm") != payload.get(
+                "admission_date_actual_norm"
             ):
-                if payload.get("admission_date_fiorilli"):
+                if payload.get("admission_date_expected"):
                     self.send_keys(
                         "dados-dt_admissao",
-                        payload["admission_date_fiorilli"],
+                        payload["admission_date_expected"],
                         By.ID,
                         clear_first=True,
                     )
                     has_changes = True
                     change_logs.append(
-                        f"Updated admission_date: {payload.get('admission_date_ahgora')} -> {payload.get('admission_date_fiorilli')}"
+                        f"Updated admission_date: {payload.get('admission_date_actual')} -> {payload.get('admission_date_expected')}"
                     )
 
-            if payload.get("department_fiorilli_norm") != payload.get(
-                "department_ahgora_norm"
+            if payload.get("department_expected_norm") != payload.get(
+                "department_actual_norm"
             ):
-                if payload.get("department_fiorilli"):
+                if payload.get("department_expected"):
                     self._set_autocomplete_select(
-                        "dados-departamento", payload["department_fiorilli"]
+                        "dados-departamento", payload["department_expected"]
                     )
                     has_changes = True
                     change_logs.append(
-                        f"Updated department: {payload.get('department_ahgora')} -> {payload.get('department_fiorilli')}"
+                        f"Updated department: {payload.get('department_actual')} -> {payload.get('department_expected')}"
                     )
-                    try:
-                        pass
-                        # self._update_location_multiselect(payload["department_fiorilli"])
-                    except Exception as e:
-                        self._log(
-                            "WARNING",
-                            f"Could not update location multiselect automatically: {e}",
+
+            if payload.get("department_expected"):
+                try:
+                    loc_changed = self._update_location_multiselect(payload["department_expected"])
+                    if loc_changed:
+                        has_changes = True
+                        change_logs.append(
+                            f"Updated location mapping based on department: {payload.get('department_expected')}"
                         )
+                except Exception as e:
+                    self._log(
+                        "WARNING",
+                        f"Could not update location multiselect automatically: {e}",
+                    )
 
             if has_changes:
                 # Click Save
@@ -445,97 +455,91 @@ class AhgoraBrowser(BaseBrowser):
             # Fallback to standard send keys without clear
             self.send_keys(element_id, value, By.ID, clear_first=False)
 
-    # def _update_location_multiselect(self, search_text: str) -> None:
-    #     """
-    #     Interacts with the Bootstrap multiselect to update the 'Localização' field.
-    #     Employs intelligent token-based fuzzy matching.
-    #     """
-    #     # 1. Click the button to open the dropdown.
-    #     dropdown_btn_xpath = "//*[@id='form_funcionario']/div/div[2]/div[1]/div[2]/div[8]/div[2]/div/div/div/button"
-    #     try:
-    #         self.click_element(dropdown_btn_xpath, max_tries=3)
-    #     except Exception:
-    #         # Fallback
-    #         try:
-    #             self.click_element("//button[contains(@class, 'multiselect dropdown-toggle')]", max_tries=3)
-    #         except Exception as e:
-    #             self._log("WARNING", f"Could not find multiselect button: {e}")
-    #             return
-    #
-    #     self.wait(1)
-    #
-    #     # 2. Clear previous selections if 'Todas localizações selecionadas' is active or checked
-    #     try:
-    #         self.click_element("//li[contains(@class, 'multiselect-all')]//label", max_tries=1)
-    #         self.wait(0.5)
-    #     except Exception:
-    #         pass
-    #
-    #     try:
-    #         self.click_element("//button[contains(@class, 'multiselect-clear-filter')]", max_tries=1)
-    #         self.wait(0.5)
-    #     except Exception:
-    #         pass
-    #
-    #     # 3. Type into the search input
-    #     search_input_xpath = "//*[@id='form_funcionario']/div/div[2]/div[1]/div[2]/div[8]/div[2]/div/div/div/div/ul/li[1]/div/input"
-    #     try:
-    #         self.send_keys(search_input_xpath, search_text, By.XPATH, clear_first=True, max_tries=3)
-    #     except Exception:
-    #         # Fallback
-    #         try:
-    #             self.send_keys("//input[contains(@class, 'multiselect-search')]", search_text, By.XPATH, clear_first=True, max_tries=3)
-    #         except Exception:
-    #             pass
-    #
-    #     self.wait(1)
-    #
-    #     # 4. Use JS for tokenized substring match to find the actual checkbox
-    #     script = f"""
-    #         var searchTxt = "{search_text.upper()}";
-    #         var searchWords = searchTxt.split(' ');
-    #         var labels = document.querySelectorAll("ul.multiselect-container label.checkbox");
-    #
-    #         var bestMatch = null;
-    #         var maxMatches = 0;
-    #
-    #         for (var i = 0; i < labels.length; i++) {{
-    #             var labelText = labels[i].textContent || labels[i].innerText;
-    #             var li = labels[i].closest('li');
-    #
-    #             if (li && !li.classList.contains('filter') && !li.classList.contains('multiselect-all')) {{
-    #                 var upperLabel = labelText.toUpperCase();
-    #                 var matches = 0;
-    #                 // Exact match takes precedence
-    #                 if (upperLabel.trim() === searchTxt.trim()) {{
-    #                     bestMatch = labels[i];
-    #                     break;
-    #                 }}
-    #                 for(var w = 0; w < searchWords.length; w++) {{
-    #                     if (searchWords[w].length > 2 && upperLabel.includes(searchWords[w])) {{
-    #                         matches++;
-    #                     }}
-    #                 }}
-    #                 if (matches > maxMatches) {{
-    #                     maxMatches = matches;
-    #                     bestMatch = labels[i];
-    #                 }}
-    #             }}
-    #         }}
-    #         if (bestMatch) {{
-    #             bestMatch.click();
-    #         }}
-    #     """
-    #     try:
-    #         self.driver.execute_script(script)
-    #     except Exception as e:
-    #         self._log("WARNING", f"Could not explicitly select the filtered location item via JS: {e}")
-    #
-    #     # 5. Close the dropdown
-    #     try:
-    #         self.click_element(dropdown_btn_xpath, max_tries=2)
-    #     except Exception:
-    #         try:
-    #             self.click_element("//button[contains(@class, 'multiselect dropdown-toggle')]", max_tries=2)
-    #         except Exception:
-    #             pass
+    def _update_location_multiselect(self, department_name: str) -> bool:
+        """
+        Interacts with the Bootstrap multiselect to update the 'Localização' field.
+        Uses the department_to_location.csv mapping if it exists.
+        Returns True if any checkbox was changed, False otherwise.
+        """
+        import csv
+        from app.core.settings import settings
+        
+        csv_file = settings.BASE_DIR / "app" / "core" / "department_to_location.csv"
+        
+        target_locations = []
+        if csv_file.exists():
+            try:
+                with open(csv_file, mode='r', encoding='latin1') as f:
+                    reader = csv.reader(f)
+                    for row in reader:
+                        if len(row) >= 2 and row[0].strip().upper() == department_name.strip().upper():
+                            val = row[1].strip()
+                            if val.startswith('[') and val.endswith(']'):
+                                import ast
+                                try:
+                                    target_locations = [x.strip().upper() for x in ast.literal_eval(val)]
+                                except Exception:
+                                    target_locations = [val.upper()]
+                            else:
+                                target_locations = [x.strip().upper() for x in val.split(';')]
+                            break
+            except Exception as e:
+                self._log("WARNING", f"Could not read department_to_location.csv: {e}")
+        
+        if not target_locations:
+            self._log("INFO", f"No location mapping found for department '{department_name}', skipping.")
+            return False
+
+        self._log("INFO", f"Enforcing locations {target_locations} for department '{department_name}'.")
+
+        dropdown_btn_xpath = "//*[@id='form_funcionario']/div/div[2]/div[1]/div[2]/div[8]/div[2]/div/div/div/button"
+        try:
+            self.click_element(dropdown_btn_xpath, max_tries=3)
+        except Exception:
+            try:
+                self.click_element("//button[contains(@class, 'multiselect dropdown-toggle')]", max_tries=3)
+            except Exception as e:
+                self._log("WARNING", f"Could not find multiselect button: {e}")
+                return False
+        
+        self.wait(1)
+
+        script = """
+            var targetLocs = arguments[0];
+            var labels = document.querySelectorAll("ul.multiselect-container label.checkbox");
+            var changed = false;
+            
+            for (var i = 0; i < labels.length; i++) {
+                var labelText = (labels[i].textContent || labels[i].innerText).trim().toUpperCase();
+                var input = labels[i].querySelector("input[type='checkbox']");
+                var li = labels[i].closest('li');
+                
+                if (li && !li.classList.contains('filter') && !li.classList.contains('multiselect-all') && input) {
+                    var shouldBeChecked = targetLocs.some(loc => labelText === loc || labelText.includes(loc));
+                    if (shouldBeChecked && !input.checked) {
+                        input.click();
+                        changed = true;
+                    } else if (!shouldBeChecked && input.checked) {
+                        input.click();
+                        changed = true;
+                    }
+                }
+            }
+            return changed;
+        """
+        changed = False
+        try:
+            changed = self.driver.execute_script(script, target_locations)
+        except Exception as e:
+            self._log("WARNING", f"Failed to set locations via JS: {e}")
+
+        # Close the dropdown
+        try:
+            self.click_element(dropdown_btn_xpath, max_tries=2)
+        except Exception:
+            try:
+                self.click_element("//button[contains(@class, 'multiselect dropdown-toggle')]", max_tries=2)
+            except Exception:
+                pass
+        
+        return changed
