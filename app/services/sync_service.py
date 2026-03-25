@@ -515,10 +515,10 @@ class SyncService:
                 )
 
             # 5. Run analysis and create tasks
-            ahgora_employees = await self._run_analysis_and_create_tasks(job_id)
+            ahgora_csv_employees = await self._run_analysis_and_create_tasks(job_id)
 
             # 6. Validate Data
-            await self._validate_ahgora_state(job_id, ahgora_employees)
+            await self._validate_ahgora_state(job_id, ahgora_csv_employees)
 
             # 7. Remove downloads from download dir
             await asyncio.to_thread(FileManager.cleanup)
@@ -615,7 +615,7 @@ class SyncService:
                 job_id, "INFO", "Data analysis and task creation completed successfully"
             )
 
-            return ahgora_employees
+            return ahgora_csv_employees
 
         except Exception as e:
             error_msg = f"Critical error during analysis phase: {str(e)}"
@@ -639,25 +639,12 @@ class SyncService:
                 self._read_csv, raw_fiorilli_path
             )
 
-            # 1. Try to load from Database State
+            # Load from Database State
             ahgora_employees = await self.repo.get_ahgora_employees_df()
 
-            # 2. Fallback to legacy CSV if Database is empty (initial seed)
             if ahgora_employees.empty:
-                raw_ahgora_path = settings.DATA_DIR / "ahgora_employees.csv"
-                if raw_ahgora_path.exists():
-                    await self._log(
-                        job_id,
-                        "INFO",
-                        "Database Ahgora state empty, seeding from legacy CSV.",
-                    )
-                    ahgora_employees = await asyncio.to_thread(
-                        self._read_csv, raw_ahgora_path
-                    )
-                else:
-                    await self._log(
-                        job_id, "WARNING", "No Ahgora state found in DB or legacy CSV."
-                    )
+                ahgora_employees = pd.DataFrame(columns=AHGORA_EMPLOYEES_COLUMNS)
+                await self._log(job_id, "INFO", "Database Ahgora state is empty.")
             else:
                 await self._log(job_id, "INFO", "Ahgora state loaded from PostgreSQL.")
 
@@ -916,9 +903,7 @@ class SyncService:
         new_employees_df = missing_from_db[~missing_from_db["id"].isin(ahgora_csv_ids)]
 
         # DB-only seed — in Ahgora CSV but not in DB → seed Ahgora CSV data to DB
-        seed_ids = set(
-            missing_from_db[missing_from_db["id"].isin(ahgora_csv_ids)]["id"]
-        )
+        seed_ids = ahgora_csv_ids - ahgora_db_ids
         seed_employees_df = (
             ahgora_csv_employees[ahgora_csv_employees["id"].isin(seed_ids)]
             if not ahgora_csv_employees.empty and seed_ids
@@ -1078,12 +1063,9 @@ class SyncService:
             change_conditions.append(location_condition)
 
         if not change_conditions:
-            return pd.DataFrame()
+            return pd.DataFrame(columns=merged.columns)
 
-        combined_condition = change_conditions[0]
-        for cond in change_conditions[1:]:
-            combined_condition |= cond
-
+        combined_condition = pd.concat(change_conditions, axis=1).any(axis=1)
         return merged[combined_condition]
 
     async def _get_new_leaves_df(

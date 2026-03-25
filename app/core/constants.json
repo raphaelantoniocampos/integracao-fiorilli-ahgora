@@ -21,12 +21,17 @@
     "ahgora_employees_columns": [
         "id",
         "name",
+        "pis_pasep",
         "position",
-        "scale",
         "department",
-        "location",
+        "cnpj",
         "admission_date",
-        "dismissal_date"
+        "dismissal_date",
+        "empty",
+        "location",
+        "scale",
+        "empty",
+        "default_password"
     ],
     "fiorilli_employees_columns": [
         "id",

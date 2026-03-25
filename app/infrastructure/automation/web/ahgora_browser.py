@@ -36,7 +36,6 @@ class AhgoraBrowser(BaseBrowser):
         self._log("INFO", "Starting employees download from Ahgora")
         try:
             self.driver.get(self.driver.current_url.replace("home", "funcionarios"))
-            self._show_dismissed_employees()
             self._click_plus_button()
             self._export_to_csv()
             self._log("INFO", "Download of employees from Ahgora completed")
@@ -79,14 +78,13 @@ class AhgoraBrowser(BaseBrowser):
         except Exception:
             self.wait(self.DELAY)
 
-    def _show_dismissed_employees(self) -> None:
-        self.click_element("filtro_demitido", selector_type=By.ID)
-
     def _click_plus_button(self) -> None:
         self.click_element("mais", selector_type=By.ID)
 
     def _export_to_csv(self) -> None:
-        self.click_element("arquivo_csv", selector_type=By.ID)
+        self.click_element("exportar", selector_type=By.ID)
+        self.select_dropdown_option("formatExport", "csv_todos", selector_type=By.ID)
+        self.click_element("sendFormat", selector_type=By.ID)
         # Give some time for the download to start/finish
         self.wait(10)
 

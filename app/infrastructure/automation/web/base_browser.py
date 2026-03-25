@@ -298,6 +298,31 @@ class BaseBrowser(ABC):
             "a"
         ).key_up(Keys.CONTROL).send_keys(keys).perform()
 
+    def select_dropdown_option(
+        self,
+        selector: str,
+        value: str,
+        selector_type=By.XPATH,
+        delay=DELAY,
+        ignored_exceptions=IGNORED_EXCEPTIONS,
+        max_tries=MAX_TRIES,
+    ):
+        self.retry_func(
+            lambda: self._select_dropdown_option_helper(
+                selector, value, selector_type, delay, ignored_exceptions
+            ),
+            max_tries,
+        )
+
+    def _select_dropdown_option_helper(
+        self, selector, value, selector_type, delay, ignored_exceptions
+    ):
+        from selenium.webdriver.support.ui import Select
+        element = WebDriverWait(
+            self.driver, delay, ignored_exceptions=ignored_exceptions
+        ).until(EC.presence_of_element_located((selector_type, selector)))
+        Select(element).select_by_value(value)
+
     def wait_desappear(
         self,
         selector: str,
