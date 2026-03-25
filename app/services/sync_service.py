@@ -34,6 +34,7 @@ UPLOAD_LEAVES_COLUMNS = settings.UPLOAD_LEAVES_COLUMNS
 PT_MONTHS = settings.PT_MONTHS
 EXCEPTIONS_AND_TYPOS = settings.EXCEPTIONS_AND_TYPOS
 MAX_AGE_MINUTES = settings.MAX_AGE_MINUTES
+SYNC_TIMEOUT_MAX = settings.SYNC_TIMEOUT_MAX
 
 DATA_DIR = settings.DATA_DIR
 
@@ -130,7 +131,7 @@ class SyncService:
             task_registry.register(job_id, current_task)
 
         try:
-            # Execute sync logic with a 15-minute timeout (prevents permanent hangs)
+            # Execute sync logic with a 30-minute timeout (prevents permanent hangs)
             result = await asyncio.wait_for(
                 self._execute_sync_logic(
                     job_id,
@@ -142,7 +143,7 @@ class SyncService:
                     ahgora_company,
                     ahgora_password,
                 ),
-                timeout=15 * 60,
+                timeout=SYNC_TIMEOUT_MAX * 60,
             )
 
             if result.success:
@@ -875,11 +876,15 @@ class SyncService:
         ahgora_csv_ids = set()
         if not ahgora_csv_employees.empty:
             ahgora_csv_ids = set(ahgora_csv_employees["id"])
-            db_not_in_csv = ahgora_employees[~ahgora_employees["id"].isin(ahgora_csv_ids)]
-            common_cols = list(set(ahgora_employees.columns) & set(ahgora_csv_employees.columns))
+            db_not_in_csv = ahgora_employees[
+                ~ahgora_employees["id"].isin(ahgora_csv_ids)
+            ]
+            common_cols = list(
+                set(ahgora_employees.columns) & set(ahgora_csv_employees.columns)
+            )
             combined_ahgora = pd.concat(
-                 [ahgora_csv_employees[common_cols], db_not_in_csv[common_cols]],
-                 ignore_index=True,
+                [ahgora_csv_employees[common_cols], db_not_in_csv[common_cols]],
+                ignore_index=True,
             )
         else:
             combined_ahgora = ahgora_employees
@@ -890,9 +895,7 @@ class SyncService:
         ]
         fiorilli_dismissed_ids = set(fiorilli_dismissed_df["id"])
 
-        ahgora_dismissed_df = combined_ahgora[
-            combined_ahgora["dismissal_date"].notna()
-        ]
+        ahgora_dismissed_df = combined_ahgora[combined_ahgora["dismissal_date"].notna()]
         ahgora_dismissed_ids = set(ahgora_dismissed_df["id"])
         dismissed_ids = ahgora_dismissed_ids | fiorilli_dismissed_ids
 
@@ -908,8 +911,6 @@ class SyncService:
         missing_from_db = missing_from_db[
             missing_from_db["binding"] != "AUXILIO RECLUSAO"
         ]
-
-
 
         # Truly new — not in DB AND not in Ahgora CSV → need Selenium automation
         new_employees_df = missing_from_db[~missing_from_db["id"].isin(ahgora_csv_ids)]
@@ -1015,48 +1016,65 @@ class SyncService:
         from app.core.settings import settings
         import csv
         import ast
+
         csv_path = settings.BASE_DIR / "app" / "core" / "department_to_location.csv"
         dept_to_loc = {}
         if csv_path.exists():
             try:
-                with open(csv_path, mode='r', encoding='latin1') as f:
+                with open(csv_path, mode="r", encoding="latin1") as f:
                     reader = csv.reader(f)
                     for row in reader:
                         if len(row) >= 2:
                             dept = row[0].strip().upper()
                             val = row[1].strip()
-                            if val.startswith('[') and val.endswith(']'):
+                            if val.startswith("[") and val.endswith("]"):
                                 try:
-                                    target_locations = [x.strip().upper() for x in ast.literal_eval(val)]
+                                    target_locations = [
+                                        x.strip().upper() for x in ast.literal_eval(val)
+                                    ]
                                 except Exception:
                                     target_locations = [val.upper()]
                             else:
-                                target_locations = [x.strip().upper() for x in val.split(';')]
+                                target_locations = [
+                                    x.strip().upper() for x in val.split(";")
+                                ]
                             dept_to_loc[dept] = sorted(target_locations)
             except Exception as e:
-                logger.warning(f"Could not read department_to_location.csv in sync_service: {e}")
+                logger.warning(
+                    f"Could not read department_to_location.csv in sync_service: {e}"
+                )
 
         def extract_ahgora_locations(val):
             if not isinstance(val, str) or pd.isna(val):
-                 return []
+                return []
             val = val.strip()
-            if val.startswith('[') and val.endswith(']'):
-                 try:
-                     locs = [x.strip().upper() for x in ast.literal_eval(val)]
-                 except Exception:
-                     locs = [val.upper()]
+            if val.startswith("[") and val.endswith("]"):
+                try:
+                    locs = [x.strip().upper() for x in ast.literal_eval(val)]
+                except Exception:
+                    locs = [val.upper()]
             elif val:
-                 locs = [x.strip().upper() for x in val.split(';')]
+                locs = [x.strip().upper() for x in val.split(";")]
             else:
-                 locs = []
+                locs = []
             return sorted(locs)
 
         if "location" in merged and dept_to_loc:
             merged["location_expected"] = merged["department_expected"].apply(
-                lambda x: dept_to_loc.get(str(x).strip().upper() if pd.notna(x) else "", [])
+                lambda x: dept_to_loc.get(
+                    str(x).strip().upper() if pd.notna(x) else "", []
+                )
             )
-            merged["location_actual"] = merged["location"].apply(extract_ahgora_locations)
-            location_condition = merged.apply(lambda row: len(row["location_expected"]) > 0 and row["location_expected"] != row["location_actual"], axis=1)
+            merged["location_actual"] = merged["location"].apply(
+                extract_ahgora_locations
+            )
+            location_condition = merged.apply(
+                lambda row: (
+                    len(row["location_expected"]) > 0
+                    and row["location_expected"] != row["location_actual"]
+                ),
+                axis=1,
+            )
             change_conditions.append(location_condition)
 
         if not change_conditions:
@@ -1201,7 +1219,7 @@ class SyncService:
                 return [_sanitize_value(x) for x in val]
             if isinstance(val, (np.ndarray,)):
                 return [_sanitize_value(x) for x in val.tolist()]
-                
+
             try:
                 if pd.isna(val):
                     return None
