@@ -74,7 +74,12 @@ class AhgoraBrowser(BaseBrowser):
 
     def _close_banner(self) -> None:
         try:
-            self.click_element("buttonAdjustPunch", selector_type=By.ID)
+            self.click_element(
+                selector="buttonAdjustPunch",
+                selector_type=By.ID,
+                delay=0.1,
+                max_tries=5,
+            )
         except Exception:
             self.wait(self.DELAY)
 
@@ -151,7 +156,10 @@ class AhgoraBrowser(BaseBrowser):
             try:
                 self._update_location_multiselect(department)
             except Exception as e:
-                self._log("WARNING", f"Could not update location multiselect automatically: {e}")
+                self._log(
+                    "WARNING",
+                    f"Could not update location multiselect automatically: {e}",
+                )
 
         # Click Save
         self.click_element("(//button[contains(text(), 'Salvar')])[last()]")
@@ -237,7 +245,9 @@ class AhgoraBrowser(BaseBrowser):
 
             if payload.get("department_expected"):
                 try:
-                    loc_changed = self._update_location_multiselect(payload["department_expected"])
+                    loc_changed = self._update_location_multiselect(
+                        payload["department_expected"]
+                    )
                     if loc_changed:
                         has_changes = True
                         change_logs.append(
@@ -301,15 +311,14 @@ class AhgoraBrowser(BaseBrowser):
             try:
                 self.send_keys("dt_demissao", dismissal_date, By.ID, clear_first=True)
                 self.wait(self.DELAY)
-                self.click_element(
-                    "(/html/body/div[1]/div/div/div[2]/div[1]/div[2]/table/tbody/tr[1]/td/div/div[2]/div/button[2])[1]"
-                )
+                self.click_element("//*[@id='funcionarios']/tbody/tr[1]/td/div/div[2]/div/button[2]")
                 self.wait(self.DELAY * 2)
-            except Exception:
+            except Exception as e:
                 self._log(
                     "INFO",
                     "No specific dismissal date field found, assumed standard removal",
                 )
+                raise e
 
             self._log(
                 "INFO",
@@ -461,45 +470,63 @@ class AhgoraBrowser(BaseBrowser):
         """
         import csv
         from app.core.settings import settings
-        
+
         csv_file = settings.BASE_DIR / "app" / "core" / "department_to_location.csv"
-        
+
         target_locations = []
         if csv_file.exists():
             try:
-                with open(csv_file, mode='r', encoding='latin1') as f:
+                with open(csv_file, mode="r", encoding="latin1") as f:
                     reader = csv.reader(f)
                     for row in reader:
-                        if len(row) >= 2 and row[0].strip().upper() == department_name.strip().upper():
+                        if (
+                            len(row) >= 2
+                            and row[0].strip().upper()
+                            == department_name.strip().upper()
+                        ):
                             val = row[1].strip()
-                            if val.startswith('[') and val.endswith(']'):
+                            if val.startswith("[") and val.endswith("]"):
                                 import ast
+
                                 try:
-                                    target_locations = [x.strip().upper() for x in ast.literal_eval(val)]
+                                    target_locations = [
+                                        x.strip().upper() for x in ast.literal_eval(val)
+                                    ]
                                 except Exception:
                                     target_locations = [val.upper()]
                             else:
-                                target_locations = [x.strip().upper() for x in val.split(';')]
+                                target_locations = [
+                                    x.strip().upper() for x in val.split(";")
+                                ]
                             break
             except Exception as e:
                 self._log("WARNING", f"Could not read department_to_location.csv: {e}")
-        
+
         if not target_locations:
-            self._log("INFO", f"No location mapping found for department '{department_name}', skipping.")
+            self._log(
+                "INFO",
+                f"No location mapping found for department '{department_name}', skipping.",
+            )
             return False
 
-        self._log("INFO", f"Enforcing locations {target_locations} for department '{department_name}'.")
+        self._log(
+            "INFO",
+            f"Enforcing locations {target_locations} for department '{department_name}'.",
+        )
 
         dropdown_btn_xpath = "//*[@id='form_funcionario']/div/div[2]/div[1]/div[2]/div[8]/div[2]/div/div/div/button"
         try:
             self.click_element(dropdown_btn_xpath, max_tries=3)
         except Exception:
             try:
-                self.click_element("//button[contains(@class, 'multiselect dropdown-toggle')]", max_tries=3)
+                self.click_element(
+                    "//button[contains(@class, 'multiselect dropdown-toggle')]",
+                    max_tries=3,
+                )
             except Exception as e:
                 self._log("WARNING", f"Could not find multiselect button: {e}")
                 return False
-        
+
         self.wait(1)
 
         script = """
@@ -536,8 +563,11 @@ class AhgoraBrowser(BaseBrowser):
             self.click_element(dropdown_btn_xpath, max_tries=2)
         except Exception:
             try:
-                self.click_element("//button[contains(@class, 'multiselect dropdown-toggle')]", max_tries=2)
+                self.click_element(
+                    "//button[contains(@class, 'multiselect dropdown-toggle')]",
+                    max_tries=2,
+                )
             except Exception:
                 pass
-        
+
         return changed
