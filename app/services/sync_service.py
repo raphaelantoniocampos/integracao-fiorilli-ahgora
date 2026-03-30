@@ -1019,10 +1019,14 @@ class SyncService:
                                     ]
                                 except Exception:
                                     target_locations = [val.upper()]
-                            else:
+                            elif val:
                                 target_locations = [
-                                    x.strip().upper() for x in val.split(";")
+                                    x.strip().upper() for x in val.split("|")
                                 ]
+                            else:
+                                target_locations = []
+                            
+                            target_locations = [x for x in target_locations if x]
                             dept_to_loc[dept] = sorted(target_locations)
             except Exception as e:
                 logger.warning(
@@ -1042,6 +1046,8 @@ class SyncService:
                 locs = [x.strip().upper() for x in val.split(";")]
             else:
                 locs = []
+            
+            locs = [x for x in locs if x]
             return sorted(locs)
 
         if "location" in merged and dept_to_loc:
