@@ -26,6 +26,8 @@ dependencies = [
     "python-multipart>=0.0.9",
     "cryptography>=46.0.5",
     "pydantic-settings>=2.13.1",
+    "pyjwt>=2.12.1",
+    "bcrypt>=5.0.0",
 ]
 
 [dependency-groups]

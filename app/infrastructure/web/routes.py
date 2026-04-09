@@ -2,12 +2,15 @@ from typing import Optional
 from uuid import UUID
 
 import dotenv
-from fastapi import APIRouter, Depends, Form, Request
+from fastapi import APIRouter, Depends, Form, Request, HTTPException
+from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
+from datetime import timedelta
 
 from app.core.database import get_db
 from app.core.settings import settings
+from app.core.security import verify_password, get_password_hash, create_access_token, decode_access_token
 from typing import Any, Dict
 from app.domain.enums import SyncStatus
 from app.infrastructure.db.sqlalchemy_repo import SqlAlchemyRepo
@@ -16,13 +19,106 @@ from app.services.sync_service import SyncService
 router = APIRouter()
 templates = Jinja2Templates(directory="app/infrastructure/web/templates")
 
+def require_auth(request: Request):
+    token = request.cookies.get("access_token")
+    if not token or not decode_access_token(token):
+        if request.headers.get("HX-Request"):
+            raise HTTPException(status_code=200, headers={"HX-Redirect": "/login"})
+        raise HTTPException(status_code=303, headers={"Location": "/login"})
+
+def require_admin(request: Request):
+    require_auth(request)
+    if not request.state.is_admin:
+        raise HTTPException(status_code=403, detail="Acesso negado. Apenas administradores podem acessar esta página.")
+
 
 def get_service(db: AsyncSession = Depends(get_service_db := get_db)):
     repo = SqlAlchemyRepo(db)
     return SyncService(repo=repo)
 
 
-@router.get("/")
+@router.get("/login")
+async def login_page(request: Request):
+    return templates.TemplateResponse("login.html", {"request": request})
+
+
+@router.post("/login")
+async def login_post(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...),
+    db: AsyncSession = Depends(get_db),
+):
+    repo = SqlAlchemyRepo(db)
+    user = await repo.get_user_by_username(username)
+
+    is_valid = False
+    is_admin = False
+    if username == settings.ADMIN_USERNAME and password == settings.ADMIN_PASSWORD:
+        is_valid = True
+        is_admin = True
+    elif user and verify_password(password, user.hashed_password):
+        is_valid = True
+        is_admin = user.is_admin
+
+    if not is_valid:
+        return templates.TemplateResponse(
+            "login.html", {"request": request, "error": "Credenciais inválidas."}
+        )
+
+    # Generate token
+    token = create_access_token(
+        {"sub": username, "is_admin": is_admin},
+        timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
+    )
+
+    response = RedirectResponse(url="/", status_code=303)
+    expires = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
+    response.set_cookie(
+            key="access_token",
+            value=token,
+            httponly=True,
+            max_age=expires,
+            samesite="lax",
+    )
+    return response
+
+
+@router.get("/logout")
+async def logout(request: Request):
+    response = RedirectResponse(url="/login", status_code=303)
+    response.delete_cookie("access_token")
+    return response
+
+
+@router.get("/create-user", dependencies=[Depends(require_admin)])
+async def create_user_page(request: Request):
+    return templates.TemplateResponse("create_user.html", {"request": request})
+
+
+@router.post("/create-user", dependencies=[Depends(require_admin)])
+async def create_user_post(
+    request: Request,
+    username: str = Form(...),
+    password: str = Form(...),
+    is_admin: bool = Form(False),
+    db: AsyncSession = Depends(get_db),
+):
+    repo = SqlAlchemyRepo(db)
+    existing = await repo.get_user_by_username(username)
+    if existing:
+        return templates.TemplateResponse(
+            "create_user.html", {"request": request, "error": "Usuário já existe."}
+        )
+
+    await repo.create_user(username, get_password_hash(password), is_admin=is_admin)
+    return templates.TemplateResponse(
+        "create_user.html",
+        {"request": request, "success": "Usuário criado com sucesso!"},
+    )
+
+
+@router.get("/", dependencies=[Depends(require_auth)])
 async def dashboard(request: Request, service: SyncService = Depends(get_service)):
     jobs = await service.list_jobs()
     last_run = jobs[0] if jobs else None
@@ -51,7 +147,7 @@ async def dashboard(request: Request, service: SyncService = Depends(get_service
     )
 
 
-@router.get("/config")
+@router.get("/config", dependencies=[Depends(require_auth)])
 async def config_page(request: Request):
     return templates.TemplateResponse(
         "config.html",
@@ -63,7 +159,7 @@ async def config_page(request: Request):
     )
 
 
-@router.post("/api/settings/toggle-headless")
+@router.post("/api/settings/toggle-headless", dependencies=[Depends(require_auth)])
 async def toggle_headless(request: Request, target: str = Form(...)):
     if settings.IS_DOCKER:
         return {"error": "Ação não permitida em produção"}
@@ -93,7 +189,7 @@ async def toggle_headless(request: Request, target: str = Form(...)):
     return response
 
 
-@router.post("/api/settings/toggle-cached")
+@router.post("/api/settings/toggle-cached", dependencies=[Depends(require_auth)])
 async def toggle_cached_files(request: Request):
     env_path = str(settings.BASE_DIR / ".env")
     settings.USE_CACHED_FILES = not settings.USE_CACHED_FILES
@@ -111,7 +207,7 @@ async def toggle_cached_files(request: Request):
     return response
 
 
-@router.get("/partials/jobs")
+@router.get("/partials/jobs", dependencies=[Depends(require_auth)])
 async def get_jobs_partial(
     request: Request, service: SyncService = Depends(get_service)
 ):
@@ -121,7 +217,7 @@ async def get_jobs_partial(
     )
 
 
-@router.get("/jobs/{job_id}/tasks")
+@router.get("/jobs/{job_id}/tasks", dependencies=[Depends(require_auth)])
 async def get_task_groups_page(
     request: Request, job_id: UUID, service: SyncService = Depends(get_service)
 ):
@@ -172,7 +268,7 @@ async def get_task_groups_page(
     )
 
 
-@router.get("/jobs/{job_id}/tasks/summary")
+@router.get("/jobs/{job_id}/tasks/summary", dependencies=[Depends(require_auth)])
 async def get_task_groups_summary(
     job_id: UUID, service: SyncService = Depends(get_service)
 ):
@@ -218,7 +314,7 @@ async def get_task_groups_summary(
     return {"groups": list(groups.values())}
 
 
-@router.get("/partials/task-details-inline")
+@router.get("/partials/task-details-inline", dependencies=[Depends(require_auth)])
 async def get_task_details_inline_partial(
     request: Request,
     job_id: UUID,
@@ -246,7 +342,7 @@ async def get_task_details_inline_partial(
     )
 
 
-@router.get("/partials/task-payload")
+@router.get("/partials/task-payload", dependencies=[Depends(require_auth)])
 async def get_task_details_partial(
     request: Request,
     task_id: Optional[UUID] = None,
@@ -287,7 +383,7 @@ def group_logs_chronologically(logs):
     return grouped
 
 
-@router.get("/partials/task-log")
+@router.get("/partials/task-log", dependencies=[Depends(require_auth)])
 async def get_task_log_partial(
     request: Request, task_id: UUID, service: SyncService = Depends(get_service)
 ):
@@ -306,7 +402,7 @@ async def get_task_log_partial(
     )
 
 
-@router.get("/partials/logs")
+@router.get("/partials/logs", dependencies=[Depends(require_auth)])
 async def get_logs_partial(
     request: Request,
     job_id: UUID,
@@ -342,7 +438,7 @@ async def get_logs_partial(
     )
 
 
-@router.get("/partials/log-entries")
+@router.get("/partials/log-entries", dependencies=[Depends(require_auth)])
 async def get_log_entries_partial(
     request: Request,
     job_id: Optional[UUID] = None,

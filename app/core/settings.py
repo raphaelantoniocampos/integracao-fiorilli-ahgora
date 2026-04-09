@@ -43,6 +43,15 @@ class Settings:
     AHGORA_USER: str = os.getenv("AHGORA_USER", "")
     AHGORA_COMPANY: str = os.getenv("AHGORA_COMPANY", "")
 
+    # Authentication
+    ADMIN_USERNAME: str = os.getenv("ADMIN_USERNAME", "admin")
+    ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "changeme123")
+    SECRET_KEY: str = os.getenv(
+        "SECRET_KEY", "b39dc1fdb917c0df61bb8160abdfdffc9641d401340156d9be72aa0639d67119"
+    )
+    ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
+
     # Database
     DATABASE_URL: str = os.getenv(
         "DATABASE_URL", "postgresql+asyncpg://postgres:postgres@localhost:5432/fiogora"

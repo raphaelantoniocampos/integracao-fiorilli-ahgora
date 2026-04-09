@@ -38,6 +38,9 @@ Crie um arquivo `.env` a partir do exemplo (`cp .env.example .env`) e preencha a
 | `FIORILLI_URL`      | URL base do sistema Fiorilli                       | -      |
 | `AHGORA_URL`        | URL de login da plataforma Ahgora                  | -      |
 | `HEADLESS_MODE`     | Executar navegador de forma invisível (True/False) | `True` |
+| `ADMIN_USERNAME`    | Nome de usuário do Administrador para painel     | `admin` |
+| `ADMIN_PASSWORD`    | Senha do Administrador para o painel             | `changeme123` |
+| `SECRET_KEY`        | Chave criptográfica para tokens (JWT)              | `b39dc...` |
 
 **2. Configuração no Fiorilli:**
 
