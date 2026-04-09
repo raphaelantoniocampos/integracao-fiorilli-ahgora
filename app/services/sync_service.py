@@ -1002,7 +1002,7 @@ class SyncService:
         import csv
         import ast
 
-        csv_path = settings.BASE_DIR / "app" / "core" / "department_to_location.csv"
+        csv_path = settings.DATA_DIR / "mappings" / "department_to_location.csv"
         dept_to_loc = {}
         if csv_path.exists():
             try:
