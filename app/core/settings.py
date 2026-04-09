@@ -17,7 +17,9 @@ class Settings:
     DATA_DIR: Path = BASE_DIR / "data"
     DOWNLOADS_DIR: Path = BASE_DIR / "downloads"
     CORE_DIR_PATH: Path = Path(__file__).resolve().parent
-    CONSTANTS_JSON_PATH: Path = CORE_DIR_PATH / "constants.json"
+    MAPPINGS_DIR: Path = DATA_DIR / "mappings"
+    CONSTANTS_JSON_PATH: Path = MAPPINGS_DIR / "constants.json"
+    EXCEPTIONS_JSON_PATH: Path = MAPPINGS_DIR / "exceptions_and_typos.json"
 
     # Browser / Automation
     IS_DOCKER: bool = os.getenv("IS_DOCKER", "False").lower() == "true"
@@ -47,7 +49,8 @@ class Settings:
     )
 
     def __init__(self):
-        self._constants = self._load_constants()
+        self._constants = self._load_json(self.CONSTANTS_JSON_PATH)
+        self._exceptions = self._load_json(self.EXCEPTIONS_JSON_PATH)
 
         self.UPLOAD_LEAVES_COLUMNS = self._constants.get("upload_leaves_columns", [])
         self.LEAVES_COLUMNS = self._constants.get("leaves_columns", [])
@@ -60,14 +63,17 @@ class Settings:
         self.COLUMNS_TO_VERIFY_CHANGE = self._constants.get(
             "columns_to_verify_change", []
         )
+        self.IGNORE_LOCATION_CHANGE_IDS = self._constants.get(
+            "ignore_location_change_ids", []
+        )
         self.PT_MONTHS = self._constants.get("pt_months", {})
-        self.EXCEPTIONS_AND_TYPOS = self._constants.get("exceptions_and_typos", {})
+        self.EXCEPTIONS_AND_TYPOS = self._exceptions
 
-    def _load_constants(self):
-        if not self.CONSTANTS_JSON_PATH.exists():
+    def _load_json(self, path: Path):
+        if not path.exists():
             return {}
         try:
-            with open(self.CONSTANTS_JSON_PATH, "r", encoding="utf-8") as f:
+            with open(path, "r", encoding="utf-8") as f:
                 return json.load(f)
         except Exception:
             return {}

@@ -471,7 +471,7 @@ class AhgoraBrowser(BaseBrowser):
         import csv
         from app.core.settings import settings
 
-        csv_file = settings.BASE_DIR / "app" / "core" / "department_to_location.csv"
+        csv_file = settings.DATA_DIR / "mappings" / "department_to_location.csv"
 
         target_locations = []
         if csv_file.exists():

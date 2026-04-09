@@ -56,6 +56,16 @@ Configure as colunas da tabela no painel *Fiorilli 2.1 - Cadastro de Trabalhador
 - Dt. Admissão
 - Dt. Desligamento
 
+**3. Mapeamentos Estáticos (`data/mappings/`):**
+
+Para realizar ajustes finos nas regras de negócio sem precisar alterar o código base, o **FioGora** utiliza diretórios de recursos externos.
+
+Edite os arquivos localizados na pasta raiz `data/mappings/`:
+- `constants.json`: Definição e padrão das nomenclaturas de colunas e propriedades (ex: `ignore_location_change_ids` para previnir trocas de localizações do servidor).
+- `exceptions_and_typos.json`: De/Para para correção de erros de digitação e nomenclatura diferentes de órgãos no Fiorilli.
+- `department_to_location.csv`: Mapeamento de `Local/Departamento` (Fiorilli) associados a suas localidades da catraca eletrônica (Ahgora).
+- `leave_codes.csv`: Dicionário contendo os códigos numéricos de afastamentos / férias.
+
 ### 3. Executando
 
 **1. Docker:**
