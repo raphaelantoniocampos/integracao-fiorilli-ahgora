@@ -20,12 +20,26 @@ from app.infrastructure.db.models import (
     AutomationTaskModel,
     SyncJobModel,
     SyncLogModel,
+    UserModel,
 )
 
 
 class SqlAlchemyRepo:
     def __init__(self, session: AsyncSession):
         self.session = session
+
+    async def get_user_by_username(self, username: str) -> Optional[UserModel]:
+        result = await self.session.execute(
+            select(UserModel).filter_by(username=username)
+        )
+        return result.scalars().first()
+
+    async def create_user(self, username: str, hashed_password: str, is_admin: bool = False) -> UserModel:
+        db_user = UserModel(username=username, hashed_password=hashed_password, is_admin=is_admin)
+        self.session.add(db_user)
+        await self.session.commit()
+        await self.session.refresh(db_user)
+        return db_user
 
     async def save_job(self, job: SyncJob) -> None:
         # Check if job exists

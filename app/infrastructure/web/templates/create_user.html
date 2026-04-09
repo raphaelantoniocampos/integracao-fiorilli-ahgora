@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="mb-8 max-w-xl mx-auto">
+    <div class="mb-6">
+        <h2 class="text-3xl font-bold text-slate-900 tracking-tight">Criar Usuário</h2>
+        <p class="text-slate-500 mt-1">Adicione um novo usuário ao sistema.</p>
+    </div>
+
+    <div class="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 transition-all hover:shadow-md">
+        <form method="POST" action="/create-user" class="space-y-5">
+            <div>
+                <label for="username" class="block text-sm font-medium text-slate-700 mb-1">Nome de Usuário</label>
+                <input type="text" name="username" id="username" required
+                    class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                    placeholder="novo usuário">
+            </div>
+
+            <div>
+                <label for="password" class="block text-sm font-medium text-slate-700 mb-1">Senha</label>
+                <input type="password" name="password" id="password" required minlength="6"
+                    class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                    placeholder="••••••••">
+            </div>
+
+            <div class="flex items-center space-x-2 text-sm font-medium text-slate-700 pt-2">
+                <input type="checkbox" name="is_admin" id="is_admin" value="true"
+                    class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded cursor-pointer">
+                <label for="is_admin" class="cursor-pointer select-none">Previdenciar privilégios de Administrador</label>
+            </div>
+
+            {% if error %}
+            <div class="p-3 bg-rose-50 text-rose-500 text-sm rounded-lg flex items-center">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                {{ error }}
+            </div>
+            {% endif %}
+            
+            {% if success %}
+            <div class="p-3 bg-emerald-50 text-emerald-500 text-sm rounded-lg flex items-center">
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                </svg>
+                {{ success }}
+            </div>
+            {% endif %}
+
+            <div class="flex items-center justify-between pt-4">
+                <a href="/" class="text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors">Voltar</a>
+                <button type="submit"
+                    class="btn-primary flex items-center py-2 px-6 rounded-lg text-sm font-semibold shadow-sm">
+                    Criar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

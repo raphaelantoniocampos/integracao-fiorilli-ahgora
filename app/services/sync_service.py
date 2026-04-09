@@ -568,7 +568,7 @@ class SyncService:
             await self._log(job_id, "INFO", "Loading leave data from files...")
             last_leaves, all_leaves = await self._get_leaves_data(job_id)
 
-            leave_codes_path = settings.BASE_DIR / "app" / "core" / "leave_codes.csv"
+            leave_codes_path = settings.DATA_DIR / "mappings" / "leave_codes.csv"
             if leave_codes_path.exists():
                 await self._log(job_id, "INFO", "Enriching leave data with codes...")
                 leave_codes = await asyncio.to_thread(
@@ -1063,6 +1063,7 @@ class SyncService:
                 lambda row: (
                     len(row["location_expected"]) > 0
                     and row["location_expected"] != row["location_actual"]
+                    and str(row["id"]).zfill(6) not in settings.IGNORE_LOCATION_CHANGE_IDS
                 ),
                 axis=1,
             )

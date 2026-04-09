@@ -124,6 +124,18 @@
                 </li>
                 <li><a href="/docs" class="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors"
                         target="_blank">Documentação</a></li>
+                {% if request.state.is_admin %}
+                <li><a href="/create-user" 
+                        class="text-sm font-medium text-indigo-600 hover:text-indigo-800 transition-colors bg-indigo-50 px-3 py-1.5 rounded-md">
+                        + Novo Usuário
+                    </a>
+                </li>
+                {% endif %}
+                <li><a href="/logout"
+                        class="text-sm font-medium text-red-500 hover:text-red-700 transition-colors ml-4">
+                        Sair
+                    </a>
+                </li>
             </ul>
         </div>
     </nav>

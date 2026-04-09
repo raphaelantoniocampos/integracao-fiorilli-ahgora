@@ -16,6 +16,7 @@ output/
 .env
 fiogora.db
 downloads/
-data/
+data/*.csv
+data/*.txt
 tasks/
 docs/*
