@@ -118,6 +118,55 @@ async def create_user_post(
     )
 
 
+@router.get("/change-password", dependencies=[Depends(require_auth)])
+async def change_password_page(request: Request):
+    return templates.TemplateResponse(
+        "change_password.html",
+        {"request": request, "username": request.state.username},
+    )
+
+
+@router.post("/change-password", dependencies=[Depends(require_auth)])
+async def change_password_post(
+    request: Request,
+    current_password: str = Form(...),
+    new_password: str = Form(...),
+    db: AsyncSession = Depends(get_db),
+):
+    username = request.state.username
+    if username == settings.ADMIN_USERNAME:
+        return templates.TemplateResponse(
+            "change_password.html",
+            {
+                "request": request,
+                "username": username,
+                "error": "A senha do usuário administrador padrão só pode ser alterada modificando o arquivo .env",
+            },
+        )
+
+    repo = SqlAlchemyRepo(db)
+    user = await repo.get_user_by_username(username)
+    if not user or not verify_password(current_password, user.hashed_password):
+        return templates.TemplateResponse(
+            "change_password.html",
+            {
+                "request": request,
+                "username": username,
+                "error": "A senha atual está incorreta.",
+            },
+        )
+
+    await repo.update_user_password(username, get_password_hash(new_password))
+    return templates.TemplateResponse(
+        "change_password.html",
+        {
+            "request": request,
+            "username": username,
+            "success": "Sua senha foi alterada com sucesso!",
+        },
+    )
+
+
 @router.get("/", dependencies=[Depends(require_auth)])
 async def dashboard(request: Request, service: SyncService = Depends(get_service)):
     jobs = await service.list_jobs()

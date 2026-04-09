@@ -41,6 +41,12 @@ class SqlAlchemyRepo:
         await self.session.refresh(db_user)
         return db_user
 
+    async def update_user_password(self, username: str, hashed_password: str) -> None:
+        user = await self.get_user_by_username(username)
+        if user:
+            user.hashed_password = hashed_password
+            await self.session.commit()
+
     async def save_job(self, job: SyncJob) -> None:
         # Check if job exists
         db_job = await self.session.get(SyncJobModel, job.id)

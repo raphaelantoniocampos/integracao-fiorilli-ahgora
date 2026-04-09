@@ -81,11 +81,13 @@ async def extend_auth_cookie_middleware(request: Request, call_next):
     from app.core.security import decode_access_token
     token = request.cookies.get("access_token")
     request.state.is_admin = False
+    request.state.username = None
     
     if token:
         payload = decode_access_token(token)
         if payload:
             request.state.is_admin = payload.get("is_admin", False)
+            request.state.username = payload.get("sub", None)
             
     response = await call_next(request)
     
