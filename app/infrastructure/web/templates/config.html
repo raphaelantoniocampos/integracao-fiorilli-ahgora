@@ -13,8 +13,8 @@
     <!-- Configuration Form -->
     <div class="bg-white px-4 py-5 sm:rounded-lg sm:p-6 shadow-md border border-gray-100">
         <form id="configForm" class="space-y-6" onsubmit="saveCredentials(event)">
-            <div class="md:grid md:grid-cols-7 md:gap-12">
-                <div class="md:col-span-3">
+            <div class="md:grid md:grid-cols-7 md:gap-6">
+                <div class="md:col-span-4">
                     <h3 class="text-lg font-medium leading-6 text-gray-900">Credenciais de Automação</h3>
                     <p class="mt-1 text-sm text-gray-500">
                         Senhas necessárias para as integrações Ahgora e Fiorilli.
@@ -35,7 +35,7 @@
                         <li class="py-1 px-2">Dt. Desligamento</li>
                     </ul>
                 </div>
-                <div class="mt-5 md:col-span-4 md:mt-0 space-y-6">
+                <div class="mt-5 md:col-span-3 md:mt-0 space-y-6">
                     <div class="col-span-6 sm:col-span-4">
                         <label for="fiorilli-url" class="block text-sm font-medium text-gray-700">URL Fiorilli</label>
                     <input type="text" name="fiorilli_url" id="fiorilli-url" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" value={{ fiorilli_url }}>
@@ -75,7 +75,7 @@
             <div class="flex flex-col items-center justify-center gap-y-3 border-t border-gray-50 mt-4">
                 <button type="submit" 
                 class="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
-                    Salvar no Navegador
+                    Salvar
                 </button>
                 <div id="save-msg" class="text-sm pt-4 text-green-600 hidden font-medium animate-pulse">Credenciais salvas no navegador!</div>
             </div>
