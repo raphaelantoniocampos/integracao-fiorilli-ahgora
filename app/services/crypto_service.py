@@ -3,6 +3,7 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.primitives import serialization
 
+
 class CryptoService:
     def __init__(self):
         # Generate an ephemeral RSA key pair for the lifetime of this service instance
@@ -16,7 +17,7 @@ class CryptoService:
         """Returns the public key in PEM format to be sent to the frontend."""
         pem = self._public_key.public_bytes(
             encoding=serialization.Encoding.PEM,
-            format=serialization.PublicFormat.SubjectPublicKeyInfo
+            format=serialization.PublicFormat.SubjectPublicKeyInfo,
         )
         return pem.decode("utf-8")
 
@@ -28,10 +29,11 @@ class CryptoService:
             padding.OAEP(
                 mgf=padding.MGF1(algorithm=hashes.SHA256()),
                 algorithm=hashes.SHA256(),
-                label=None
-            )
+                label=None,
+            ),
         )
         return decrypted_data.decode("utf-8")
+
 
 # Singleton instance for the application
 crypto_service = CryptoService()

@@ -34,8 +34,12 @@ class SqlAlchemyRepo:
         )
         return result.scalars().first()
 
-    async def create_user(self, username: str, hashed_password: str, is_admin: bool = False) -> UserModel:
-        db_user = UserModel(username=username, hashed_password=hashed_password, is_admin=is_admin)
+    async def create_user(
+        self, username: str, hashed_password: str, is_admin: bool = False
+    ) -> UserModel:
+        db_user = UserModel(
+            username=username, hashed_password=hashed_password, is_admin=is_admin
+        )
         self.session.add(db_user)
         await self.session.commit()
         await self.session.refresh(db_user)

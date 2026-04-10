@@ -44,7 +44,9 @@ def test_run_sync_job(mock_service_class, mock_decrypt, client):
     # Override get_service dependency specially to inject the mock instance
     app.dependency_overrides[get_service] = lambda: mock_service
 
-    response = client.post("/api/sync/run", json={"fiorilli_password": "enc", "ahgora_password": "enc"})
+    response = client.post(
+        "/api/sync/run", json={"fiorilli_password": "enc", "ahgora_password": "enc"}
+    )
     assert response.status_code == 200
     assert response.json()["id"] == str(job_id)
     mock_service.create_job.assert_called_once()

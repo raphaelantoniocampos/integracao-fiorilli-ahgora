@@ -79,18 +79,19 @@ def health_check():
 @app.middleware("http")
 async def extend_auth_cookie_middleware(request: Request, call_next):
     from app.core.security import decode_access_token
+
     token = request.cookies.get("access_token")
     request.state.is_admin = False
     request.state.username = None
-    
+
     if token:
         payload = decode_access_token(token)
         if payload:
             request.state.is_admin = payload.get("is_admin", False)
             request.state.username = payload.get("sub", None)
-            
+
     response = await call_next(request)
-    
+
     if token and request.url.path != "/logout":
         # Ensure we set cookie on response
         expires = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
@@ -101,7 +102,7 @@ async def extend_auth_cookie_middleware(request: Request, call_next):
             max_age=expires,
             samesite="lax",
         )
-        
+
     return response
 
 

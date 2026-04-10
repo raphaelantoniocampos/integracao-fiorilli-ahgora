@@ -1025,7 +1025,7 @@ class SyncService:
                                 ]
                             else:
                                 target_locations = []
-                            
+
                             target_locations = [x for x in target_locations if x]
                             dept_to_loc[dept] = sorted(target_locations)
             except Exception as e:
@@ -1046,7 +1046,7 @@ class SyncService:
                 locs = [x.strip().upper() for x in val.split(";")]
             else:
                 locs = []
-            
+
             locs = [x for x in locs if x]
             return sorted(locs)
 
@@ -1063,7 +1063,8 @@ class SyncService:
                 lambda row: (
                     len(row["location_expected"]) > 0
                     and row["location_expected"] != row["location_actual"]
-                    and str(row["id"]).zfill(6) not in settings.IGNORE_LOCATION_CHANGE_IDS
+                    and str(row["id"]).zfill(6)
+                    not in settings.IGNORE_LOCATION_CHANGE_IDS
                 ),
                 axis=1,
             )

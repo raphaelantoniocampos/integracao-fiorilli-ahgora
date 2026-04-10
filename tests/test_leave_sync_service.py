@@ -63,7 +63,10 @@ async def test_execute_leaves_batch_success():
     # First to RUNNING, then to SUCCESS
     repo.update_task_status.assert_any_call(task_id, AutomationTaskStatus.RUNNING)
     repo.update_task_status.assert_any_call(
-        task_id, AutomationTaskStatus.SUCCESS, message="Batch completed: 1 imported, 0 existing ignored, 0 errors.", payload=task.payload
+        task_id,
+        AutomationTaskStatus.SUCCESS,
+        message="Batch completed: 1 imported, 0 existing ignored, 0 errors.",
+        payload=task.payload,
     )
 
 
@@ -91,7 +94,9 @@ async def test_execute_leaves_batch_with_validation_errors():
     )
 
     repo.get_automation_tasks_by_job = AsyncMock(return_value=[task])
-    repo.get_ahgora_leaves_df = AsyncMock(return_value=pd.DataFrame([{"id": "000001"}, {"id": "000002"}]))
+    repo.get_ahgora_leaves_df = AsyncMock(
+        return_value=pd.DataFrame([{"id": "000001"}, {"id": "000002"}])
+    )
     repo.update_task_status = AsyncMock()
     repo.save_ahgora_leaves_batch = AsyncMock()
     repo.evaluate_and_update_job_status = AsyncMock()
@@ -107,13 +112,21 @@ async def test_execute_leaves_batch_with_validation_errors():
                 "message": "Interseccao",
                 "index": 0,
             },
-            {"payload": {"id": "000002"}, "status": "success", "message": "", "index": 1},
+            {
+                "payload": {"id": "000002"},
+                "status": "success",
+                "message": "",
+                "index": 1,
+            },
         ]
     )
     await service.execute_leaves_batch(job_id)
 
     repo.update_task_status.assert_any_call(
-        task_id, AutomationTaskStatus.SUCCESS, message="Batch completed: 1 imported, 0 existing ignored, 1 errors.", payload=task.payload
+        task_id,
+        AutomationTaskStatus.SUCCESS,
+        message="Batch completed: 1 imported, 0 existing ignored, 1 errors.",
+        payload=task.payload,
     )
 
 
@@ -148,7 +161,9 @@ async def test_execute_leaves_batch_catastrophic_failure():
 
     service = LeaveSyncService(repo=repo)
 
-    service._run_browser_batch_import = MagicMock(side_effect=Exception("Browser crashed"))
+    service._run_browser_batch_import = MagicMock(
+        side_effect=Exception("Browser crashed")
+    )
     await service.execute_leaves_batch(job_id)
 
     repo.update_task_status.assert_any_call(

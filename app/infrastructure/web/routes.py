@@ -10,7 +10,12 @@ from datetime import timedelta
 
 from app.core.database import get_db
 from app.core.settings import settings
-from app.core.security import verify_password, get_password_hash, create_access_token, decode_access_token
+from app.core.security import (
+    verify_password,
+    get_password_hash,
+    create_access_token,
+    decode_access_token,
+)
 from typing import Any, Dict
 from app.domain.enums import SyncStatus
 from app.infrastructure.db.sqlalchemy_repo import SqlAlchemyRepo
@@ -19,6 +24,7 @@ from app.services.sync_service import SyncService
 router = APIRouter()
 templates = Jinja2Templates(directory="app/infrastructure/web/templates")
 
+
 def require_auth(request: Request):
     token = request.cookies.get("access_token")
     if not token or not decode_access_token(token):
@@ -26,10 +32,14 @@ def require_auth(request: Request):
             raise HTTPException(status_code=200, headers={"HX-Redirect": "/login"})
         raise HTTPException(status_code=303, headers={"Location": "/login"})
 
+
 def require_admin(request: Request):
     require_auth(request)
     if not request.state.is_admin:
-        raise HTTPException(status_code=403, detail="Acesso negado. Apenas administradores podem acessar esta página.")
+        raise HTTPException(
+            status_code=403,
+            detail="Acesso negado. Apenas administradores podem acessar esta página.",
+        )
 
 
 def get_service(db: AsyncSession = Depends(get_service_db := get_db)):
@@ -75,11 +85,11 @@ async def login_post(
     response = RedirectResponse(url="/", status_code=303)
     expires = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
     response.set_cookie(
-            key="access_token",
-            value=token,
-            httponly=True,
-            max_age=expires,
-            samesite="lax",
+        key="access_token",
+        value=token,
+        httponly=True,
+        max_age=expires,
+        samesite="lax",
     )
     return response
 
@@ -341,12 +351,12 @@ async def get_task_groups_summary(
 
     for t in tasks:
         group = groups[t.type]
-        group["type"] = str(t.type) if t.type else "" # ensures JSON serialization
+        group["type"] = str(t.type) if t.type else ""  # ensures JSON serialization
         if hasattr(t.type, "name"):
             group["type"] = t.type.name
         elif hasattr(t.type, "value"):
             group["type"] = t.type.value
-            
+
         group["total"] += 1
 
         if t.status == AutomationTaskStatus.PENDING:

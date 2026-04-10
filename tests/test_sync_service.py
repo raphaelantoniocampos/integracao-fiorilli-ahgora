@@ -39,7 +39,14 @@ async def test_run_sync_background_success():
         return_value=SyncResult(success=True, status=SyncStatus.SUCCESS, message="OK"),
     ):
         await service.run_sync_background(
-            job_id, "http://fiorilli", "user1", "pass1", "http://ahgora", "user2", "company", "pass2"
+            job_id,
+            "http://fiorilli",
+            "user1",
+            "pass1",
+            "http://ahgora",
+            "user2",
+            "company",
+            "pass2",
         )
 
     repo.update_job_status.assert_any_call(job_id, SyncStatus.RUNNING)
@@ -66,7 +73,14 @@ async def test_run_sync_background_failure_permanent():
         side_effect=Exception("Browser Error"),
     ):
         await service.run_sync_background(
-            job_id, "http://fiorilli", "user1", "pass1", "http://ahgora", "user2", "company", "pass2"
+            job_id,
+            "http://fiorilli",
+            "user1",
+            "pass1",
+            "http://ahgora",
+            "user2",
+            "company",
+            "pass2",
         )
 
     repo.update_job_status.assert_any_call(job_id, SyncStatus.FAILED, "Browser Error")
@@ -94,7 +108,14 @@ async def test_run_sync_background_retry_scheduled():
         ),
     ):
         await service.run_sync_background(
-            job_id, "http://fiorilli", "user1", "pass1", "http://ahgora", "user2", "company", "pass2"
+            job_id,
+            "http://fiorilli",
+            "user1",
+            "pass1",
+            "http://ahgora",
+            "user2",
+            "company",
+            "pass2",
         )
 
     # Should have called increment_job_retry, not update_job_status(FAILED)

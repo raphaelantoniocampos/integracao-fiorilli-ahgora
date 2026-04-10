@@ -311,7 +311,9 @@ class AhgoraBrowser(BaseBrowser):
             try:
                 self.send_keys("dt_demissao", dismissal_date, By.ID, clear_first=True)
                 self.wait(self.DELAY)
-                self.click_element("//*[@id='funcionarios']/tbody/tr[1]/td/div/div[2]/div/button[2]")
+                self.click_element(
+                    "//*[@id='funcionarios']/tbody/tr[1]/td/div/div[2]/div/button[2]"
+                )
                 self.wait(self.DELAY * 2)
             except Exception as e:
                 self._log(

@@ -318,6 +318,7 @@ class BaseBrowser(ABC):
         self, selector, value, selector_type, delay, ignored_exceptions
     ):
         from selenium.webdriver.support.ui import Select
+
         element = WebDriverWait(
             self.driver, delay, ignored_exceptions=ignored_exceptions
         ).until(EC.presence_of_element_located((selector_type, selector)))

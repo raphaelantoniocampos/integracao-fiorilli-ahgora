@@ -25,7 +25,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
         expire = datetime.now(timezone.utc) + expires_delta
     else:
         expire = datetime.now(timezone.utc) + timedelta(minutes=15)
-    
+
     # Ensure any UUID in the data is converted to a string before encoding
     for k, v in to_encode.items():
         if isinstance(v, UUID):

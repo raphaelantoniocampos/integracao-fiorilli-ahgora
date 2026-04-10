@@ -73,8 +73,6 @@ class LeaveSyncService:
             task_id=batch_task.id,
         )
 
-
-
         cancel_event = task_registry.get_cancel_event(job_id)
         if not cancel_event:
             cancel_event = threading.Event()
