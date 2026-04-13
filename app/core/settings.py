@@ -19,7 +19,7 @@ class Settings:
     CORE_DIR_PATH: Path = Path(__file__).resolve().parent
     MAPPINGS_DIR: Path = DATA_DIR / "mappings"
     CONSTANTS_JSON_PATH: Path = MAPPINGS_DIR / "constants.json"
-    EXCEPTIONS_JSON_PATH: Path = MAPPINGS_DIR / "exceptions_and_typos.json"
+    EXCEPTIONS_JSON_PATH: Path = MAPPINGS_DIR / "exceptions.json"
 
     # Browser / Automation
     IS_DOCKER: bool = os.getenv("IS_DOCKER", "False").lower() == "true"
