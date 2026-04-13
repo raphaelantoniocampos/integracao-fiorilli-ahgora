@@ -17,9 +17,9 @@ class Settings:
     DATA_DIR: Path = BASE_DIR / "data"
     DOWNLOADS_DIR: Path = BASE_DIR / "downloads"
     CORE_DIR_PATH: Path = Path(__file__).resolve().parent
+    EXCEPTIONS_JSON_PATH: Path = DATA_DIR / "exceptions.json"
     MAPPINGS_DIR: Path = DATA_DIR / "mappings"
     CONSTANTS_JSON_PATH: Path = MAPPINGS_DIR / "constants.json"
-    EXCEPTIONS_JSON_PATH: Path = MAPPINGS_DIR / "exceptions.json"
 
     # Browser / Automation
     IS_DOCKER: bool = os.getenv("IS_DOCKER", "False").lower() == "true"
