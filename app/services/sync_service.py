@@ -32,7 +32,6 @@ COLUMNS_TO_VERIFY_CHANGE = settings.COLUMNS_TO_VERIFY_CHANGE
 LEAVES_COLUMNS = settings.LEAVES_COLUMNS
 UPLOAD_LEAVES_COLUMNS = settings.UPLOAD_LEAVES_COLUMNS
 PT_MONTHS = settings.PT_MONTHS
-EXCEPTIONS_AND_TYPOS = settings.EXCEPTIONS_AND_TYPOS
 MAX_AGE_MINUTES = settings.MAX_AGE_MINUTES
 SYNC_TIMEOUT_MAX = settings.SYNC_TIMEOUT_MAX
 
@@ -839,7 +838,7 @@ class SyncService:
             .encode("ASCII", "ignore")
             .decode("ASCII")
         )
-        normalized = EXCEPTIONS_AND_TYPOS.get(normalized, normalized)
+        normalized = settings.EXCEPTIONS_AND_TYPOS.get(normalized, normalized)
         return normalized.lower().strip()
 
     async def _generate_tasks_dfs(
@@ -1096,7 +1095,7 @@ class SyncService:
             # Apply normalize text for normalization
             for col in df.columns:
                 if df[col].dtype == object:
-                    df[col] = df[col].replace(EXCEPTIONS_AND_TYPOS)
+                    df[col] = df[col].replace(settings.EXCEPTIONS_AND_TYPOS)
 
         if last_leaves.empty:
             all_leaves_copy = all_leaves.copy()

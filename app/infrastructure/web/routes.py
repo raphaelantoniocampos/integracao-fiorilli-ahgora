@@ -101,11 +101,6 @@ async def logout(request: Request):
     return response
 
 
-@router.get("/create-user", dependencies=[Depends(require_admin)])
-async def create_user_page(request: Request):
-    return templates.TemplateResponse("create_user.html", {"request": request})
-
-
 @router.post("/create-user", dependencies=[Depends(require_admin)])
 async def create_user_post(
     request: Request,
@@ -116,16 +111,23 @@ async def create_user_post(
 ):
     repo = SqlAlchemyRepo(db)
     existing = await repo.get_user_by_username(username)
+    
+    context = {
+        "request": request,
+        "fiorilli_url": settings.FIORILLI_URL,
+        "ahgora_url": settings.AHGORA_URL,
+        "username": request.state.username,
+        "exceptions_typos": settings.EXCEPTIONS_AND_TYPOS,
+        "ignore_ids": settings.IGNORE_LOCATION_CHANGE_IDS,
+    }
+
     if existing:
-        return templates.TemplateResponse(
-            "create_user.html", {"request": request, "error": "Usuário já existe."}
-        )
+        context["create_user_error"] = "Usuário já existe."
+        return templates.TemplateResponse("config.html", context)
 
     await repo.create_user(username, get_password_hash(password), is_admin=is_admin)
-    return templates.TemplateResponse(
-        "create_user.html",
-        {"request": request, "success": "Usuário criado com sucesso!"},
-    )
+    context["create_user_success"] = "Usuário criado com sucesso!"
+    return templates.TemplateResponse("config.html", context)
 
 
 @router.get("/change-password", dependencies=[Depends(require_auth)])
@@ -214,8 +216,47 @@ async def config_page(request: Request):
             "request": request,
             "fiorilli_url": settings.FIORILLI_URL,
             "ahgora_url": settings.AHGORA_URL,
+            "username": request.state.username,
+            "exceptions_typos": settings.EXCEPTIONS_AND_TYPOS,
+            "ignore_ids": settings.IGNORE_LOCATION_CHANGE_IDS,
         },
     )
+
+@router.post("/api/config/exceptions/typo", dependencies=[Depends(require_admin)])
+async def add_typo(request: Request, mistake: str = Form(...), correction: str = Form(...)):
+    settings.EXCEPTIONS_AND_TYPOS[mistake.strip()] = correction.strip()
+    settings.save_exceptions()
+    return templates.TemplateResponse("partials/typos_list.html", {
+        "request": request, "exceptions_typos": settings.EXCEPTIONS_AND_TYPOS
+    })
+
+@router.delete("/api/config/exceptions/typo/{mistake}", dependencies=[Depends(require_admin)])
+async def delete_typo(request: Request, mistake: str):
+    if mistake in settings.EXCEPTIONS_AND_TYPOS:
+        del settings.EXCEPTIONS_AND_TYPOS[mistake]
+        settings.save_exceptions()
+    return templates.TemplateResponse("partials/typos_list.html", {
+        "request": request, "exceptions_typos": settings.EXCEPTIONS_AND_TYPOS
+    })
+
+@router.post("/api/config/exceptions/ignore-id", dependencies=[Depends(require_admin)])
+async def add_ignore_id(request: Request, ignore_id: str = Form(...)):
+    val = ignore_id.strip()
+    if val and val not in settings.IGNORE_LOCATION_CHANGE_IDS:
+        settings.IGNORE_LOCATION_CHANGE_IDS.append(val)
+        settings.save_exceptions()
+    return templates.TemplateResponse("partials/ignore_ids_list.html", {
+        "request": request, "ignore_ids": settings.IGNORE_LOCATION_CHANGE_IDS
+    })
+
+@router.delete("/api/config/exceptions/ignore-id/{ignore_id}", dependencies=[Depends(require_admin)])
+async def delete_ignore_id(request: Request, ignore_id: str):
+    if ignore_id in settings.IGNORE_LOCATION_CHANGE_IDS:
+        settings.IGNORE_LOCATION_CHANGE_IDS.remove(ignore_id)
+        settings.save_exceptions()
+    return templates.TemplateResponse("partials/ignore_ids_list.html", {
+        "request": request, "ignore_ids": settings.IGNORE_LOCATION_CHANGE_IDS
+    })
 
 
 @router.post("/api/settings/toggle-headless", dependencies=[Depends(require_auth)])

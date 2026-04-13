@@ -1,25 +1,60 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="space-y-6 mx-auto px-4 sm:px-6 lg:px-8">
-    <!-- Header -->
-    <div class="text-center sm:flex sm:items-center sm:justify-between sm:text-left">
-        <div>
-            <h1 class="text-2xl font-bold text-gray-900">Configurações Base</h1>
-            <p class="mt-2 text-sm text-gray-700">Gerencie suas credenciais de acesso. As credenciais são armazenadas apenas localmente no navegador.</p>
-        </div>
+<style>
+    .tab-btn {
+        display: block;
+        padding: 0.75rem 1rem;
+        border-radius: 0.5rem;
+        font-weight: 500;
+        color: #64748b;
+        transition: all 0.2s;
+    }
+    .tab-btn:hover {
+        background-color: #f1f5f9;
+        color: #1e293b;
+    }
+    .tab-btn.active {
+        background-color: #e0e7ff;
+        color: #4f46e5;
+    }
+    .tab-content {
+        display: none;
+        animation: fadeIn 0.3s ease-in-out;
+    }
+    .tab-content.active {
+        display: block;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(5px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+</style>
+
+<div class="flex flex-col md:flex-row gap-8 mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
+    <!-- Sidebar Navigation -->
+    <div class="w-full md:w-64 flex-shrink-0">
+        <h2 class="text-xl font-bold text-slate-800 mb-4 px-2">Configurações</h2>
+        <nav class="space-y-1">
+            <a href="#general" onclick="showTab('general', this)" class="tab-btn active">Geral</a>
+            <a href="#automation" onclick="showTab('automation', this)" class="tab-btn">Automação</a>
+            <a href="#password" onclick="showTab('password', this)" class="tab-btn">Alterar Senha</a>
+            {% if request.state.is_admin %}
+            <a href="#exceptions" onclick="showTab('exceptions', this)" class="tab-btn">Exceções/Erros</a>
+            <a href="#create-user" onclick="showTab('create-user', this)" class="tab-btn">Criar Usuário</a>
+            {% endif %}
+        </nav>
     </div>
 
-    <!-- Configuration Form -->
-    <div class="bg-white px-4 py-5 sm:rounded-lg sm:p-6 shadow-md border border-gray-100">
-        <form id="configForm" class="space-y-6" onsubmit="saveCredentials(event)">
-            <div class="md:grid md:grid-cols-7 md:gap-6">
-                <div class="md:col-span-4">
-                    <h3 class="text-lg font-medium leading-6 text-gray-900">Credenciais de Automação</h3>
-                    <p class="mt-1 text-sm text-gray-500">
-                        Senhas necessárias para as integrações Ahgora e Fiorilli.
-                    </p>
-                    <p class="mt-2 text-sm text-gray-700">Configure as colunas da tabela no painel <b>Fiorilli 2.1 - Cadastro de Trabalhadores</b> e defina como padrão para seu usuário:</p>
+    <!-- Main Content Panels -->
+    <div class="flex-1">
+
+        <!-- Tab: General Config -->
+        <div id="tab-general" class="tab-content active">
+            <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-100">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-slate-900">Configuração de colunas Fiorilli</h2>
+                    <p class="mt-2 text-sm text-slate-500">Configure as colunas da tabela no painel Fiorilli 2.1 - Cadastro de Trabalhadores e defina como padrão para seu usuário:</p>
                     <ul class="mt-3 divide-y divide-gray-200 rounded-md border border-gray-200 text-sm text-gray-700">
                         <li class="py-1 px-2">Registro</li>
                         <li class="py-1 px-2">Nome</li>
@@ -35,94 +70,275 @@
                         <li class="py-1 px-2">Dt. Desligamento</li>
                     </ul>
                 </div>
-                <div class="mt-5 md:col-span-3 md:mt-0 space-y-6">
-                    <div class="col-span-6 sm:col-span-4">
-                        <label for="fiorilli-url" class="block text-sm font-medium text-gray-700">URL Fiorilli</label>
-                    <input type="text" name="fiorilli_url" id="fiorilli-url" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" value={{ fiorilli_url }}>
+            </div>
+        </div>
+        
+        <!-- Tab: Automation Config -->
+        <div id="tab-automation" class="tab-content">
+            <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-100">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-slate-900">Credenciais de Automação</h2>
+                    <p class="mt-2 text-sm text-slate-500">As credenciais são armazenadas localmente no navegador.</p>
+                </div>
+
+                <form id="configForm" class="space-y-6" onsubmit="saveCredentials(event)">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Fiorilli Config -->
+                        <div class="space-y-4">
+                            <h3 class="text-lg font-medium text-slate-800 border-b pb-2">Sistema Fiorilli</h3>
+                            <div>
+                                <label for="fiorilli-url" class="block text-sm font-medium text-slate-700">URL</label>
+                                <input type="text" name="fiorilli_url" id="fiorilli-url" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" value="{{ fiorilli_url }}">
+                            </div>
+                            <div>
+                                <label for="fiorilli-user" class="block text-sm font-medium text-slate-700">Usuário</label>
+                                <input type="text" name="fiorilli_user" id="fiorilli-user" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            </div>
+                            <div>
+                                <label for="fiorilli-password" class="block text-sm font-medium text-slate-700">Senha</label>
+                                <input type="password" name="fiorilli_password" id="fiorilli-password" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            </div>
+                        </div>
+
+                        <!-- Ahgora Config -->
+                        <div class="space-y-4">
+                            <h3 class="text-lg font-medium text-slate-800 border-b pb-2">Sistema Ahgora</h3>
+                            <div>
+                                <label for="ahgora-url" class="block text-sm font-medium text-slate-700">URL</label>
+                                <input type="text" name="ahgora_url" id="ahgora-url" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" value="{{ ahgora_url }}">
+                            </div>
+                            <div>
+                                <label for="ahgora-company" class="block text-sm font-medium text-slate-700">Empresa (Código)</label>
+                                <input type="text" name="ahgora_company" id="ahgora-company" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            </div>
+                            <div>
+                                <label for="ahgora-user" class="block text-sm font-medium text-slate-700">Usuário</label>
+                                <input type="text" name="ahgora_user" id="ahgora-user" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            </div>
+                            <div>
+                                <label for="ahgora-password" class="block text-sm font-medium text-slate-700">Senha</label>
+                                <input type="password" name="ahgora_password" id="ahgora-password" class="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-col items-end pt-4 border-t border-slate-100">
+                        <button type="submit" class="btn-primary flex items-center py-2 px-6 rounded-lg text-sm font-semibold shadow-sm">
+                            Salvar Credenciais
+                        </button>
+                        <div id="save-msg" class="text-sm pt-4 text-emerald-600 hidden font-medium animate-pulse">Credenciais salvas com sucesso!</div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tab: Change Password -->
+        <div id="tab-password" class="tab-content">
+            <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-100">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-slate-900">Mudar Senha</h2>
+                    <p class="mt-2 text-sm text-slate-500">Altere a senha da sua conta de acesso ao Fiogora.</p>
+                </div>
+                
+                <form method="POST" action="/change-password" class="space-y-5 max-w-md">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Usuário Atual</label>
+                        <div class="px-4 py-2 border border-slate-200 rounded-lg bg-slate-50 text-slate-700 cursor-not-allowed">
+                            {{ username }}
+                        </div>
+                    </div>
+                    <div>
+                        <label for="current_password" class="block text-sm font-medium text-slate-700 mb-1">Senha Atual</label>
+                        <input type="password" name="current_password" id="current_password" required
+                            class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all">
+                    </div>
+                    <div>
+                        <label for="new_password" class="block text-sm font-medium text-slate-700 mb-1">Nova Senha</label>
+                        <input type="password" name="new_password" id="new_password" required minlength="6"
+                            class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all">
                     </div>
 
-                    <div class="col-span-6 sm:col-span-4">
-                        <label for="fiorilli-user" class="block text-sm font-medium text-gray-700">Usuário Fiorilli</label>
-                        <input type="text" name="fiorilli_user" id="fiorilli-user" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                    {% if error %}
+                    <div class="p-3 bg-rose-50 text-rose-500 text-sm rounded-lg flex items-center">
+                        <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <span>{{ error }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    {% if success %}
+                    <div class="p-3 bg-emerald-50 text-emerald-500 text-sm rounded-lg flex items-center">
+                        <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        <span>{{ success }}</span>
+                    </div>
+                    {% endif %}
+
+                    <div class="pt-4 flex justify-end">
+                        <button type="submit" class="btn-primary flex items-center py-2 px-6 rounded-lg text-sm font-semibold shadow-sm">
+                            Atualizar Senha
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tab: Create User -->
+        <div id="tab-create-user" class="tab-content">
+            <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-100 mb-6">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-slate-900">Criar Usuário</h2>
+                    <p class="mt-1 text-sm text-slate-500">Adicione um novo usuário ao sistema.</p>
+                </div>
+                
+                <form method="POST" action="/create-user" class="space-y-5 max-w-md">
+                    <div>
+                        <label for="new_username" class="block text-sm font-medium text-slate-700 mb-1">Nome de Usuário</label>
+                        <input type="text" name="username" id="new_username" required
+                            class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                            placeholder="novo usuário">
                     </div>
 
-                    <div class="col-span-6 sm:col-span-4">
-                        <label for="fiorilli-password" class="block text-sm font-medium text-gray-700">Senha Fiorilli</label>
-                        <input type="password" name="fiorilli_password" id="fiorilli-password" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                    <div>
+                        <label for="new_user_password" class="block text-sm font-medium text-slate-700 mb-1">Senha</label>
+                        <input type="password" name="password" id="new_user_password" required minlength="6"
+                            class="w-full px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                            placeholder="••••••••">
                     </div>
 
-                    <div class="col-span-6 sm:col-span-4">
-                        <label for="ahgora-url" class="block text-sm font-medium text-gray-700">URL Ahgora</label>
-                        <input type="text" name="ahgora_url" id="ahgora-url" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" value={{ ahgora_url }}>
+                    <div class="flex items-center space-x-2 text-sm font-medium text-slate-700 pt-2">
+                        <input type="checkbox" name="is_admin" id="is_admin_check" value="true"
+                            class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded cursor-pointer">
+                        <label for="is_admin_check" class="cursor-pointer select-none">Administrador</label>
                     </div>
 
-                    <div class="col-span-6 sm:col-span-4">
-                        <label for="ahgora-company" class="block text-sm font-medium text-gray-700">Empresa Ahgora</label>
-                        <input type="text" name="ahgora_company" id="ahgora-company" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                    {% if create_user_error %}
+                    <div class="p-3 bg-rose-50 text-rose-500 text-sm rounded-lg flex items-center">
+                        <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <span>{{ create_user_error }}</span>
                     </div>
+                    {% endif %}
+                    
+                    {% if create_user_success %}
+                    <div class="p-3 bg-emerald-50 text-emerald-500 text-sm rounded-lg flex items-center">
+                        <svg class="w-4 h-4 mr-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        <span>{{ create_user_success }}</span>
+                    </div>
+                    {% endif %}
 
-                    <div class="col-span-6 sm:col-span-4">
-                        <label for="ahgora-user" class="block text-sm font-medium text-gray-700">Usuário Ahgora</label>
-                        <input type="text" name="ahgora_user" id="ahgora-user" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+                    <div class="pt-4 flex justify-end">
+                        <button type="submit" class="btn-primary flex items-center py-2 px-6 rounded-lg text-sm font-semibold shadow-sm">
+                            Criar
+                        </button>
                     </div>
+                </form>
+            </div>
+        </div>
 
-                    <div class="col-span-6 sm:col-span-4">
-                        <label for="ahgora-password" class="block text-sm font-medium text-gray-700">Senha Ahgora</label>
-                        <input type="password" name="ahgora_password" id="ahgora-password" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm">
+        {% if request.state.is_admin %}
+
+        <!-- Tab: Exceptions -->
+        <div id="tab-exceptions" class="tab-content">
+            <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-100 mb-6">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-slate-900">Correção de Nomes (Erros de Digitação)</h2>
+                    <p class="mt-1 text-sm text-slate-500">Mapeie nomes incorretos do painel para o nome correto desejado.</p>
+                </div>
+                
+                <form hx-post="/api/config/exceptions/typo" hx-target="#typos-list-container" hx-swap="innerHTML" class="flex gap-4 items-end mb-6">
+                    <div class="flex-1">
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Valor Incorreto</label>
+                        <input type="text" name="mistake" required class="w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border">
                     </div>
+                    <div class="flex-1">
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Valor Correto</label>
+                        <input type="text" name="correction" required class="w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border">
+                    </div>
+                    <button type="submit" onclick="setTimeout(()=> { this.form.reset(); }, 50)" class="btn-primary py-2 px-4 rounded-lg text-sm font-semibold shadow-sm h-10">Adicionar</button>
+                </form>
+
+                <div id="typos-list-container" class="border rounded-lg overflow-hidden border-slate-200">
+                    {% include 'partials/typos_list.html' %}
                 </div>
             </div>
-            <div class="flex flex-col items-center justify-center gap-y-3 border-t border-gray-50 mt-4">
-                <button type="submit" 
-                class="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
-                    Salvar
-                </button>
-                <div id="save-msg" class="text-sm pt-4 text-green-600 hidden font-medium animate-pulse">Credenciais salvas no navegador!</div>
+
+            <div class="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-100">
+                <div class="mb-6">
+                    <h2 class="text-2xl font-bold text-slate-900">Locais Ignorados</h2>
+                    <p class="mt-1 text-sm text-slate-500">Contratos com estes locais não terão mudanças de alocação alertadas/atualizadas.</p>
+                </div>
+
+                <form hx-post="/api/config/exceptions/ignore-id" hx-target="#ignore-ids-container" hx-swap="innerHTML" class="flex gap-4 items-end mb-6">
+                    <div class="flex-1 max-w-sm">
+                        <label class="block text-sm font-medium text-slate-700 mb-1">ID do Local a Ignorar</label>
+                        <input type="text" name="ignore_id" required class="w-full rounded-md border-slate-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2 border">
+                    </div>
+                    <button type="submit" onclick="setTimeout(()=> { this.form.reset(); }, 50)" class="btn-primary py-2 px-4 rounded-lg text-sm font-semibold shadow-sm h-10">Adicionar ID</button>
+                </form>
+
+                <div id="ignore-ids-container">
+                    {% include 'partials/ignore_ids_list.html' %}
+                </div>
             </div>
-        </form>
         </div>
+        {% endif %}
     </div>
 </div>
 
-    <script>
-        // Carregar do localStorage ao iniciar
-        document.addEventListener("DOMContentLoaded", function () {
-            const fields = [
-                "fiorilli_url", "fiorilli_user", "fiorilli_password",
-                "ahgora_url", "ahgora_company", "ahgora_user", "ahgora_password"
-            ];
-            fields.forEach(f => {
-                const stored = localStorage.getItem(f);
-                if (stored) {
-                    const elId = f.replace('_', '-');
-                    const element = document.getElementById(elId);
-                    if(element) element.value = stored;
-                }
-            });
-        });
+<script>
+    function showTab(tabId, btn) {
+        // Toggle tabs visibility
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + tabId).classList.add('active');
+        
+        // Toggle active button style
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        btn.classList.add('active');
+        
+        // Update URL hash without scroll
+        history.replaceState(null, null, ' ' + window.location.pathname + '#' + tabId);
+    }
 
-        function saveCredentials(event) {
-            event.preventDefault();
-            
-            const fields = [
-                "fiorilli_url", "fiorilli_user", "fiorilli_password",
-                "ahgora_url", "ahgora_company", "ahgora_user", "ahgora_password"
-            ];
-
-            fields.forEach(f => {
+    // Auto-select tab based on hash or errors
+    document.addEventListener("DOMContentLoaded", function () {
+        const hash = window.location.hash.substring(1);
+        const urlParams = window.location.search || '';
+        
+        // If there was an error rendering from a post /change-password
+        if(window.location.pathname === '/change-password' || `{{"error" if error else ""}}` || `{{"success" if success else ""}}`) {
+            const btn = document.querySelector('a[href="#password"]');
+            if(btn) showTab('password', btn);
+        } else if(window.location.pathname === '/create-user' || `{{"create_user_error" if create_user_error else ""}}` || `{{"create_user_success" if create_user_success else ""}}`) {
+            const btn = document.querySelector('a[href="#create-user"]');
+            if(btn) showTab('create-user', btn);
+        } else if (hash) {
+            const btn = document.querySelector(`a[href="#${hash}"]`);
+            if(btn) showTab(hash, btn);
+        }
+        
+        // Load credentials logic for automation tab
+        const fields = ["fiorilli_url", "fiorilli_user", "fiorilli_password", "ahgora_url", "ahgora_company", "ahgora_user", "ahgora_password"];
+        fields.forEach(f => {
+            const stored = localStorage.getItem(f);
+            if (stored) {
                 const elId = f.replace('_', '-');
-                const val = document.getElementById(elId).value;
-                localStorage.setItem(f, val);
-            });
+                const element = document.getElementById(elId);
+                if(element) element.value = stored;
+            }
+        });
+    });
 
+    function saveCredentials(event) {
+        event.preventDefault();
+        const fields = ["fiorilli_url", "fiorilli_user", "fiorilli_password", "ahgora_url", "ahgora_company", "ahgora_user", "ahgora_password"];
+        fields.forEach(f => {
+            const elId = f.replace('_', '-');
+            const val = document.getElementById(elId).value;
+            localStorage.setItem(f, val);
+        });
         localStorage.setItem('credentials_timestamp', new Date().getTime().toString());
 
         const msg = document.getElementById("save-msg");
         msg.classList.remove("hidden");
-        setTimeout(() => {
-            msg.classList.add("hidden");
-            window.location.href = '/';
-        }, 1500);
+        setTimeout(() => msg.classList.add("hidden"), 2000);
     }
 </script>
 {% endblock %}

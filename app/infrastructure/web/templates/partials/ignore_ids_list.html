@@ -1,0 +1,14 @@
+{% if ignore_ids %}
+<div class="flex flex-wrap gap-2">
+    {% for id in ignore_ids %}
+    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors">
+        {{ id }}
+        <button hx-delete="/api/config/exceptions/ignore-id/{{ id }}" hx-target="#ignore-ids-container" hx-swap="innerHTML" class="text-slate-400 hover:text-rose-500 ml-1 rounded-full focus:outline-none" title="Remover">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+    </span>
+    {% endfor %}
+</div>
+{% else %}
+<p class="text-sm text-slate-500 py-4 text-center border-2 border-dashed border-slate-200 rounded-lg">Nenhum ID ignorado no momento.</p>
+{% endif %}

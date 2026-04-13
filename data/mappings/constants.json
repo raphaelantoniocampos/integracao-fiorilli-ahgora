@@ -54,9 +54,6 @@
         "position",
         "department"
     ],
-    "ignore_location_change_ids": [
-        "034149"
-    ],
     "pt_months": {
         "Jan": "Jan",
         "Fev": "Feb",

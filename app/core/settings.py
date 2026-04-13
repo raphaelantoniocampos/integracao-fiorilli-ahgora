@@ -59,8 +59,6 @@ class Settings:
 
     def __init__(self):
         self._constants = self._load_json(self.CONSTANTS_JSON_PATH)
-        self._exceptions = self._load_json(self.EXCEPTIONS_JSON_PATH)
-
         self.UPLOAD_LEAVES_COLUMNS = self._constants.get("upload_leaves_columns", [])
         self.LEAVES_COLUMNS = self._constants.get("leaves_columns", [])
         self.AHGORA_EMPLOYEES_COLUMNS = self._constants.get(
@@ -72,11 +70,9 @@ class Settings:
         self.COLUMNS_TO_VERIFY_CHANGE = self._constants.get(
             "columns_to_verify_change", []
         )
-        self.IGNORE_LOCATION_CHANGE_IDS = self._constants.get(
-            "ignore_location_change_ids", []
-        )
         self.PT_MONTHS = self._constants.get("pt_months", {})
-        self.EXCEPTIONS_AND_TYPOS = self._exceptions
+        
+        self.reload_exceptions()
 
     def _load_json(self, path: Path):
         if not path.exists():
@@ -86,6 +82,19 @@ class Settings:
                 return json.load(f)
         except Exception:
             return {}
+
+    def reload_exceptions(self):
+        exceptions_data = self._load_json(self.EXCEPTIONS_JSON_PATH)
+        self.EXCEPTIONS_AND_TYPOS = exceptions_data.get("typos", {})
+        self.IGNORE_LOCATION_CHANGE_IDS = exceptions_data.get("ignore_location_change_ids", [])
+
+    def save_exceptions(self):
+        data = {
+            "typos": self.EXCEPTIONS_AND_TYPOS,
+            "ignore_location_change_ids": self.IGNORE_LOCATION_CHANGE_IDS
+        }
+        with open(self.EXCEPTIONS_JSON_PATH, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=4)
 
 
 settings = Settings()
