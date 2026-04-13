@@ -18,5 +18,6 @@ fiogora.db
 downloads/
 data/*.csv
 data/*.txt
+data/mappings/exceptions_and_typos.json
 tasks/
 docs/*
