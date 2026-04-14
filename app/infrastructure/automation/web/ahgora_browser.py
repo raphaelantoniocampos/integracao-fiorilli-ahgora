@@ -243,7 +243,7 @@ class AhgoraBrowser(BaseBrowser):
                         f"Updated department: {payload.get('department_actual')} -> {payload.get('department_expected')}"
                     )
 
-            if payload.get("department_expected"):
+            if payload.get("department_expected") and settings.UPDATE_LOCATIONS:
                 try:
                     loc_changed = self._update_location_multiselect(
                         payload["department_expected"]

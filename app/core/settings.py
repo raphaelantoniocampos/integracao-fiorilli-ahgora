@@ -36,6 +36,7 @@ class Settings:
     LEAVES_MONTHS_AGO: int = int(os.getenv("LEAVES_MONTHS_AGO", "3"))
     MAX_AGE_MINUTES: int = int(os.getenv("MAX_AGE_MINUTES", "60"))
     USE_CACHED_FILES: bool = os.getenv("USE_CACHED_FILES", "True").lower() == "true"
+    UPDATE_LOCATIONS: bool = os.getenv("UPDATE_LOCATIONS", "True").lower() == "true"
     SYNC_TIMEOUT_MAX: int = int(os.getenv("SYNC_TIMEOUT_MAX", "30"))
 
     # Credentials

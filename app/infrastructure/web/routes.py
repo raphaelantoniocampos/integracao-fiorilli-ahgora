@@ -184,16 +184,24 @@ async def dashboard(request: Request, service: SyncService = Depends(get_service
     jobs = await service.list_jobs()
     last_run = jobs[0] if jobs else None
 
-    # Total stats instead of daily, since jobs run rarely
-    total_jobs = len(jobs)
-    success_jobs = len([j for j in jobs if j.status == SyncStatus.SUCCESS])
-    failed_jobs = len([j for j in jobs if j.status == SyncStatus.FAILED])
+    employees_df = await service.repo.get_ahgora_employees_df()
+    leaves_df = await service.repo.get_ahgora_leaves_df()
+    
+    active_employees = 0
+    if not employees_df.empty:
+        active_employees = int(employees_df['dismissal_date'].isna().sum())
+
+    total_leaves = len(leaves_df)
+
+    last_success = next((j for j in jobs if j.status == SyncStatus.SUCCESS), None)
+    last_sync_date = "Nenhuma"
+    if last_success and last_success.finished_at:
+        last_sync_date = last_success.finished_at.strftime("%d/%m/%Y %H:%M")
 
     stats = {
-        "last_run_status": last_run.status if last_run else "Nenhuma",
-        "total_jobs": total_jobs,
-        "success_jobs": success_jobs,
-        "failed_jobs": failed_jobs,
+        "active_employees": active_employees,
+        "total_leaves": total_leaves,
+        "last_sync_date": last_sync_date,
     }
 
     return templates.TemplateResponse(
@@ -219,6 +227,10 @@ async def config_page(request: Request):
             "username": request.state.username,
             "exceptions_typos": settings.EXCEPTIONS_AND_TYPOS,
             "ignore_ids": settings.IGNORE_LOCATION_CHANGE_IDS,
+            "use_cached_files": settings.USE_CACHED_FILES,
+            "update_locations": settings.UPDATE_LOCATIONS,
+            "headless_mode": settings.HEADLESS_MODE,
+            "is_docker": settings.IS_DOCKER,
         },
     )
 
@@ -301,6 +313,22 @@ async def toggle_cached_files(request: Request):
             "request": request,
             "use_cached_files": settings.USE_CACHED_FILES,
             "is_docker": settings.IS_DOCKER,
+        },
+    )
+    response.headers["HX-Trigger"] = "refresh"
+    return response
+
+@router.post("/api/settings/toggle-locations", dependencies=[Depends(require_auth)])
+async def toggle_location_updates(request: Request):
+    env_path = str(settings.BASE_DIR / ".env")
+    settings.UPDATE_LOCATIONS = not settings.UPDATE_LOCATIONS
+    dotenv.set_key(env_path, "UPDATE_LOCATIONS", str(settings.UPDATE_LOCATIONS))
+
+    response = templates.TemplateResponse(
+        "partials/location_updates_toggle.html",
+        {
+            "request": request,
+            "update_locations": settings.UPDATE_LOCATIONS,
         },
     )
     response.headers["HX-Trigger"] = "refresh"

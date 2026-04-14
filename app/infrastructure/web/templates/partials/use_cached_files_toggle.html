@@ -1,10 +1,10 @@
-<div id="use-cached-files-toggle-container"
-    class="flex items-center space-x-2 mr-4">
-    <button hx-post="/api/settings/toggle-cached" hx-target="#use-cached-files-toggle-container" hx-swap="outerHTML"
-        class="text-xs px-3 py-1.5 rounded-md border font-medium transition-colors {% if use_cached_files %}bg-indigo-50 text-indigo-700 border-indigo-200{% else %}bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100{% endif %}">
-        <span class="flex items-center">
-            <span class="w-1.5 h-1.5 rounded-full mr-1.5 {% if use_cached_files %}bg-indigo-500{% else %}bg-slate-400{% endif %}"></span>
-            Usar Cache
-        </span>
+<div id="use-cached-files-toggle-container" class="flex items-center justify-between p-5 bg-white border border-slate-200 rounded-xl hover:border-indigo-300 hover:shadow-sm transition-all w-full">
+    <div class="pr-6">
+        <div class="font-semibold text-slate-800 text-sm mb-1">Usar Cache</div>
+        <div class="text-xs text-slate-500 leading-relaxed">Quando desativado, o sistema sempre obtém dados diretamente da fonte ao vivo, o que torna a sincronização mais precisa e à prova de falhas, por outro lado mais lenta. Quando ativado, usa dados cacheados guardados nas etapas prévias otimizando o processo.</div>
+    </div>
+    <button hx-post="/api/settings/toggle-cached" hx-target="#use-cached-files-toggle-container" hx-swap="outerHTML" 
+        class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 {% if use_cached_files %}bg-indigo-600{% else %}bg-slate-200{% endif %}">
+        <span class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {% if use_cached_files %}translate-x-5{% else %}translate-x-0{% endif %}"></span>
     </button>
 </div>

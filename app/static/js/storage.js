@@ -97,7 +97,7 @@ async function getEncryptedCredentials() {
 
     if (isExpired || !fiorilliPwd || !ahgoraPwd || !fiorilliUser || !ahgoraUser || !ahgoraCompany) {
         alert(isExpired ? 'Sua sessão expirou. Por favor, configure novamente.' : 'Configure suas credenciais.');
-        window.location.href = '/config';
+        window.location.href = '/config#automation';
         return null;
     }
 

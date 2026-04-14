@@ -1,0 +1,10 @@
+<div id="location-updates-toggle-container" class="flex items-center justify-between p-5 bg-white border border-slate-200 rounded-xl hover:border-indigo-300 hover:shadow-sm transition-all w-full">
+    <div class="pr-6">
+        <div class="font-semibold text-slate-800 text-sm mb-1">Atualização de Localização (Ahgora)</div>
+        <div class="text-xs text-slate-500 leading-relaxed">Gerencia de forma automática a relocalização dos funcionários baseada no seu departamento. Desative caso prefira preencher as lotações de forma puramente manual (Apenas edições são afetadas; Adições de novos funcionários continuarão alocando lotações sempre).</div>
+    </div>
+    <button hx-post="/api/settings/toggle-locations" hx-target="#location-updates-toggle-container" hx-swap="outerHTML" 
+        class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 {% if update_locations %}bg-indigo-600{% else %}bg-slate-200{% endif %}">
+        <span aria-hidden="true" class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out {% if update_locations %}translate-x-5{% else %}translate-x-0{% endif %}"></span>
+    </button>
+</div>
