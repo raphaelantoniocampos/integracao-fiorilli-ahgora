@@ -253,6 +253,31 @@ class TaskExecutionService:
 
         await self.repo.evaluate_and_update_job_status(job_id)
 
+    async def cancel_all_for_job(self, job_id: UUID) -> None:
+        """
+        Cancels all pending, running or failed tasks for a given job.
+        """
+        from app.domain.enums import AutomationTaskStatus
+
+        logger.info(f"Cancelling all tasks for job {job_id}")
+
+        tasks = await self.repo.get_automation_tasks_by_job(job_id)
+        batch = [
+            t
+            for t in tasks
+            if t.status
+            in [
+                AutomationTaskStatus.PENDING,
+                AutomationTaskStatus.RUNNING,
+                AutomationTaskStatus.FAILED,
+            ]
+        ]
+
+        for t in batch:
+            await self.cancel_task(t.id)
+
+        await self.repo.evaluate_and_update_job_status(job_id)
+
     def _run_browser_automation(
         self,
         task_type: TaskType,

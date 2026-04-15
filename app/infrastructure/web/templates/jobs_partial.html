@@ -51,8 +51,8 @@
     </td>
     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
         <div class="flex justify-end items-center space-x-2">
-            {% if job.status in ['running', 'retrying'] %}
-            <button hx-post="/api/sync/jobs/{{ job.id }}/kill" hx-swap="none"
+            {% if job.status in ['pending', 'running', 'retrying'] %}
+            <button hx-post="{% if job.status == 'pending' %}/api/sync/tasks/job/{{ job.id }}/cancel-all{% else %}/api/sync/jobs/{{ job.id }}/kill{% endif %}" hx-swap="none"
                 class="text-red-400 hover:text-red-700 p-2 hover:bg-red-50 rounded-full transition-all"
                 title="Cancelar Job">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

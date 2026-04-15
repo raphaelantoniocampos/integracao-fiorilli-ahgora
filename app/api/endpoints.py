@@ -252,6 +252,20 @@ async def cancel_batch_tasks(
     return {"message": f"Batch tasks cancelled for {task_type}"}
 
 
+@router.post(
+    "/tasks/job/{job_id}/cancel-all",
+    summary="Cancel All Automation Tasks for a Job",
+    description="Cancels all pending, running or failed automation tasks associated with a specific job.",
+    tags=["Automation Tasks"],
+)
+async def cancel_all_job_tasks(
+    job_id: UUID,
+    service: TaskExecutionService = Depends(get_execution_service),
+):
+    await service.cancel_all_for_job(job_id)
+    return {"message": f"All tasks cancelled for job {job_id}"}
+
+
 async def _run_task_standalone(
     task_id: UUID,
     fiorilli_url: Optional[str] = None,
