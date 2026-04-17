@@ -1,6 +1,12 @@
 const EXPIRATION_TIME_DAYS = 5
 const EXPIRATION_TIME_MS = EXPIRATION_TIME_DAYS * 24 * 60 * 60 * 1000;
 
+// Centralized credential field names
+const CREDENTIAL_FIELDS = [
+    "fiorilli_url", "fiorilli_user", "fiorilli_password",
+    "ahgora_url", "ahgora_company", "ahgora_user", "ahgora_password"
+];
+
 // Helper functions for encryption
 function str2ab(str) {
     const buf = new ArrayBuffer(str.length);
@@ -20,14 +26,8 @@ function checkAndHandleExpiration() {
 
         if (timePassed > EXPIRATION_TIME_MS) {
             console.log("Credentials expired. Cleaning up...");
-
-            const keysToClear = [
-                'fiorilli_password', 'ahgora_password', 'fiorilli_user',
-                'ahgora_user', 'ahgora_company', 'credentials_timestamp',
-                'fiorilli_url', 'ahgora_url'
-            ];
-
-            keysToClear.forEach(key => localStorage.removeItem(key));
+            CREDENTIAL_FIELDS.forEach(key => localStorage.removeItem(key));
+            localStorage.removeItem('credentials_timestamp');
             return true;
         }
     }
@@ -84,18 +84,18 @@ async function encryptString(text, publicKey) {
 
 // Credential retrieval and encryption logic
 async function getEncryptedCredentials() {
-
     const isExpired = checkAndHandleExpiration();
 
-    const fiorilliPwd = localStorage.getItem('fiorilli_password');
-    const ahgoraPwd = localStorage.getItem('ahgora_password');
-    const fiorilliUser = localStorage.getItem('fiorilli_user');
-    const ahgoraUser = localStorage.getItem('ahgora_user');
-    const ahgoraCompany = localStorage.getItem('ahgora_company');
-    const fiorilliUrl = localStorage.getItem('fiorilli_url') || '';
-    const ahgoraUrl = localStorage.getItem('ahgora_url') || '';
+    // Load all credential values
+    const creds = {};
+    CREDENTIAL_FIELDS.forEach(key => {
+        creds[key] = localStorage.getItem(key) || '';
+    });
 
-    if (isExpired || !fiorilliPwd || !ahgoraPwd || !fiorilliUser || !ahgoraUser || !ahgoraCompany) {
+    const requiredFields = ['fiorilli_password', 'ahgora_password', 'fiorilli_user', 'ahgora_user', 'ahgora_company'];
+    const missingFields = requiredFields.filter(f => !creds[f]);
+
+    if (isExpired || missingFields.length > 0) {
         alert(isExpired ? 'Sua sessão expirou. Por favor, configure novamente.' : 'Configure suas credenciais.');
         window.location.href = '/config#automation';
         return null;
@@ -114,17 +114,17 @@ async function getEncryptedCredentials() {
         return null;
     }
 
-    const encryptedFiorilli = await encryptString(fiorilliPwd, publicKey);
-    const encryptedAhgora = await encryptString(ahgoraPwd, publicKey);
+    const encryptedFiorilli = await encryptString(creds.fiorilli_password, publicKey);
+    const encryptedAhgora = await encryptString(creds.ahgora_password, publicKey);
 
     return {
-        fiorilli_user: fiorilliUser,
-        ahgora_user: ahgoraUser,
-        ahgora_company: ahgoraCompany,
+        fiorilli_user: creds.fiorilli_user,
+        ahgora_user: creds.ahgora_user,
+        ahgora_company: creds.ahgora_company,
         fiorilli_password: encryptedFiorilli,
         ahgora_password: encryptedAhgora,
-        fiorilli_url: fiorilliUrl || null,
-        ahgora_url: ahgoraUrl || null
+        fiorilli_url: creds.fiorilli_url || null,
+        ahgora_url: creds.ahgora_url || null
     };
 }
 
@@ -171,7 +171,6 @@ async function executeBatch(jobId, taskType, btn) {
         const credentials = await getEncryptedCredentials();
         if (!credentials) {
             console.warn("No credentials found");
-            // alert("DEBUG: No credentials found");
             if (btn) {
                 btn.disabled = false;
                 btn.classList.remove('opacity-50', 'cursor-not-allowed');
@@ -294,6 +293,7 @@ async function cancelBatch(jobId, taskType, btn) {
 }
 
 // Global exposure
+window.CREDENTIAL_FIELDS = CREDENTIAL_FIELDS;
 window.startSync = startSync;
 window.executeBatch = executeBatch;
 window.executeTask = executeTask;

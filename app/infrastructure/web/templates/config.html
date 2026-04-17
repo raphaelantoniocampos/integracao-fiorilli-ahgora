@@ -297,63 +297,15 @@
     </div>
 </div>
 
-<script>
-    function showTab(tabId, btn) {
-        // Toggle tabs visibility
-        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-        document.getElementById('tab-' + tabId).classList.add('active');
-        
-        // Toggle active button style
-        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
-        btn.classList.add('active');
-        
-        // Update URL hash without scroll
-        history.replaceState(null, null, ' ' + window.location.pathname + '#' + tabId);
-    }
-
-    // Auto-select tab based on hash or errors
-    document.addEventListener("DOMContentLoaded", function () {
-        const hash = window.location.hash.substring(1);
-        const urlParams = window.location.search || '';
-        
-        // If there was an error rendering from a post /change-password
-        if(window.location.pathname === '/change-password' || `{{"error" if error else ""}}` || `{{"success" if success else ""}}`) {
-            const btn = document.querySelector('a[href="#password"]');
-            if(btn) showTab('password', btn);
-        } else if(window.location.pathname === '/create-user' || `{{"create_user_error" if create_user_error else ""}}` || `{{"create_user_success" if create_user_success else ""}}`) {
-            const btn = document.querySelector('a[href="#create-user"]');
-            if(btn) showTab('create-user', btn);
-        } else if (hash) {
-            const btn = document.querySelector(`a[href="#${hash}"]`);
-            if(btn) showTab(hash, btn);
-        }
-        
-        // Load credentials logic for automation tab
-        const fields = ["fiorilli_url", "fiorilli_user", "fiorilli_password", "ahgora_url", "ahgora_company", "ahgora_user", "ahgora_password"];
-        fields.forEach(f => {
-            const stored = localStorage.getItem(f);
-            if (stored) {
-                const elId = f.replace('_', '-');
-                const element = document.getElementById(elId);
-                if(element) element.value = stored;
-            }
+    <script src="/static/js/config.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            initConfig({
+                hasPasswordError: {{ 'true' if error else 'false' }},
+                hasPasswordSuccess: {{ 'true' if success else 'false' }},
+                hasCreateUserError: {{ 'true' if create_user_error else 'false' }},
+                hasCreateUserSuccess: {{ 'true' if create_user_success else 'false' }}
+            });
         });
-    });
-
-    function saveCredentials(event) {
-        event.preventDefault();
-        const fields = ["fiorilli_url", "fiorilli_user", "fiorilli_password", "ahgora_url", "ahgora_company", "ahgora_user", "ahgora_password"];
-        fields.forEach(f => {
-            const elId = f.replace('_', '-');
-            const val = document.getElementById(elId).value;
-            localStorage.setItem(f, val);
-        });
-        localStorage.setItem('credentials_timestamp', new Date().getTime().toString());
-
-        const msg = document.getElementById("save-msg");
-        msg.classList.remove("hidden");
-        setTimeout(() => msg.classList.add("hidden"), 2000);
-        window.location.href = '/';
-    }
-</script>
+    </script>
 {% endblock %}
