@@ -32,8 +32,6 @@ function saveCredentials(event) {
         }
     });
 
-    localStorage.setItem('credentials_timestamp', new Date().getTime().toString());
-
     const msg = document.getElementById("save-msg");
     if (msg) {
         msg.classList.remove("hidden");

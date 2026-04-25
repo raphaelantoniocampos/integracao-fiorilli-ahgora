@@ -1,6 +1,3 @@
-const EXPIRATION_TIME_DAYS = 5
-const EXPIRATION_TIME_MS = EXPIRATION_TIME_DAYS * 24 * 60 * 60 * 1000;
-
 // Centralized credential field names
 const CREDENTIAL_FIELDS = [
     "fiorilli_url", "fiorilli_user", "fiorilli_password",
@@ -15,25 +12,6 @@ function str2ab(str) {
         bufView[i] = str.charCodeAt(i);
     }
     return buf;
-}
-
-function checkAndHandleExpiration() {
-    const lastSaved = localStorage.getItem('credentials_timestamp');
-
-    if (lastSaved) {
-        const now = new Date().getTime();
-        const timePassed = now - parseInt(lastSaved);
-
-        if (timePassed > EXPIRATION_TIME_MS) {
-            console.log("Credentials expired. Cleaning up...");
-            CREDENTIAL_FIELDS.forEach(key => localStorage.removeItem(key));
-            localStorage.removeItem('credentials_timestamp');
-            return true;
-        }
-    }
-
-    localStorage.setItem('credentials_timestamp', new Date().getTime().toString());
-    return false;
 }
 
 async function importPublicKey(pemString) {
@@ -84,8 +62,6 @@ async function encryptString(text, publicKey) {
 
 // Credential retrieval and encryption logic
 async function getEncryptedCredentials() {
-    const isExpired = checkAndHandleExpiration();
-
     // Load all credential values
     const creds = {};
     CREDENTIAL_FIELDS.forEach(key => {
@@ -95,8 +71,8 @@ async function getEncryptedCredentials() {
     const requiredFields = ['fiorilli_password', 'ahgora_password', 'fiorilli_user', 'ahgora_user', 'ahgora_company'];
     const missingFields = requiredFields.filter(f => !creds[f]);
 
-    if (isExpired || missingFields.length > 0) {
-        alert(isExpired ? 'Sua sessão expirou. Por favor, configure novamente.' : 'Configure suas credenciais.');
+    if (missingFields.length > 0) {
+        alert('Configure suas credenciais.');
         window.location.href = '/config#automation';
         return null;
     }
