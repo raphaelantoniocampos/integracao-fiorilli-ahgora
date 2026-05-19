@@ -264,12 +264,8 @@ class SyncService:
         # Update the status to CANCELLED
         async with self._db_lock:
             log_msg = "Job was killed/cancelled by user request"
-            await self.repo.update_job_status(
-                job_id, SyncStatus.CANCELLED, log_msg
-            )
-            await self._log(
-                job_id, "WARNING", log_msg
-            )
+            await self.repo.update_job_status(job_id, SyncStatus.CANCELLED, log_msg)
+            await self._log(job_id, "WARNING", log_msg)
 
         return True
 

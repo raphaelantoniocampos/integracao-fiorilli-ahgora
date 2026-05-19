@@ -72,7 +72,7 @@ class Settings:
             "columns_to_verify_change", []
         )
         self.PT_MONTHS = self._constants.get("pt_months", {})
-        
+
         self.reload_exceptions()
 
     def _load_json(self, path: Path):
@@ -87,12 +87,14 @@ class Settings:
     def reload_exceptions(self):
         exceptions_data = self._load_json(self.EXCEPTIONS_JSON_PATH)
         self.EXCEPTIONS_AND_TYPOS = exceptions_data.get("typos", {})
-        self.IGNORE_LOCATION_CHANGE_IDS = exceptions_data.get("ignore_location_change_ids", [])
+        self.IGNORE_LOCATION_CHANGE_IDS = exceptions_data.get(
+            "ignore_location_change_ids", []
+        )
 
     def save_exceptions(self):
         data = {
             "typos": self.EXCEPTIONS_AND_TYPOS,
-            "ignore_location_change_ids": self.IGNORE_LOCATION_CHANGE_IDS
+            "ignore_location_change_ids": self.IGNORE_LOCATION_CHANGE_IDS,
         }
         with open(self.EXCEPTIONS_JSON_PATH, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=4)

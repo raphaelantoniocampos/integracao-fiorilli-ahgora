@@ -111,7 +111,7 @@ async def create_user_post(
 ):
     repo = SqlAlchemyRepo(db)
     existing = await repo.get_user_by_username(username)
-    
+
     context = {
         "request": request,
         "fiorilli_url": settings.FIORILLI_URL,
@@ -186,10 +186,10 @@ async def dashboard(request: Request, service: SyncService = Depends(get_service
 
     employees_df = await service.repo.get_ahgora_employees_df()
     leaves_df = await service.repo.get_ahgora_leaves_df()
-    
+
     active_employees = 0
     if not employees_df.empty:
-        active_employees = int(employees_df['dismissal_date'].isna().sum())
+        active_employees = int(employees_df["dismissal_date"].isna().sum())
 
     total_leaves = len(leaves_df)
 
@@ -234,22 +234,31 @@ async def config_page(request: Request):
         },
     )
 
+
 @router.post("/api/config/exceptions/typo", dependencies=[Depends(require_admin)])
-async def add_typo(request: Request, mistake: str = Form(...), correction: str = Form(...)):
+async def add_typo(
+    request: Request, mistake: str = Form(...), correction: str = Form(...)
+):
     settings.EXCEPTIONS_AND_TYPOS[mistake.strip()] = correction.strip()
     settings.save_exceptions()
-    return templates.TemplateResponse("partials/typos_list.html", {
-        "request": request, "exceptions_typos": settings.EXCEPTIONS_AND_TYPOS
-    })
+    return templates.TemplateResponse(
+        "partials/typos_list.html",
+        {"request": request, "exceptions_typos": settings.EXCEPTIONS_AND_TYPOS},
+    )
 
-@router.delete("/api/config/exceptions/typo/{mistake}", dependencies=[Depends(require_admin)])
+
+@router.delete(
+    "/api/config/exceptions/typo/{mistake}", dependencies=[Depends(require_admin)]
+)
 async def delete_typo(request: Request, mistake: str):
     if mistake in settings.EXCEPTIONS_AND_TYPOS:
         del settings.EXCEPTIONS_AND_TYPOS[mistake]
         settings.save_exceptions()
-    return templates.TemplateResponse("partials/typos_list.html", {
-        "request": request, "exceptions_typos": settings.EXCEPTIONS_AND_TYPOS
-    })
+    return templates.TemplateResponse(
+        "partials/typos_list.html",
+        {"request": request, "exceptions_typos": settings.EXCEPTIONS_AND_TYPOS},
+    )
+
 
 @router.post("/api/config/exceptions/ignore-id", dependencies=[Depends(require_admin)])
 async def add_ignore_id(request: Request, ignore_id: str = Form(...)):
@@ -257,18 +266,24 @@ async def add_ignore_id(request: Request, ignore_id: str = Form(...)):
     if val and val not in settings.IGNORE_LOCATION_CHANGE_IDS:
         settings.IGNORE_LOCATION_CHANGE_IDS.append(val)
         settings.save_exceptions()
-    return templates.TemplateResponse("partials/ignore_ids_list.html", {
-        "request": request, "ignore_ids": settings.IGNORE_LOCATION_CHANGE_IDS
-    })
+    return templates.TemplateResponse(
+        "partials/ignore_ids_list.html",
+        {"request": request, "ignore_ids": settings.IGNORE_LOCATION_CHANGE_IDS},
+    )
 
-@router.delete("/api/config/exceptions/ignore-id/{ignore_id}", dependencies=[Depends(require_admin)])
+
+@router.delete(
+    "/api/config/exceptions/ignore-id/{ignore_id}",
+    dependencies=[Depends(require_admin)],
+)
 async def delete_ignore_id(request: Request, ignore_id: str):
     if ignore_id in settings.IGNORE_LOCATION_CHANGE_IDS:
         settings.IGNORE_LOCATION_CHANGE_IDS.remove(ignore_id)
         settings.save_exceptions()
-    return templates.TemplateResponse("partials/ignore_ids_list.html", {
-        "request": request, "ignore_ids": settings.IGNORE_LOCATION_CHANGE_IDS
-    })
+    return templates.TemplateResponse(
+        "partials/ignore_ids_list.html",
+        {"request": request, "ignore_ids": settings.IGNORE_LOCATION_CHANGE_IDS},
+    )
 
 
 @router.post("/api/settings/toggle-headless", dependencies=[Depends(require_auth)])
@@ -317,6 +332,7 @@ async def toggle_cached_files(request: Request):
     )
     response.headers["HX-Trigger"] = "refresh"
     return response
+
 
 @router.post("/api/settings/toggle-locations", dependencies=[Depends(require_auth)])
 async def toggle_location_updates(request: Request):
