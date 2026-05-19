@@ -29,7 +29,7 @@ def test_health_check(client):
     assert response.json()["status"] == "ok"
 
 
-@patch("app.api.endpoints.crypto_service.decrypt")
+@patch("app.api.endpoints.transport_crypto.decrypt")
 @patch("app.api.endpoints.SyncService")
 def test_run_sync_job(mock_service_class, mock_decrypt, client):
     mock_decrypt.side_effect = lambda x: x

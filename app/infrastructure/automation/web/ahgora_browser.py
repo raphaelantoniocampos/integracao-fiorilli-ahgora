@@ -347,7 +347,7 @@ class AhgoraBrowser(BaseBrowser):
         try:
             # Find the file input element and send the file path
             file_input = self.driver.find_element(By.XPATH, "//input[@type='file']")
-            file_input.send_keys(str(file_path))
+            file_input.send_keys(file_path)
             self.wait(self.DELAY)
 
             # Ensure the specific layout is selected (pw_afimport_01)

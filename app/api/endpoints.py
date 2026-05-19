@@ -11,7 +11,8 @@ from app.core.task_registry import task_registry
 from app.domain.entities import AutomationTask, SyncJob, SyncLog
 from app.domain.enums import AutomationTaskStatus
 from app.infrastructure.db.sqlalchemy_repo import SqlAlchemyRepo
-from app.services.crypto_service import crypto_service
+from app.services.transport_crypto import transport_crypto
+from app.services.credential_crypto import store_credentials_in_metadata
 from app.services.sync_service import SyncService
 from app.services.task_execution_service import TaskExecutionService
 
@@ -40,7 +41,7 @@ def get_service(db: AsyncSession = Depends(get_db)):
     description="Returns the RSA public key in PEM format for frontend encryption.",
 )
 async def get_public_key():
-    return {"public_key": crypto_service.get_public_key_pem()}
+    return {"public_key": transport_crypto.get_public_key_pem()}
 
 
 @router.post(
@@ -55,8 +56,8 @@ async def run_sync_job(
     service: SyncService = Depends(get_service),
 ):
     try:
-        decrypted_fiorilli = crypto_service.decrypt(credentials.fiorilli_password)
-        decrypted_ahgora = crypto_service.decrypt(credentials.ahgora_password)
+        decrypted_fiorilli = transport_crypto.decrypt(credentials.fiorilli_password)
+        decrypted_ahgora = transport_crypto.decrypt(credentials.ahgora_password)
     except Exception:
         raise HTTPException(
             status_code=400, detail="Invalid credential encryption payload"
@@ -66,6 +67,8 @@ async def run_sync_job(
     ahgora_url = credentials.ahgora_url or settings.AHGORA_URL
 
     job = await service.create_job(triggered_by="api")
+    store_credentials_in_metadata(job.metadata, decrypted_fiorilli, decrypted_ahgora)
+    await service.repo.save_job(job)
     background_tasks.add_task(
         SyncService.run_sync_task_standalone,
         job.id,
@@ -211,8 +214,8 @@ async def execute_batch_tasks(
     credentials: SyncCredentials = Body(...),
 ):
     try:
-        decrypted_fiorilli = crypto_service.decrypt(credentials.fiorilli_password)
-        decrypted_ahgora = crypto_service.decrypt(credentials.ahgora_password)
+        decrypted_fiorilli = transport_crypto.decrypt(credentials.fiorilli_password)
+        decrypted_ahgora = transport_crypto.decrypt(credentials.ahgora_password)
     except Exception:
         raise HTTPException(
             status_code=400, detail="Invalid credential encryption payload"
@@ -306,8 +309,8 @@ async def execute_task(
     credentials: SyncCredentials = Body(...),
 ):
     try:
-        decrypted_fiorilli = crypto_service.decrypt(credentials.fiorilli_password)
-        decrypted_ahgora = crypto_service.decrypt(credentials.ahgora_password)
+        decrypted_fiorilli = transport_crypto.decrypt(credentials.fiorilli_password)
+        decrypted_ahgora = transport_crypto.decrypt(credentials.ahgora_password)
     except Exception:
         raise HTTPException(
             status_code=400, detail="Invalid credential encryption payload"

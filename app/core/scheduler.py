@@ -2,7 +2,10 @@ import asyncio
 import logging
 
 from app.core.database import async_session_factory
+from app.core.settings import settings
+from app.domain.enums import SyncStatus
 from app.infrastructure.db.sqlalchemy_repo import SqlAlchemyRepo
+from app.services.credential_crypto import extract_credentials_from_metadata
 from app.services.sync_service import SyncService
 
 logger = logging.getLogger(__name__)
@@ -54,9 +57,33 @@ class RetryScheduler:
                 logger.info(
                     f"Scheduling retry for job {job.id} (Attempt {job.retry_count + 1})"
                 )
-                # Trigger standalone background sync
-                # We don't await it here to avoid blocking the scheduler loop
-                asyncio.create_task(SyncService.run_sync_task_standalone(job.id))
+
+                creds = extract_credentials_from_metadata(job.metadata)
+                if creds is None:
+                    logger.warning(
+                        f"Job {job.id} has no stored credentials; marking FAILED."
+                    )
+                    await repo.update_job_status(
+                        job.id,
+                        SyncStatus.FAILED,
+                        "No stored credentials available for retry",
+                    )
+                    continue
+
+                fiorilli_password, ahgora_password = creds
+
+                asyncio.create_task(
+                    SyncService.run_sync_task_standalone(
+                        job.id,
+                        settings.FIORILLI_URL,
+                        settings.FIORILLI_USER,
+                        fiorilli_password,
+                        settings.AHGORA_URL,
+                        settings.AHGORA_USER,
+                        settings.AHGORA_COMPANY,
+                        ahgora_password,
+                    )
+                )
 
 
 scheduler = RetryScheduler()

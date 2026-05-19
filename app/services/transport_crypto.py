@@ -36,4 +36,4 @@ class CryptoService:
 
 
 # Singleton instance for the application
-crypto_service = CryptoService()
+transport_crypto = CryptoService()
