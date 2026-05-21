@@ -28,8 +28,8 @@ class BrowserCancelledException(Exception):
 
 
 class BaseBrowser(ABC):
-    MAX_TRIES = 10
-    DELAY = 0.5
+    MAX_TRIES = 30
+    DELAY = 1
     IGNORED_EXCEPTIONS = (
         ElementClickInterceptedException,
         ElementNotInteractableException,

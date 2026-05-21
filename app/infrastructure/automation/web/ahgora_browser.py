@@ -1,6 +1,7 @@
 import logging
 from typing import Callable, Optional
 
+from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.by import By
 
 from app.core.settings import settings
@@ -30,7 +31,10 @@ class AhgoraBrowser(BaseBrowser):
             headless=headless,
             cancel_event=cancel_event,
         )
-        self._login()
+        try:
+            self._login()
+        except NoSuchElementException:
+            self._login()
 
     def download_employees(self):
         self._log("INFO", "Starting employees download from Ahgora")
@@ -471,6 +475,7 @@ class AhgoraBrowser(BaseBrowser):
         Returns True if any checkbox was changed, False otherwise.
         """
         import csv
+
         from app.core.settings import settings
 
         csv_path = settings.DATA_DIR / "mappings" / "department_to_location.csv"
