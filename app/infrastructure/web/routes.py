@@ -20,6 +20,7 @@ from typing import Any, Dict
 from app.domain.enums import SyncStatus
 from app.infrastructure.db.sqlalchemy_repo import SqlAlchemyRepo
 from app.services.sync_service import SyncService
+from app.services.credential_crypto import encrypt_password, decrypt_password
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/infrastructure/web/templates")
@@ -646,10 +647,33 @@ async def get_user_credentials(request: Request, db: AsyncSession = Depends(get_
     if credentials is None:
         # Return empty dict if no credentials set
         return {}
-    return credentials
+
+    # Decrypt passwords for form display
+    fiorilli_password = ""
+    ahgora_password = ""
+    if credentials.get("fiorilli_password_encrypted"):
+        try:
+            fiorilli_password = decrypt_password(credentials["fiorilli_password_encrypted"])
+        except Exception:
+            pass
+    if credentials.get("ahgora_password_encrypted"):
+        try:
+            ahgora_password = decrypt_password(credentials["ahgora_password_encrypted"])
+        except Exception:
+            pass
+
+    return {
+        "fiorilli_url": credentials.get("fiorilli_url"),
+        "fiorilli_user": credentials.get("fiorilli_user"),
+        "fiorilli_password": fiorilli_password,
+        "ahgora_url": credentials.get("ahgora_url"),
+        "ahgora_user": credentials.get("ahgora_user"),
+        "ahgora_password": ahgora_password,
+        "ahgora_company": credentials.get("ahgora_company"),
+    }
 
 
-@router.put("/api/user/credentials", dependencies=[Depends(require_auth)])
+@router.post("/api/user/credentials", dependencies=[Depends(require_auth)])
 async def save_user_credentials(
     request: Request,
     fiorilli_url: str = Form(None),
@@ -668,11 +692,18 @@ async def save_user_credentials(
     if user is None:
         raise HTTPException(status_code=404, detail="User not found")
 
+    existing = await repo.get_user_credentials(user.id)
+
     # Encrypt passwords before storing
     fiorilli_password_encrypted = None
-    ahgora_password_encrypted = None
+    if existing:
+        fiorilli_password_encrypted = existing.get("fiorilli_password_encrypted")
     if fiorilli_password:
         fiorilli_password_encrypted = encrypt_password(fiorilli_password)
+
+    ahgora_password_encrypted = None
+    if existing:
+        ahgora_password_encrypted = existing.get("ahgora_password_encrypted")
     if ahgora_password:
         ahgora_password_encrypted = encrypt_password(ahgora_password)
 
@@ -685,5 +716,6 @@ async def save_user_credentials(
         "ahgora_password_encrypted": ahgora_password_encrypted,
         "ahgora_company": ahgora_company,
     }
+
     await repo.save_user_credentials(user.id, credentials_dict)
     return {"status": "ok"}

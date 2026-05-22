@@ -1,5 +1,8 @@
+import logging
 from typing import Optional
 from uuid import UUID
+
+logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Request
 from pydantic import BaseModel
@@ -12,7 +15,10 @@ from app.domain.entities import AutomationTask, SyncJob, SyncLog
 from app.domain.enums import AutomationTaskStatus
 from app.infrastructure.db.sqlalchemy_repo import SqlAlchemyRepo
 from app.services.transport_crypto import transport_crypto
-from app.services.credential_crypto import store_credentials_in_metadata
+from app.services.credential_crypto import (
+    store_credentials_in_metadata,
+    decrypt_password,
+)
 from app.services.sync_service import SyncService
 from app.services.task_execution_service import TaskExecutionService
 
