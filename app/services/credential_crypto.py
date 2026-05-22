@@ -38,6 +38,20 @@ def decrypt_credentials(token: str) -> tuple[str, str]:
     return parts[0].decode(), parts[1].decode()
 
 
+def encrypt_password(password: str) -> str:
+    """Encrypt a single password using Fernet."""
+    return _get_fernet().encrypt(password.encode()).decode()
+
+
+def decrypt_password(token: str) -> str:
+    """Decrypt a single password from a Fernet token."""
+    try:
+        plaintext = _get_fernet().decrypt(token.encode())
+    except InvalidToken:
+        raise ValueError("Fernet decryption failed — invalid or corrupted token")
+    return plaintext.decode()
+
+
 def store_credentials_in_metadata(
     metadata: dict[str, Any],
     fiorilli_password: str,

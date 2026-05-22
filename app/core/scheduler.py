@@ -5,7 +5,10 @@ from app.core.database import async_session_factory
 from app.core.settings import settings
 from app.domain.enums import SyncStatus
 from app.infrastructure.db.sqlalchemy_repo import SqlAlchemyRepo
-from app.services.credential_crypto import extract_credentials_from_metadata
+from app.services.credential_crypto import (
+    decrypt_password,
+    extract_credentials_from_metadata,
+)
 from app.services.sync_service import SyncService
 
 logger = logging.getLogger(__name__)
@@ -72,16 +75,103 @@ class RetryScheduler:
 
                 fiorilli_password, ahgora_password = creds
 
+                # Get user-specific credentials if available, otherwise fall back to global settings
+                if job.user_id:
+                    user_creds = await repo.get_user_credentials(job.user_id)
+                    if user_creds:
+                        # Decrypt passwords from user credentials
+                        user_fiorilli_password = None
+                        user_ahgora_password = None
+                        if user_creds.get("fiorilli_password_encrypted"):
+                            try:
+                                user_fiorilli_password = decrypt_password(
+                                    user_creds["fiorilli_password_encrypted"]
+                                )
+                            except Exception as e:
+                                logger.warning(
+                                    f"Failed to decrypt Fiorilli password for user {job.user_id}: {e}"
+                                )
+                        if user_creds.get("ahgora_password_encrypted"):
+                            try:
+                                user_ahgora_password = decrypt_password(
+                                    user_creds["ahgora_password_encrypted"]
+                                )
+                            except Exception as e:
+                                logger.warning(
+                                    f"Failed to decrypt Ahgora password for user {job.user_id}: {e}"
+                                )
+
+                        # Use user credentials if available, otherwise fall back to stored passwords
+                        fiorilli_url = (
+                            user_creds.get("fiorilli_url") or settings.FIORILLI_URL
+                        )
+                        fiorilli_user = (
+                            user_creds.get("fiorilli_user") or settings.FIORILLI_USER
+                        )
+                        ahgora_url = user_creds.get("ahgora_url") or settings.AHGORA_URL
+                        ahgora_user = (
+                            user_creds.get("ahgora_user") or settings.AHGORA_USER
+                        )
+                        ahgora_company = (
+                            user_creds.get("ahgora_company") or settings.AHGORA_COMPANY
+                        )
+
+                        # Use decrypted passwords if available, otherwise fall back to stored ones
+                        final_fiorilli_password = (
+                            user_fiorilli_password or fiorilli_password
+                        )
+                        final_ahgora_password = user_ahgora_password or ahgora_password
+                    else:
+                        # No user credentials found, fall back to global settings
+                        global_settings = await repo.get_global_settings()
+                        if global_settings is None:
+                            logger.error(
+                                f"Neither user nor global settings found for job {job.id}; marking FAILED."
+                            )
+                            await repo.update_job_status(
+                                job.id,
+                                SyncStatus.FAILED,
+                                "User and global settings not found",
+                            )
+                            continue
+                        fiorilli_url = global_settings.fiorilli_url
+                        fiorilli_user = global_settings.fiorilli_user
+                        ahgora_url = global_settings.ahgora_url
+                        ahgora_user = global_settings.ahgora_user
+                        ahgora_company = global_settings.ahgora_company
+                        final_fiorilli_password = fiorilli_password
+                        final_ahgora_password = ahgora_password
+                else:
+                    # No user_id in job (legacy job), fall back to global settings
+                    global_settings = await repo.get_global_settings()
+                    if global_settings is None:
+                        logger.error(
+                            f"Global settings not found for job {job.id}; marking FAILED."
+                        )
+                        await repo.update_job_status(
+                            job.id,
+                            SyncStatus.FAILED,
+                            "Global settings not found",
+                        )
+                        continue
+                    fiorilli_url = global_settings.fiorilli_url
+                    fiorilli_user = global_settings.fiorilli_user
+                    ahgora_url = global_settings.ahgora_url
+                    ahgora_user = global_settings.ahgora_user
+                    ahgora_company = global_settings.ahgora_company
+                    final_fiorilli_password = fiorilli_password
+                    final_ahgora_password = ahgora_password
+
                 asyncio.create_task(
                     SyncService.run_sync_task_standalone(
                         job.id,
-                        settings.FIORILLI_URL,
-                        settings.FIORILLI_USER,
-                        fiorilli_password,
-                        settings.AHGORA_URL,
-                        settings.AHGORA_USER,
-                        settings.AHGORA_COMPANY,
-                        ahgora_password,
+                        fiorilli_url,
+                        fiorilli_user,
+                        final_fiorilli_password,
+                        ahgora_url,
+                        ahgora_user,
+                        ahgora_company,
+                        final_ahgora_password,
                     )
                 )
 

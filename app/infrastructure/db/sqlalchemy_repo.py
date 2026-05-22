@@ -18,8 +18,10 @@ from app.infrastructure.db.models import (
     AhgoraEmployeeModel,
     AhgoraLeaveModel,
     AutomationTaskModel,
+    GlobalSettingsModel,
     SyncJobModel,
     SyncLogModel,
+    UserCredentialModel,
     UserModel,
 )
 
@@ -443,6 +445,75 @@ class SqlAlchemyRepo:
             )
             for db in db_tasks
         ]
+
+    async def get_global_settings(self) -> Optional[GlobalSettingsModel]:
+        """Retrieve the global settings from the database"""
+        result = await self.session.execute(select(GlobalSettingsModel))
+        return result.scalar_one_or_none()
+
+    async def get_user_credentials(self, user_id: UUID) -> Optional[dict]:
+        """Retrieve credentials for a specific user"""
+        result = await self.session.execute(
+            select(UserCredentialModel).filter_by(user_id=user_id)
+        )
+        creds_model = result.scalar_one_or_none()
+
+        if creds_model is None:
+            return None
+
+        return {
+            "fiorilli_url": creds_model.fiorilli_url,
+            "fiorilli_user": creds_model.fiorilli_user,
+            "fiorilli_password_encrypted": creds_model.fiorilli_password_encrypted,
+            "ahgora_url": creds_model.ahgora_url,
+            "ahgora_user": creds_model.ahgora_user,
+            "ahgora_password_encrypted": creds_model.ahgora_password_encrypted,
+            "ahgora_company": creds_model.ahgora_company,
+        }
+
+    async def save_user_credentials(
+        self, user_id: UUID, credentials_dict: dict
+    ) -> None:
+        """Save or update credentials for a specific user"""
+        # Check if credentials already exist for this user
+        result = await self.session.execute(
+            select(UserCredentialModel).filter_by(user_id=user_id)
+        )
+        existing = result.scalar_one_or_none()
+
+        if existing:
+            # Update existing record
+            existing.fiorilli_url = credentials_dict.get("fiorilli_url")
+            existing.fiorilli_user = credentials_dict.get("fiorilli_user")
+            existing.fiorilli_password_encrypted = credentials_dict.get(
+                "fiorilli_password_encrypted"
+            )
+            existing.ahgora_url = credentials_dict.get("ahgora_url")
+            existing.ahgora_user = credentials_dict.get("ahgora_user")
+            existing.ahgora_password_encrypted = credentials_dict.get(
+                "ahgora_password_encrypted"
+            )
+            existing.ahgora_company = credentials_dict.get("ahgora_company")
+            existing.updated_at = datetime.now()
+        else:
+            # Create new record
+            new_creds = UserCredentialModel(
+                user_id=user_id,
+                fiorilli_url=credentials_dict.get("fiorilli_url"),
+                fiorilli_user=credentials_dict.get("fiorilli_user"),
+                fiorilli_password_encrypted=credentials_dict.get(
+                    "fiorilli_password_encrypted"
+                ),
+                ahgora_url=credentials_dict.get("ahgora_url"),
+                ahgora_user=credentials_dict.get("ahgora_user"),
+                ahgora_password_encrypted=credentials_dict.get(
+                    "ahgora_password_encrypted"
+                ),
+                ahgora_company=credentials_dict.get("ahgora_company"),
+            )
+            self.session.add(new_creds)
+
+        await self.session.commit()
 
     async def get_ahgora_employees_df(self) -> pd.DataFrame:
         """Returns the cached Ahgora employees as a DataFrame"""

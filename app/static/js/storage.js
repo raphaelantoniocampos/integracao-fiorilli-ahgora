@@ -113,6 +113,13 @@ async function startSync(event) {
     if (btnText) btnText.innerText = "Iniciando...";
 
     try {
+        // First save credentials to backend
+        const saveCredentials = await saveCredentialsToBackend();
+        if (!saveCredentials) {
+            alert('Failed to save credentials');
+            return;
+        }
+
         const credentials = await getEncryptedCredentials();
         if (!credentials) return;
 
@@ -134,6 +141,36 @@ async function startSync(event) {
     } finally {
         btn.disabled = false;
         if (btnText) btnText.innerText = "Iniciar Sincronização";
+    }
+}
+
+// Save credentials to backend API
+async function saveCredentialsToBackend() {
+    const creds = {};
+    CREDENTIAL_FIELDS.forEach(key => {
+        creds[key] = localStorage.getItem(key) || '';
+    });
+
+    const requiredFields = ['fiorilli_password', 'ahgora_password', 'fiorilli_user', 'ahgora_user', 'ahgora_company'];
+    const missingFields = requiredFields.filter(f => !creds[f]);
+
+    if (missingFields.length > 0) {
+        alert('Configure suas credenciais.');
+        window.location.href = '/config#automation';
+        return false;
+    }
+
+    try {
+        const response = await fetch('/api/user/credentials', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams(creds)
+        });
+
+        return response.ok;
+    } catch (error) {
+        console.error('Error saving credentials to backend:', error);
+        return false;
     }
 }
 

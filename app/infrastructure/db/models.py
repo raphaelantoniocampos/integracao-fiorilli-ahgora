@@ -1,3 +1,4 @@
+from typing import Optional
 from datetime import datetime
 from uuid import UUID, uuid4
 
@@ -17,6 +18,9 @@ class SyncJobModel(Base):
     )
     status: Mapped[SyncStatus] = mapped_column(String, default=SyncStatus.PENDING)
     triggered_by: Mapped[str] = mapped_column(String, default="system")
+    user_id: Mapped[Optional[UUID]] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("users.id"), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
     started_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
     finished_at: Mapped[datetime] = mapped_column(DateTime, nullable=True)
@@ -31,6 +35,7 @@ class SyncJobModel(Base):
     automation_tasks: Mapped[list["AutomationTaskModel"]] = relationship(
         back_populates="job", cascade="all, delete-orphan"
     )
+    user: Mapped[Optional["UserModel"]] = relationship()
 
 
 class SyncLogModel(Base):
@@ -71,6 +76,17 @@ class AutomationTaskModel(Base):
     logs: Mapped[list["SyncLogModel"]] = relationship(
         back_populates="task", cascade="all, delete-orphan"
     )
+
+
+class GlobalSettingsModel(Base):
+    __tablename__ = "global_settings"
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    fiorilli_url: Mapped[str] = mapped_column(String, default="")
+    fiorilli_user: Mapped[str] = mapped_column(String, default="")
+    ahgora_url: Mapped[str] = mapped_column(String, default="")
+    ahgora_user: Mapped[str] = mapped_column(String, default="")
+    ahgora_company: Mapped[str] = mapped_column(String, default="")
 
 
 class AhgoraEmployeeModel(Base):
@@ -116,3 +132,41 @@ class UserModel(Base):
     hashed_password: Mapped[str] = mapped_column(String)
     is_admin: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
+
+
+# Relationship to credentials — defined after UserCredentialModel
+
+
+class UserCredentialModel(Base):
+    __tablename__ = "user_credentials"
+
+    id: Mapped[UUID] = mapped_column(
+        PG_UUID(as_uuid=True), primary_key=True, default=uuid4
+    )
+    user_id: Mapped[UUID] = mapped_column(
+        PG_UUID(as_uuid=True), ForeignKey("users.id"), unique=True, nullable=False
+    )
+    fiorilli_url: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    fiorilli_user: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    fiorilli_password_encrypted: Mapped[Optional[str]] = mapped_column(
+        String, nullable=True
+    )
+    ahgora_url: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    ahgora_user: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    ahgora_password_encrypted: Mapped[Optional[str]] = mapped_column(
+        String, nullable=True
+    )
+    ahgora_company: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.now, onupdate=datetime.now
+    )
+
+    # Relationship
+    user: Mapped["UserModel"] = relationship(back_populates="credentials")
+
+
+# Add relationship to UserModel
+UserModel.credentials = relationship(
+    "UserCredentialModel", back_populates="user", uselist=False
+)

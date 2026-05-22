@@ -1,7 +1,7 @@
 from typing import Optional
 from uuid import UUID
 
-from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -51,34 +51,73 @@ async def get_public_key():
     description="Starts a background job to download data from Fiorilli and Ahgora and perform analysis.",
 )
 async def run_sync_job(
+    request: Request,
     background_tasks: BackgroundTasks,
-    credentials: SyncCredentials = Body(...),
     service: SyncService = Depends(get_service),
+    db: AsyncSession = Depends(get_db),
 ):
-    try:
-        decrypted_fiorilli = transport_crypto.decrypt(credentials.fiorilli_password)
-        decrypted_ahgora = transport_crypto.decrypt(credentials.ahgora_password)
-    except Exception:
-        raise HTTPException(
-            status_code=400, detail="Invalid credential encryption payload"
-        )
+    # Get the current user
+    username = request.state.username
+    repo = SqlAlchemyRepo(db)
+    user = await repo.get_user_by_username(username)
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
 
-    fiorilli_url = credentials.fiorilli_url or settings.FIORILLI_URL
-    ahgora_url = credentials.ahgora_url or settings.AHGORA_URL
+    # Get the user's credentials from the database
+    credentials_dict = await repo.get_user_credentials(user.id)
+    if credentials_dict is None:
+        raise HTTPException(status_code=400, detail="User credentials not found")
 
+    # Decrypt passwords
+    fiorilli_password = None
+    ahgora_password = None
+    if credentials_dict.get("fiorilli_password_encrypted"):
+        try:
+            fiorilli_password = decrypt_password(
+                credentials_dict["fiorilli_password_encrypted"]
+            )
+        except Exception as e:
+            logger.error(f"Failed to decrypt Fiorilli password for user {user.id}: {e}")
+            raise HTTPException(
+                status_code=500, detail="Failed to decrypt Fiorilli password"
+            )
+    if credentials_dict.get("ahgora_password_encrypted"):
+        try:
+            ahgora_password = decrypt_password(
+                credentials_dict["ahgora_password_encrypted"]
+            )
+        except Exception as e:
+            logger.error(f"Failed to decrypt Ahgora password for user {user.id}: {e}")
+            raise HTTPException(
+                status_code=500, detail="Failed to decrypt Ahgora password"
+            )
+
+    # Get URLs and usernames, fallback to settings if not set
+    fiorilli_url = credentials_dict.get("fiorilli_url") or settings.FIORILLI_URL
+    fiorilli_user = credentials_dict.get("fiorilli_user") or settings.FIORILLI_USER
+    ahgora_url = credentials_dict.get("ahgora_url") or settings.AHGORA_URL
+    ahgora_user = credentials_dict.get("ahgora_user") or settings.AHGORA_USER
+    ahgora_company = credentials_dict.get("ahgora_company") or settings.AHGORA_COMPANY
+
+    # Create job and associate with user
     job = await service.create_job(triggered_by="api")
-    store_credentials_in_metadata(job.metadata, decrypted_fiorilli, decrypted_ahgora)
+    job.user_id = user.id
     await service.repo.save_job(job)
+
+    # Store credentials in job metadata for retry purposes (encrypted)
+    store_credentials_in_metadata(job.metadata, fiorilli_password, ahgora_password)
+
+    # Run the sync task in the background
     background_tasks.add_task(
         SyncService.run_sync_task_standalone,
         job.id,
         fiorilli_url,
-        credentials.fiorilli_user,
-        decrypted_fiorilli,
+        fiorilli_user,
+        fiorilli_password,
         ahgora_url,
-        credentials.ahgora_user,
-        credentials.ahgora_company,
-        decrypted_ahgora,
+        ahgora_user,
+        ahgora_company,
+        ahgora_password,
     )
     return job
 

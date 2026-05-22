@@ -182,7 +182,7 @@ async def change_password_post(
 @router.get("/", dependencies=[Depends(require_auth)])
 async def dashboard(request: Request, service: SyncService = Depends(get_service)):
     jobs = await service.list_jobs()
-    last_run = jobs[0] if jobs else None
+    jobs[0] if jobs else None
 
     employees_df = await service.repo.get_ahgora_employees_df()
     leaves_df = await service.repo.get_ahgora_leaves_df()
@@ -632,3 +632,58 @@ async def get_log_entries_partial(
     return templates.TemplateResponse(
         "log_entries_partial.html", {"request": request, "grouped_logs": []}
     )
+
+
+@router.get("/api/user/credentials", dependencies=[Depends(require_auth)])
+async def get_user_credentials(request: Request, db: AsyncSession = Depends(get_db)):
+    """Get the credentials for the current user."""
+    username = request.state.username
+    repo = SqlAlchemyRepo(db)
+    user = await repo.get_user_by_username(username)
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    credentials = await repo.get_user_credentials(user.id)
+    if credentials is None:
+        # Return empty dict if no credentials set
+        return {}
+    return credentials
+
+
+@router.put("/api/user/credentials", dependencies=[Depends(require_auth)])
+async def save_user_credentials(
+    request: Request,
+    fiorilli_url: str = Form(None),
+    fiorilli_user: str = Form(None),
+    fiorilli_password: str = Form(None),
+    ahgora_url: str = Form(None),
+    ahgora_user: str = Form(None),
+    ahgora_password: str = Form(None),
+    ahgora_company: str = Form(None),
+    db: AsyncSession = Depends(get_db),
+):
+    """Save or update the credentials for the current user."""
+    username = request.state.username
+    repo = SqlAlchemyRepo(db)
+    user = await repo.get_user_by_username(username)
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Encrypt passwords before storing
+    fiorilli_password_encrypted = None
+    ahgora_password_encrypted = None
+    if fiorilli_password:
+        fiorilli_password_encrypted = encrypt_password(fiorilli_password)
+    if ahgora_password:
+        ahgora_password_encrypted = encrypt_password(ahgora_password)
+
+    credentials_dict = {
+        "fiorilli_url": fiorilli_url,
+        "fiorilli_user": fiorilli_user,
+        "fiorilli_password_encrypted": fiorilli_password_encrypted,
+        "ahgora_url": ahgora_url,
+        "ahgora_user": ahgora_user,
+        "ahgora_password_encrypted": ahgora_password_encrypted,
+        "ahgora_company": ahgora_company,
+    }
+    await repo.save_user_credentials(user.id, credentials_dict)
+    return {"status": "ok"}
