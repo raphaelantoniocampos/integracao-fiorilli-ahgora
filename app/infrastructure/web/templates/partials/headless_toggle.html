@@ -1,0 +1,32 @@
+<div id="headless-toggles" class="flex items-center justify-between p-5 bg-white border border-slate-200 rounded-xl hover:border-indigo-300 hover:shadow-sm transition-all w-full {% if is_docker %}opacity-60 grayscale{% endif %}">
+    <div class="pr-6">
+        <div class="font-semibold text-slate-800 text-sm mb-1">Navegador Oculto</div>
+        <div class="text-xs text-slate-500 leading-relaxed">
+            {% if is_docker %}
+                Executa o navegador de forma silenciosa e em segundo plano. Dentro de containers Docker não é possível visualizar o navegador então esta opção não pode ser alterada.
+            {% else %}
+                Desative para ver o navegador sendo operado de forma automatizada ao vivo (ótimo para verificar ou apresentar visulamente como as rotinas de automação funcionam antes de enviar para background local).
+            {% endif %}
+        </div>
+    </div>
+
+    <div id="headless-sync-toggles" class="flex items-center space-x-2 mr-4">
+        <button hx-post="/api/settings/toggle-headless" hx-vals='{"target": "sync"}' hx-target="#headless-sync-toggles"
+            class="text-xs px-3 py-1.5 rounded-md border font-medium transition-colors {% if headless_mode %}bg-indigo-50 text-indigo-700 border-indigo-200{% else %}bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100{% endif %}" {% if is_docker %}disabled title="Não permitido em Docker" {% endif %}>
+            <span class="flex items-center">
+                <span class="w-1.5 h-1.5 rounded-full mr-1.5 {% if headless_mode %}bg-indigo-500{% else %}bg-slate-400{% endif %}"></span>
+                Downloads
+            </span>
+        </button>
+    </div>
+
+    <div id="headless-tasks-toggles" class="flex items-center space-x-2 mr-4">
+        <button hx-post="/api/settings/toggle-headless" hx-vals='{"target": "tasks"}' hx-target="#headless-tasks-toggles"
+            class="text-xs px-3 py-1.5 rounded-md border font-medium transition-colors {% if headless_mode_tasks %}bg-indigo-50 text-indigo-700 border-indigo-200{% else %}bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100{% endif %}" {% if is_docker %}disabled title="Não permitido em Docker" {% endif %}>
+            <span class="flex items-center">
+                <span class="w-1.5 h-1.5 rounded-full mr-1.5 {% if headless_mode_tasks %}bg-indigo-500{% else %}bg-slate-400{% endif %}"></span>
+                Tarefas
+            </span>
+        </button>
+    </div>
+</div>
