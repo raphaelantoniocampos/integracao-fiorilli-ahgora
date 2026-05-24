@@ -20,37 +20,6 @@ function showTab(tabId, btn) {
     history.replaceState(null, null, ' ' + window.location.pathname + '#' + tabId);
 }
 
-async function saveCredentials(event) {
-    event.preventDefault();
-    const fields = window.CREDENTIAL_FIELDS || [];
-    const creds = {};
-
-    fields.forEach(f => {
-        const elId = f.replace('_', '-');
-        const element = document.getElementById(elId);
-        if (element) {
-            creds[f] = element.value;
-            localStorage.setItem(f, element.value);
-        }
-    });
-
-    try {
-        const msg = document.getElementById("save-msg");
-        if (msg) {
-            msg.classList.remove("hidden");
-            setTimeout(() => {
-                msg.classList.add("hidden");
-                window.location.href = '/';
-            }, 1000);
-        } else {
-            window.location.href = '/';
-        }
-    } catch (error) {
-        console.error('Error saving credentials:', error);
-        alert('Erro ao salvar credenciais no banco de dados: ' + error.message);
-    }
-}
-
 /**
  * Initializes the configuration page state
  * @param {Object} options - State options from the server

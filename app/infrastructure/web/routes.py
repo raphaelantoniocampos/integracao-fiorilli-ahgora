@@ -1,26 +1,25 @@
-from typing import Optional
+from datetime import timedelta
+from typing import Any, Dict, Optional
 from uuid import UUID
 
 import dotenv
-from fastapi import APIRouter, Depends, Form, Request, HTTPException
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
-from datetime import timedelta
 
 from app.core.database import get_db
-from app.core.settings import settings
 from app.core.security import (
-    verify_password,
-    get_password_hash,
     create_access_token,
     decode_access_token,
+    get_password_hash,
+    verify_password,
 )
-from typing import Any, Dict
+from app.core.settings import settings
 from app.domain.enums import SyncStatus
 from app.infrastructure.db.sqlalchemy_repo import SqlAlchemyRepo
+from app.services.credential_crypto import decrypt_password, encrypt_password
 from app.services.sync_service import SyncService
-from app.services.credential_crypto import encrypt_password, decrypt_password
 
 router = APIRouter()
 templates = Jinja2Templates(directory="app/infrastructure/web/templates")
@@ -30,15 +29,15 @@ def require_auth(request: Request):
     token = request.cookies.get("access_token")
     if not token or not decode_access_token(token):
         if request.headers.get("HX-Request"):
-            raise HTTPException(status_code=200, headers={"HX-Redirect": "/login"})
-        raise HTTPException(status_code=303, headers={"Location": "/login"})
+            raise HTTPException(status_code=status.HTTP_200_OK, headers={"HX-Redirect": "/login"})
+        raise HTTPException(status_code=status.HTTP_303_SEE_OTHER, headers={"Location": "/login"})
 
 
 def require_admin(request: Request):
     require_auth(request)
     if not request.state.is_admin:
         raise HTTPException(
-            status_code=403,
+            status_code=status.HTTP_403_FORBIDDEN,
             detail="Acesso negado. Apenas administradores podem acessar esta página.",
         )
 
@@ -83,7 +82,7 @@ async def login_post(
         timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
     )
 
-    response = RedirectResponse(url="/", status_code=303)
+    response = RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
     expires = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
     response.set_cookie(
         key="access_token",
@@ -97,7 +96,7 @@ async def login_post(
 
 @router.get("/logout")
 async def logout(request: Request):
-    response = RedirectResponse(url="/login", status_code=303)
+    response = RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
     response.delete_cookie("access_token")
     return response
 
@@ -231,6 +230,7 @@ async def config_page(request: Request):
             "use_cached_files": settings.USE_CACHED_FILES,
             "update_locations": settings.UPDATE_LOCATIONS,
             "headless_mode": settings.HEADLESS_MODE,
+            "headless_mode_tasks": settings.HEADLESS_MODE_TASKS,
             "is_docker": settings.IS_DOCKER,
         },
     )
@@ -418,6 +418,7 @@ async def get_task_groups_summary(
     job_id: UUID, service: SyncService = Depends(get_service)
 ):
     from collections import defaultdict
+
     from app.domain.enums import AutomationTaskStatus
 
     tasks = await service.get_automation_tasks(job_id)
@@ -642,7 +643,7 @@ async def get_user_credentials(request: Request, db: AsyncSession = Depends(get_
     repo = SqlAlchemyRepo(db)
     user = await repo.get_user_by_username(username)
     if user is None:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
     credentials = await repo.get_user_credentials(user.id)
     if credentials is None:
         # Return empty dict if no credentials set
@@ -690,7 +691,7 @@ async def save_user_credentials(
     repo = SqlAlchemyRepo(db)
     user = await repo.get_user_by_username(username)
     if user is None:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
     existing = await repo.get_user_credentials(user.id)
 
@@ -718,4 +719,6 @@ async def save_user_credentials(
     }
 
     await repo.save_user_credentials(user.id, credentials_dict)
-    return {"status": "ok"}
+
+    return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
+

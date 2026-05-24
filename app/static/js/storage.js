@@ -114,14 +114,9 @@ async function startSync(event) {
     if (btnText) btnText.innerText = "Iniciando...";
 
     try {
-        const credentials = await getEncryptedCredentials();
-
-        if (!credentials) return;
-
         const response = await fetch('/api/sync/run', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(credentials)
         });
 
         if (!response.ok) {

@@ -4,7 +4,15 @@ from uuid import UUID
 
 logger = logging.getLogger(__name__)
 
-from fastapi import APIRouter, BackgroundTasks, Body, Depends, HTTPException, Request
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Body,
+    Depends,
+    HTTPException,
+    Request,
+    status,
+)
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,13 +22,13 @@ from app.core.task_registry import task_registry
 from app.domain.entities import AutomationTask, SyncJob, SyncLog
 from app.domain.enums import AutomationTaskStatus
 from app.infrastructure.db.sqlalchemy_repo import SqlAlchemyRepo
-from app.services.transport_crypto import transport_crypto
 from app.services.credential_crypto import (
-    store_credentials_in_metadata,
     decrypt_password,
+    store_credentials_in_metadata,
 )
 from app.services.sync_service import SyncService
 from app.services.task_execution_service import TaskExecutionService
+from app.services.transport_crypto import transport_crypto
 
 
 class SyncCredentials(BaseModel):
@@ -67,12 +75,12 @@ async def run_sync_job(
     repo = SqlAlchemyRepo(db)
     user = await repo.get_user_by_username(username)
     if user is None:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
     # Get the user's credentials from the database
     credentials_dict = await repo.get_user_credentials(user.id)
     if credentials_dict is None:
-        raise HTTPException(status_code=400, detail="User credentials not found")
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User credentials not found")
 
     # Decrypt passwords
     fiorilli_password = None
@@ -85,7 +93,7 @@ async def run_sync_job(
         except Exception as e:
             logger.error(f"Failed to decrypt Fiorilli password for user {user.id}: {e}")
             raise HTTPException(
-                status_code=500, detail="Failed to decrypt Fiorilli password"
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to decrypt Fiorilli password"
             )
     if credentials_dict.get("ahgora_password_encrypted"):
         try:
@@ -95,7 +103,7 @@ async def run_sync_job(
         except Exception as e:
             logger.error(f"Failed to decrypt Ahgora password for user {user.id}: {e}")
             raise HTTPException(
-                status_code=500, detail="Failed to decrypt Ahgora password"
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to decrypt Ahgora password"
             )
 
     # Get URLs and usernames, fallback to settings if not set
@@ -146,7 +154,7 @@ async def list_jobs(service: SyncService = Depends(get_service)):
 async def kill_job(job_id: UUID, service: SyncService = Depends(get_service)):
     success = await service.kill_job(job_id)
     if not success:
-        raise HTTPException(status_code=404, detail="Job not found or not running")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found or not running")
     return {"message": f"Kill signal sent to job {job_id}"}
 
 
@@ -263,7 +271,7 @@ async def execute_batch_tasks(
         decrypted_ahgora = transport_crypto.decrypt(credentials.ahgora_password)
     except Exception:
         raise HTTPException(
-            status_code=400, detail="Invalid credential encryption payload"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid credential encryption payload"
         )
 
     fiorilli_url = credentials.fiorilli_url or settings.FIORILLI_URL
@@ -358,7 +366,7 @@ async def execute_task(
         decrypted_ahgora = transport_crypto.decrypt(credentials.ahgora_password)
     except Exception:
         raise HTTPException(
-            status_code=400, detail="Invalid credential encryption payload"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid credential encryption payload"
         )
 
     fiorilli_url = credentials.fiorilli_url or settings.FIORILLI_URL
@@ -392,7 +400,7 @@ async def cancel_task(
     success = await service.cancel_task(task_id)
     if not success:
         raise HTTPException(
-            status_code=400,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail="Não foi possível cancelar a tarefa. Ou ela não existe ou já foi finalizada/cancelada.",
         )
     return {"message": "Tarefa cancelada com sucesso"}

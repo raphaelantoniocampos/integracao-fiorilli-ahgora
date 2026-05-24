@@ -1,9 +1,9 @@
-<!-- <div id="headless-toggles-old" class="flex items-center space-x-2 mr-4"> -->
-<!--     <button hx-post="/api/settings/toggle-headless" hx-vals='{"target": "tasks"}' hx-target="#headless-toggles-old" hx-swap="outerHTML"  -->
-<!--         class="text-xs px-3 py-1.5 rounded-md border font-medium transition-colors {% if headless_mode_tasks %}bg-indigo-50 text-indigo-700 border-indigo-200{% else %}bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100{% endif %}" {% if is_docker %}disabled title="Não permitido em Docker" {% endif %}> -->
-<!--         <span class="flex items-center"> -->
-<!--             <span class="w-1.5 h-1.5 rounded-full mr-1.5 {% if headless_mode_tasks %}bg-indigo-500{% else %}bg-slate-400{% endif %}"></span> -->
-<!--             Headless (Tarefas) -->
-<!--         </span> -->
-<!--     </button> -->
-<!-- </div> -->
+<div id="headless-tasks-toggles" class="flex items-center space-x-2 mr-4 p-2">
+    <button hx-post="/api/settings/toggle-headless" hx-vals='{"target": "tasks"}' hx-target="#headless-tasks-toggles"
+        class="text-xs px-3 py-1.5 rounded-md border font-medium transition-colors {% if headless_mode_tasks %}bg-indigo-50 text-indigo-700 border-indigo-200{% else %}bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100{% endif %}" {% if is_docker %}disabled title="Não permitido em Docker" {% endif %}>
+        <span class="flex items-center">
+            <span class="w-1.5 h-1.5 rounded-full mr-1.5 {% if headless_mode_tasks %}bg-indigo-500{% else %}bg-slate-400{% endif %}"></span>
+            Tarefas
+        </span>
+    </button>
+</div>
