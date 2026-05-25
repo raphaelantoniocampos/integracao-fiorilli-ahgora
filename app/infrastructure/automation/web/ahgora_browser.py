@@ -60,6 +60,7 @@ class AhgoraBrowser(BaseBrowser):
         self._click_enter_button()
         self._enter_password("password", psw)
         self._click_enter_button()
+        self._check_login_error()
         self._select_company(company)
         self._close_banner()
         self.wait(self.DELAY)
@@ -86,6 +87,27 @@ class AhgoraBrowser(BaseBrowser):
             )
         except Exception:
             self.wait(self.DELAY)
+
+    def _check_login_error(self) -> None:
+        """Check if the login error message is displayed after submitting credentials."""
+        self.wait(0.3)
+        try:
+            error_element = self.driver.find_element(
+                By.XPATH,
+                "//p[contains(text(), 'Dados incorretos, tente novamente.')]",
+            )
+            if error_element and error_element.is_displayed():
+                self._log(
+                    "ERROR",
+                    "Ahgora login failed: Usuário ou senha incorretos, tente novamente.",
+                )
+                raise ValueError(
+                    "Ahgora login failed: Usuário ou senha incorretos, tente novamente."
+                )
+        except ValueError:
+            raise
+        except Exception:
+            pass
 
     def _click_plus_button(self) -> None:
         self.click_element("mais", selector_type=By.ID)

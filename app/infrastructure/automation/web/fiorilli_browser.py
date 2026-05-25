@@ -81,6 +81,7 @@ class FiorilliBrowser(BaseBrowser):
         self._enter_username("//input[@placeholder='(Usuário)']", user)
         self._enter_password("//input[@placeholder='(Senha)']", psw)
         self._click_login_button()
+        self._check_login_error()
         self._wait_for_login_to_complete()
         sleep(self.DELAY)
 
@@ -95,6 +96,27 @@ class FiorilliBrowser(BaseBrowser):
 
     def _wait_for_login_to_complete(self) -> None:
         self.wait_desappear("//*[contains(text(), 'Acessando SIP 7.5')]")
+
+    def _check_login_error(self) -> None:
+        """Check if the login error label is displayed after clicking Entrar."""
+        self.wait(0.5)
+        try:
+            error_element = self.driver.find_element(
+                By.XPATH,
+                "//label[contains(text(), 'Acesso Negado')]",
+            )
+            if error_element and error_element.is_displayed():
+                self._log(
+                    "ERROR",
+                    "Fiorilli login failed: Acesso Negado. Usuário ou Senha Inválido",
+                )
+                raise ValueError(
+                    "Fiorilli login failed: Acesso Negado. Usuário ou Senha Inválido"
+                )
+        except ValueError:
+            raise
+        except Exception:
+            pass
 
     def _navigate_to_maintenance_section(self) -> None:
         self.click_element("//*[contains(text(), '2 - Manutenção')]")
