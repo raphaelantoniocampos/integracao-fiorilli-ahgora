@@ -74,3 +74,21 @@ def extract_credentials_from_metadata(
     if token is None:
         return None
     return decrypt_credentials(token)
+
+def decrypt_credentials_dict(credentials_dict, user_id):
+    # Decrypt passwords
+    if credentials_dict.get("fiorilli_password_encrypted"):
+        try:
+            credentials_dict["fiorilli_password"] = decrypt_password(
+                credentials_dict["fiorilli_password_encrypted"]
+            )
+        except Exception as e:
+            logger.error(f"Failed to decrypt Fiorilli password for user {user_id}: {e}")
+    if credentials_dict.get("ahgora_password_encrypted"):
+        try:
+            credentials_dict["ahgora_password"] = decrypt_password(
+                credentials_dict["ahgora_password_encrypted"]
+            )
+        except Exception as e:
+            logger.error(f"Failed to decrypt Ahgora password for user {user_id}: {e}")
+    return credentials_dict

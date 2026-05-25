@@ -7,7 +7,6 @@ logger = logging.getLogger(__name__)
 from fastapi import (
     APIRouter,
     BackgroundTasks,
-    Body,
     Depends,
     HTTPException,
     Request,
@@ -23,7 +22,7 @@ from app.domain.entities import AutomationTask, SyncJob, SyncLog
 from app.domain.enums import AutomationTaskStatus
 from app.infrastructure.db.sqlalchemy_repo import SqlAlchemyRepo
 from app.services.credential_crypto import (
-    decrypt_password,
+    decrypt_credentials_dict,
     store_credentials_in_metadata,
 )
 from app.services.sync_service import SyncService
@@ -75,36 +74,18 @@ async def run_sync_job(
     repo = SqlAlchemyRepo(db)
     user = await repo.get_user_by_username(username)
     if user is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
 
     # Get the user's credentials from the database
     credentials_dict = await repo.get_user_credentials(user.id)
     if credentials_dict is None:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User credentials not found")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="User credentials not found"
+        )
 
-    # Decrypt passwords
-    fiorilli_password = None
-    ahgora_password = None
-    if credentials_dict.get("fiorilli_password_encrypted"):
-        try:
-            fiorilli_password = decrypt_password(
-                credentials_dict["fiorilli_password_encrypted"]
-            )
-        except Exception as e:
-            logger.error(f"Failed to decrypt Fiorilli password for user {user.id}: {e}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to decrypt Fiorilli password"
-            )
-    if credentials_dict.get("ahgora_password_encrypted"):
-        try:
-            ahgora_password = decrypt_password(
-                credentials_dict["ahgora_password_encrypted"]
-            )
-        except Exception as e:
-            logger.error(f"Failed to decrypt Ahgora password for user {user.id}: {e}")
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to decrypt Ahgora password"
-            )
+    credentials_dict = decrypt_credentials_dict(credentials_dict=credentials_dict, user_id=user.id)
 
     # Get URLs and usernames, fallback to settings if not set
     fiorilli_url = credentials_dict.get("fiorilli_url") or settings.FIORILLI_URL
@@ -112,6 +93,8 @@ async def run_sync_job(
     ahgora_url = credentials_dict.get("ahgora_url") or settings.AHGORA_URL
     ahgora_user = credentials_dict.get("ahgora_user") or settings.AHGORA_USER
     ahgora_company = credentials_dict.get("ahgora_company") or settings.AHGORA_COMPANY
+    ahgora_password = credentials_dict.get("ahgora_password")
+    fiorilli_password = credentials_dict.get("fiorilli_password")
 
     # Create job and associate with user
     job = await service.create_job(triggered_by="api")
@@ -154,7 +137,9 @@ async def list_jobs(service: SyncService = Depends(get_service)):
 async def kill_job(job_id: UUID, service: SyncService = Depends(get_service)):
     success = await service.kill_job(job_id)
     if not success:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found or not running")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Job not found or not running"
+        )
     return {"message": f"Kill signal sent to job {job_id}"}
 
 
@@ -261,21 +246,40 @@ async def _run_batch_standalone(
     tags=["Automation Tasks"],
 )
 async def execute_batch_tasks(
+    request: Request,
     job_id: UUID,
     task_type: str,
     background_tasks: BackgroundTasks,
-    credentials: SyncCredentials = Body(...),
+    db: AsyncSession = Depends(get_db),
 ):
-    try:
-        decrypted_fiorilli = transport_crypto.decrypt(credentials.fiorilli_password)
-        decrypted_ahgora = transport_crypto.decrypt(credentials.ahgora_password)
-    except Exception:
+
+    # Get the current user
+    username = request.state.username
+    repo = SqlAlchemyRepo(db)
+    user = await repo.get_user_by_username(username)
+    if user is None:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid credential encryption payload"
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
 
-    fiorilli_url = credentials.fiorilli_url or settings.FIORILLI_URL
-    ahgora_url = credentials.ahgora_url or settings.AHGORA_URL
+    # Get the user's credentials from the database
+    credentials_dict = await repo.get_user_credentials(user.id)
+    if credentials_dict is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="User credentials not found"
+        )
+
+    credentials_dict = decrypt_credentials_dict(credentials_dict=credentials_dict, user_id=user.id)
+
+    # Get URLs and usernames, fallback to settings if not set
+    fiorilli_url = credentials_dict.get("fiorilli_url") or settings.FIORILLI_URL
+    fiorilli_user = credentials_dict.get("fiorilli_user") or settings.FIORILLI_USER
+    ahgora_url = credentials_dict.get("ahgora_url") or settings.AHGORA_URL
+    ahgora_user = credentials_dict.get("ahgora_user") or settings.AHGORA_USER
+    ahgora_company = credentials_dict.get("ahgora_company") or settings.AHGORA_COMPANY
+    ahgora_password = credentials_dict.get("ahgora_password")
+    fiorilli_password = credentials_dict.get("fiorilli_password")
+
 
     # Execute batch in background with a new db session
     background_tasks.add_task(
@@ -283,12 +287,12 @@ async def execute_batch_tasks(
         job_id,
         task_type,
         fiorilli_url,
-        credentials.fiorilli_user,
-        decrypted_fiorilli,
+        fiorilli_user,
+        fiorilli_password,
         ahgora_url,
-        credentials.ahgora_user,
-        credentials.ahgora_company,
-        decrypted_ahgora,
+        ahgora_user,
+        ahgora_company,
+        ahgora_password,
     )
     return {"message": f"Batch task execution triggered for {task_type}"}
 
@@ -357,32 +361,50 @@ async def _run_task_standalone(
     tags=["Automation Tasks"],
 )
 async def execute_task(
+    request: Request,
     task_id: UUID,
     background_tasks: BackgroundTasks,
-    credentials: SyncCredentials = Body(...),
+    db: AsyncSession = Depends(get_db),
 ):
-    try:
-        decrypted_fiorilli = transport_crypto.decrypt(credentials.fiorilli_password)
-        decrypted_ahgora = transport_crypto.decrypt(credentials.ahgora_password)
-    except Exception:
+
+    # Get the current user
+    username = request.state.username
+    repo = SqlAlchemyRepo(db)
+    user = await repo.get_user_by_username(username)
+    if user is None:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid credential encryption payload"
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
         )
 
-    fiorilli_url = credentials.fiorilli_url or settings.FIORILLI_URL
-    ahgora_url = credentials.ahgora_url or settings.AHGORA_URL
+    # Get the user's credentials from the database
+    credentials_dict = await repo.get_user_credentials(user.id)
+    if credentials_dict is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="User credentials not found"
+        )
+
+    credentials_dict = decrypt_credentials_dict(credentials_dict=credentials_dict, user_id=user.id)
+
+    # Get URLs and usernames, fallback to settings if not set
+    fiorilli_url = credentials_dict.get("fiorilli_url") or settings.FIORILLI_URL
+    fiorilli_user = credentials_dict.get("fiorilli_user") or settings.FIORILLI_USER
+    ahgora_url = credentials_dict.get("ahgora_url") or settings.AHGORA_URL
+    ahgora_user = credentials_dict.get("ahgora_user") or settings.AHGORA_USER
+    ahgora_company = credentials_dict.get("ahgora_company") or settings.AHGORA_COMPANY
+    ahgora_password = credentials_dict.get("ahgora_password")
+    fiorilli_password = credentials_dict.get("fiorilli_password")
 
     # Execute in background with a new db session
     background_tasks.add_task(
         _run_task_standalone,
         task_id,
         fiorilli_url,
-        credentials.fiorilli_user,
-        decrypted_fiorilli,
+        fiorilli_user,
+        fiorilli_password,
         ahgora_url,
-        credentials.ahgora_user,
-        credentials.ahgora_company,
-        decrypted_ahgora,
+        ahgora_user,
+        ahgora_company,
+        ahgora_password,
     )
     return {"message": "Task execution triggered", "task_id": str(task_id)}
 

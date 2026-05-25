@@ -1,10 +1,3 @@
-// Centralized credential field names
-const CREDENTIAL_FIELDS = [
-    "fiorilli_url", "fiorilli_user", "fiorilli_password",
-    "ahgora_url", "ahgora_company", "ahgora_user", "ahgora_password"
-];
-window.CREDENTIAL_FIELDS = CREDENTIAL_FIELDS;
-
 // Helper functions for encryption
 function str2ab(str) {
     const buf = new ArrayBuffer(str.length);
@@ -61,50 +54,6 @@ async function encryptString(text, publicKey) {
     return window.btoa(binary);
 }
 
-// Credential retrieval and encryption logic
-async function getEncryptedCredentials() {
-    // Load all credential values
-    const creds = {};
-    CREDENTIAL_FIELDS.forEach(key => {
-        creds[key] = localStorage.getItem(key) || '';
-    });
-
-    const requiredFields = ['fiorilli_password', 'ahgora_password', 'fiorilli_user', 'ahgora_user', 'ahgora_company'];
-    const missingFields = requiredFields.filter(f => !creds[f]);
-
-    if (missingFields.length > 0) {
-        alert('Configure suas credenciais.');
-        window.location.href = '/config#automation';
-        return null;
-    }
-
-    const keysResponse = await fetch('/api/sync/public-key');
-    if (!keysResponse.ok) {
-        throw new Error("Falha ao obter chave pública");
-    }
-    const pkData = await keysResponse.json();
-
-    const publicKey = await importPublicKey(pkData.public_key);
-    if (!publicKey) {
-        const currentUrl = window.location.origin;
-        alert(`O seu navegador está bloqueando as APIs de criptografia porque esta conexão não é segura (HTTP).\n\nPara resolver em rede local:\n1. Acesse chrome://flags/#unsafely-treat-insecure-origin-as-secure\n2. Ative a opção e adicione: ${currentUrl}\n3. Reinicie o navegador.`);
-        return null;
-    }
-
-    const encryptedFiorilli = await encryptString(creds.fiorilli_password, publicKey);
-    const encryptedAhgora = await encryptString(creds.ahgora_password, publicKey);
-
-    return {
-        fiorilli_user: creds.fiorilli_user,
-        ahgora_user: creds.ahgora_user,
-        ahgora_company: creds.ahgora_company,
-        fiorilli_password: encryptedFiorilli,
-        ahgora_password: encryptedAhgora,
-        fiorilli_url: creds.fiorilli_url || null,
-        ahgora_url: creds.ahgora_url || null
-    };
-}
-
 // Action functions
 async function startSync(event) {
     const btn = event.currentTarget;
@@ -141,22 +90,11 @@ async function executeBatch(jobId, taskType, btn) {
     }
 
     try {
-        const credentials = await getEncryptedCredentials();
-        if (!credentials) {
-            console.warn("No credentials found");
-            if (btn) {
-                btn.disabled = false;
-                btn.classList.remove('opacity-50', 'cursor-not-allowed');
-            }
-            return;
-        }
-
         const url = `/api/sync/tasks/batch/execute?job_id=${jobId}&task_type=${encodeURIComponent(taskType)}`;
 
         const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(credentials)
         });
 
         if (!response.ok) {
@@ -190,20 +128,9 @@ async function executeTask(taskId, btn) {
     }
 
     try {
-        const credentials = await getEncryptedCredentials();
-        if (!credentials) {
-            console.warn("No credentials found");
-            if (btn) {
-                btn.disabled = false;
-                btn.classList.remove('opacity-50', 'cursor-not-allowed');
-            }
-            return;
-        }
-
         const response = await fetch(`/api/sync/tasks/${taskId}/execute`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(credentials)
         });
 
         if (!response.ok) {
@@ -266,7 +193,6 @@ async function cancelBatch(jobId, taskType, btn) {
 }
 
 // Global exposure
-window.CREDENTIAL_FIELDS = CREDENTIAL_FIELDS;
 window.startSync = startSync;
 window.executeBatch = executeBatch;
 window.executeTask = executeTask;

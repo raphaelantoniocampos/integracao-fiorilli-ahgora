@@ -38,39 +38,4 @@ async function initConfig(options = {}) {
         const btn = document.querySelector(`a[href="#${hash}"]`);
         if (btn) showTab(hash, btn);
     }
-
-    // Load credentials logic for automation tab from backend API
-    try {
-        const response = await fetch('/api/user/credentials', {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' }
-        });
-
-        if (response.ok) {
-            const credentials = await response.json();
-            const fields = window.CREDENTIAL_FIELDS || [];
-            fields.forEach(f => {
-                const value = credentials[f] || '';
-                const elId = f.replace('_', '-');
-                const element = document.getElementById(elId);
-                if (element) {
-                    element.value = value;
-                }
-            });
-        }
-    } catch (error) {
-        console.error('Failed to load user credentials:', error);
-        // Fallback to localStorage if backend fails
-        const fields = window.CREDENTIAL_FIELDS || [];
-        fields.forEach(f => {
-            const stored = localStorage.getItem(f);
-            if (stored) {
-                const elId = f.replace('_', '-');
-                const element = document.getElementById(elId);
-                if (element) {
-                    element.value = stored;
-                }
-            }
-        });
-    }
 }
