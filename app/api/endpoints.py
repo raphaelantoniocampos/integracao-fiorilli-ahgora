@@ -102,7 +102,7 @@ async def run_sync_job(
     await service.repo.save_job(job)
 
     # Store credentials in job metadata for retry purposes (encrypted)
-    store_credentials_in_metadata(job.metadata, fiorilli_password, ahgora_password)
+    store_credentials_in_metadata(job.metadata_info, fiorilli_password, ahgora_password)
 
     # Run the sync task in the background
     background_tasks.add_task(

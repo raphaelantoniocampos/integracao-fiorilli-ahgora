@@ -5,7 +5,6 @@ from fastapi.testclient import TestClient
 
 from app.main import app
 from app.core.database import get_db
-from app.infrastructure.web.routes import require_auth
 from app.services.credential_crypto import encrypt_password
 
 # Mock database session

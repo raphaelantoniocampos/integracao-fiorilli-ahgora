@@ -1289,7 +1289,7 @@ class SyncService:
 
         job = await self.get_job(job_id)
         if job:
-            job.metadata["tasks_generated"] = len(tasks_to_create)
+            job.metadata_info["tasks_generated"] = len(tasks_to_create)
             async with self._db_lock:
                 await self.repo.save_job(job)
 

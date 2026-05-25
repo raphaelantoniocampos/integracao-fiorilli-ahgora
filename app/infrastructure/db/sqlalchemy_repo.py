@@ -65,7 +65,7 @@ class SqlAlchemyRepo:
                 started_at=job.started_at,
                 finished_at=job.finished_at,
                 error_message=job.error_message,
-                metadata_info=job.metadata,
+                metadata_info=job.metadata_info,
                 retry_count=job.retry_count,
                 next_retry_at=job.next_retry_at,
             )
@@ -75,7 +75,7 @@ class SqlAlchemyRepo:
             db_job.started_at = job.started_at  # type: ignore
             db_job.finished_at = job.finished_at  # type: ignore
             db_job.error_message = job.error_message  # type: ignore
-            db_job.metadata_info = job.metadata
+            db_job.metadata_info = job.metadata_info
             db_job.retry_count = job.retry_count
             db_job.next_retry_at = job.next_retry_at  # type: ignore
 
@@ -94,7 +94,7 @@ class SqlAlchemyRepo:
             started_at=db_job.started_at,
             finished_at=db_job.finished_at,
             error_message=db_job.error_message,
-            metadata=db_job.metadata_info,
+            metadata_info=db_job.metadata_info,
             retry_count=db_job.retry_count,
             next_retry_at=db_job.next_retry_at,
         )
@@ -119,7 +119,7 @@ class SqlAlchemyRepo:
                 started_at=db.started_at,
                 finished_at=db.finished_at,
                 error_message=db.error_message,
-                metadata=db.metadata_info,
+                metadata_info=db.metadata_info,
                 retry_count=db.retry_count,
                 next_retry_at=db.next_retry_at,
             )
@@ -174,7 +174,7 @@ class SqlAlchemyRepo:
                 started_at=db.started_at,
                 finished_at=db.finished_at,
                 error_message=db.error_message,
-                metadata=db.metadata_info,
+                metadata_info=db.metadata_info,
                 retry_count=db.retry_count,
                 next_retry_at=db.next_retry_at,
             )

@@ -61,7 +61,7 @@ class RetryScheduler:
                     f"Scheduling retry for job {job.id} (Attempt {job.retry_count + 1})"
                 )
 
-                creds = extract_credentials_from_metadata(job.metadata)
+                creds = extract_credentials_from_metadata(job.metadata_info)
                 if creds is None:
                     logger.warning(
                         f"Job {job.id} has no stored credentials; marking FAILED."
