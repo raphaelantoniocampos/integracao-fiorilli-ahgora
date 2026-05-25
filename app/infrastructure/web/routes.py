@@ -29,8 +29,12 @@ def require_auth(request: Request):
     token = request.cookies.get("access_token")
     if not token or not decode_access_token(token):
         if request.headers.get("HX-Request"):
-            raise HTTPException(status_code=status.HTTP_200_OK, headers={"HX-Redirect": "/login"})
-        raise HTTPException(status_code=status.HTTP_303_SEE_OTHER, headers={"Location": "/login"})
+            raise HTTPException(
+                status_code=status.HTTP_200_OK, headers={"HX-Redirect": "/login"}
+            )
+        raise HTTPException(
+            status_code=status.HTTP_303_SEE_OTHER, headers={"Location": "/login"}
+        )
 
 
 def require_admin(request: Request):
@@ -643,7 +647,9 @@ async def get_user_credentials(request: Request, db: AsyncSession = Depends(get_
     repo = SqlAlchemyRepo(db)
     user = await repo.get_user_by_username(username)
     if user is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
     credentials = await repo.get_user_credentials(user.id)
     if credentials is None:
         # Return empty dict if no credentials set
@@ -654,7 +660,9 @@ async def get_user_credentials(request: Request, db: AsyncSession = Depends(get_
     ahgora_password = ""
     if credentials.get("fiorilli_password_encrypted"):
         try:
-            fiorilli_password = decrypt_password(credentials["fiorilli_password_encrypted"])
+            fiorilli_password = decrypt_password(
+                credentials["fiorilli_password_encrypted"]
+            )
         except Exception:
             pass
     if credentials.get("ahgora_password_encrypted"):
@@ -691,9 +699,16 @@ async def save_user_credentials(
     repo = SqlAlchemyRepo(db)
     user = await repo.get_user_by_username(username)
     if user is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
 
-    existing = await repo.get_user_credentials(user.id)
+    existing = await repo.get_user_credentials(user.id) or {}
+
+    def get_valid_value(form_value, key):
+        if form_value and form_value.strip():
+            return form_value.strip()
+        return existing.get(key)
 
     # Encrypt passwords before storing
     fiorilli_password_encrypted = None
@@ -709,16 +724,15 @@ async def save_user_credentials(
         ahgora_password_encrypted = encrypt_password(ahgora_password)
 
     credentials_dict = {
-        "fiorilli_url": fiorilli_url,
-        "fiorilli_user": fiorilli_user,
+        "fiorilli_url": get_valid_value(fiorilli_url, "fiorilli_url"),
+        "fiorilli_user": get_valid_value(fiorilli_user, "fiorilli_user"),
         "fiorilli_password_encrypted": fiorilli_password_encrypted,
-        "ahgora_url": ahgora_url,
-        "ahgora_user": ahgora_user,
+        "ahgora_url": get_valid_value(ahgora_url, "ahgora_url"),
+        "ahgora_user": get_valid_value(ahgora_user, "ahgora_user"),
         "ahgora_password_encrypted": ahgora_password_encrypted,
-        "ahgora_company": ahgora_company,
+        "ahgora_company": get_valid_value(ahgora_company, "ahgora_company"),
     }
 
     await repo.save_user_credentials(user.id, credentials_dict)
 
-    return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
-
+    return {"status": "success", "message": "Credentials updated"}
