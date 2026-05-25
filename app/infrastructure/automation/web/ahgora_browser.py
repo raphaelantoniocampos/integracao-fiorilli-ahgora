@@ -96,7 +96,7 @@ class AhgoraBrowser(BaseBrowser):
                 By.XPATH,
                 "//p[contains(text(), 'Dados incorretos, tente novamente.')]",
             )
-            if error_element and error_element.is_displayed():
+            if error_element:
                 self._log(
                     "ERROR",
                     "Ahgora login failed: Usuário ou senha incorretos, tente novamente.",

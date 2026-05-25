@@ -105,7 +105,7 @@ class FiorilliBrowser(BaseBrowser):
                 By.XPATH,
                 "//label[contains(text(), 'Acesso Negado')]",
             )
-            if error_element and error_element.is_displayed():
+            if error_element:
                 self._log(
                     "ERROR",
                     "Fiorilli login failed: Acesso Negado. Usuário ou Senha Inválido",
